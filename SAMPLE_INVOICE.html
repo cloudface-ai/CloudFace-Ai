@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudFace AI - Invoice</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .invoice-header {
+            background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+            color: white;
+            padding: 40px;
+            position: relative;
+        }
+        
+        .invoice-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #34a853, #fbbc04, #ea4335);
+        }
+        
+        .company-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 30px;
+        }
+        
+        .logo-section h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .logo-section p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .invoice-title {
+            text-align: right;
+        }
+        
+        .invoice-title h2 {
+            font-size: 36px;
+            font-weight: 300;
+            margin-bottom: 5px;
+        }
+        
+        .invoice-title p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .invoice-body {
+            padding: 40px;
+        }
+        
+        .info-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+        
+        .info-block h3 {
+            color: #1a73e8;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .info-block p {
+            color: #333;
+            line-height: 1.6;
+            font-size: 14px;
+        }
+        
+        .invoice-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .detail-value {
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 30px 0;
+        }
+        
+        .items-table thead {
+            background: #1a73e8;
+            color: white;
+        }
+        
+        .items-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .items-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            color: #333;
+        }
+        
+        .items-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .price-summary {
+            margin-top: 30px;
+            border-top: 2px solid #e0e0e0;
+            padding-top: 20px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 15px;
+        }
+        
+        .summary-row.discount {
+            color: #34a853;
+            font-weight: 600;
+        }
+        
+        .summary-row.total {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a73e8;
+            border-top: 2px solid #1a73e8;
+            padding-top: 15px;
+            margin-top: 10px;
+        }
+        
+        .payment-status {
+            display: inline-block;
+            background: #34a853;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .invoice-footer {
+            background: #f8f9fa;
+            padding: 30px 40px;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        .footer-notes {
+            margin-bottom: 20px;
+        }
+        
+        .footer-notes h4 {
+            color: #1a73e8;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .footer-notes p {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .footer-contact {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .contact-item {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .contact-item strong {
+            display: block;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+        
+        .brand-footer {
+            text-align: center;
+            padding: 20px;
+            background: #1a73e8;
+            color: white;
+            font-size: 13px;
+        }
+        
+        .brand-footer a {
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            
+            .invoice-container {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container">
+        <!-- Header -->
+        <div class="invoice-header">
+            <div class="company-info">
+                <div class="logo-section">
+                    <img src="/static/Cloudface-ai-logo.png" alt="CloudFace AI" style="height: 50px; margin-bottom: 10px; background: white; padding: 8px; border-radius: 8px;">
+                    <p>Privacy-First Face Recognition</p>
+                </div>
+                <div class="invoice-title">
+                    <h2>INVOICE</h2>
+                    <p>#CF-2025-001234</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Body -->
+        <div class="invoice-body">
+            <!-- Info Row -->
+            <div class="info-row">
+                <div class="info-block">
+                    <h3>From</h3>
+                    <p>
+                        <strong>Elephic Technologies</strong><br>
+                        E-2/22, Block E2, DLF Phase 1<br>
+                        Sector 26A, Gurugram, Haryana<br>
+                        122003, India<br>
+                        <br>
+                        📧 support@cloudface-ai.com<br>
+                        📞 +91 9718686723
+                    </p>
+                </div>
+                
+                <div class="info-block">
+                    <h3>Bill To</h3>
+                    <p>
+                        <strong>Vinod Kumar</strong><br>
+                        smp@glamly.com<br>
+                        +91 9873315940<br>
+                        <br>
+                        <span class="payment-status">✓ PAID</span>
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Invoice Details -->
+            <div class="invoice-details">
+                <div class="detail-row">
+                    <span class="detail-label">Invoice Date:</span>
+                    <span class="detail-value">10 October 2025</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Payment ID:</span>
+                    <span class="detail-value">pay_RRhIHHhPEZF2ii</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Payment Method:</span>
+                    <span class="detail-value">Card (XXXX-3362)</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Transaction Date:</span>
+                    <span class="detail-value">10 Oct 2025, 01:33:07 PM IST</span>
+                </div>
+            </div>
+            
+            <!-- Items Table -->
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Period</th>
+                        <th style="text-align: right;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>
+                            <strong>Personal Plan</strong><br>
+                            <span style="font-size: 13px; color: #666;">
+                                • Advanced face recognition<br>
+                                • 20,000 images per year<br>
+                                • 20 videos per year<br>
+                                • Priority support
+                            </span>
+                        </td>
+                        <td>1 Year<br><span style="font-size: 12px; color: #666;">10 Oct 2025 - 09 Oct 2026</span></td>
+                        <td style="text-align: right; font-weight: 600;">₹3,999</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <!-- Price Summary -->
+            <div class="price-summary">
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span>₹3,999</span>
+                </div>
+                <div class="summary-row discount">
+                    <span>🎉 Discount (Test-Invoice Offer)</span>
+                    <span>- ₹3,900</span>
+                </div>
+                <div class="summary-row">
+                    <span>Tax (GST 0%)</span>
+                    <span>₹0</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total Paid</span>
+                    <span>₹99</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="invoice-footer">
+            <div class="footer-notes">
+                <h4>📝 Important Notes</h4>
+                <p>
+                    • This is a computer-generated invoice and does not require a signature.<br>
+                    • Your subscription is now active and valid for 1 year from the purchase date.<br>
+                    • For support or refund requests, please contact us within 7 days of purchase.<br>
+                    • All face recognition processing is done securely with zero data retention.
+                </p>
+            </div>
+            
+            <div class="footer-notes">
+                <h4>🔒 Privacy Guarantee</h4>
+                <p>
+                    CloudFace AI processes your photos securely and immediately deletes them after analysis. 
+                    We never store your images - only face embeddings in YOUR Google Drive. Your privacy is our priority.
+                </p>
+            </div>
+            
+            <div class="footer-contact">
+                <div class="contact-item">
+                    <strong>📧 Email Support</strong>
+                    support@cloudface-ai.com
+                </div>
+                <div class="contact-item">
+                    <strong>📞 Phone Support</strong>
+                    +91 9718686723<br>
+                    Mon-Fri: 10:00 AM-5:30 PM
+                </div>
+                <div class="contact-item">
+                    <strong>🌐 Website</strong>
+                    cloudface-ai.com
+                </div>
+            </div>
+        </div>
+        
+        <!-- Brand Footer -->
+        <div class="brand-footer">
+            <p>
+                © 2025 <a href="https://cloudface-ai.com">cloudface-ai.com</a> • 
+                A product of Elephic Technologies • 
+                Made with ❤️ in Gurugram, India
+            </p>
+        </div>
+    </div>
+    
+</body>
+</html>
+

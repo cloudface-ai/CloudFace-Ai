@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Generator - CloudFace AI Admin</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1a73e8;
+            --primary-light: #4285f4;
+            --primary-dark: #0d47a1;
+            --accent: #ea4335;
+            --accent-light: #f28b82;
+            --success: #34a853;
+            --warning: #fbbc04;
+            --bg: #fafafa;
+            --surface: #fff;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --text-tertiary: #9aa0a6;
+            --border: #dadce0;
+            --shadow: 0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.24);
+            --shadow-hover: 0 14px 28px rgba(0,0,0,.25), 0 10px 10px rgba(0,0,0,.22);
+            --radius: 16px;
+            --radius-sm: 8px;
+            --transition: all 0.2s ease;
+        }
+
+        body {
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: var(--text-primary);
+        }
+
+        .container {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-hover);
+            border: 1px solid var(--border);
+            max-width: 700px;
+            width: 100%;
+            padding: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 28px;
+            font-weight: 500;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            transition: var(--transition);
+            background: var(--surface);
+            color: var(--text-primary);
+        }
+
+        input[type="text"]:focus, input[type="file"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1);
+        }
+
+        input[type="file"] {
+            cursor: pointer;
+        }
+
+        input[type="file"]::-webkit-file-upload-button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+
+        input[type="file"]::-webkit-file-upload-button:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            padding: 14px 30px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: var(--text-tertiary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: var(--text-secondary);
+            box-shadow: var(--shadow);
+        }
+
+        .output-box {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 15px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .output-box.show {
+            display: block;
+        }
+
+        .generated-link {
+            background: var(--surface);
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: var(--primary);
+            margin: 10px 0;
+            border: 1px solid var(--border);
+        }
+
+        .qr-code {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .qr-code canvas {
+            max-width: 200px;
+            margin: 10px auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px;
+            background: var(--surface);
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            margin-top: 10px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        .example {
+            background: #fff3cd;
+            border-left: 4px solid var(--warning);
+            padding: 12px;
+            margin: 15px 0;
+            font-size: 13px;
+            border-radius: var(--radius-sm);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .back-link:hover {
+            color: var(--primary-dark);
+            text-decoration: underline;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .btn {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+
+            /* Stack share buttons vertically on mobile */
+            div[style*="grid-template-columns: repeat(2"] {
+                grid-template-columns: 1fr !important;
+            }
+
+            .qr-code canvas, .qr-code svg {
+                max-width: 250px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 20px;
+            }
+
+            input[type="text"] {
+                font-size: 16px; /* Prevent zoom on iOS */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔗 Auto-Process Link Generator</h1>
+        <p class="subtitle">Create shareable links for easy photo processing</p>
+
+        <div class="form-group">
+            <label for="companyName">Company Name</label>
+            <input type="text" id="companyName" placeholder="e.g., Acme Corporation, Tech Solutions Inc">
+            <p class="help-text">Your company name - will appear as the host inviting users</p>
+        </div>
+
+        <div class="form-group">
+            <label for="companyLogo">Company Logo</label>
+            <input type="file" id="companyLogo" accept="image/*" onchange="handleLogoUpload(event)">
+            <p class="help-text">Optional - upload your company logo (PNG, JPG, GIF - max 2MB)</p>
+            <div id="logoPreview" style="display: none; margin-top: 10px;">
+                <img id="previewImg" style="max-width: 100px; max-height: 60px; border-radius: 4px; border: 1px solid var(--border);">
+                <button type="button" onclick="removeLogo()" style="margin-left: 10px; padding: 4px 8px; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer;">Remove</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="eventName">Event Name</label>
+            <input type="text" id="eventName" placeholder="e.g., Wedding Reception, Corporate Event 2025">
+            <p class="help-text">This will be displayed to users when they open the link</p>
+        </div>
+
+        <div class="form-group">
+            <label for="eventDate">Event Date</label>
+            <input type="text" id="eventDate" placeholder="e.g., October 7, 2025">
+            <p class="help-text">Optional - helps users identify the event</p>
+        </div>
+
+        <div class="form-group">
+            <label for="driveUrl">Google Drive Folder URL</label>
+            <input type="text" id="driveUrl" placeholder="Paste your Google Drive folder link here">
+            <p class="help-text">Users will be able to click your link and automatically process this folder</p>
+        </div>
+
+
+        <button class="btn" onclick="generateLink()">📤 Share Now</button>
+
+        <div id="output" class="output-box">
+            <h3 style="margin-bottom: 15px; color: #333;">✅ Share Your Processed Photos:</h3>
+            
+            <div class="generated-link" id="generatedLink"></div>
+            
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 15px 0;">
+                <button class="btn btn-secondary" onclick="copyToClipboard()" style="width: auto;">
+                    📋 Copy Link
+                </button>
+                <button class="btn btn-secondary" onclick="shareViaWhatsApp()" style="width: auto; background: #25D366;">
+                    💬 WhatsApp
+                </button>
+                <button class="btn btn-secondary" onclick="shareViaEmail()" style="width: auto; background: #ea4335;">
+                    📧 Email
+                </button>
+                <button class="btn btn-secondary" onclick="downloadQR()" style="width: auto; background: #fbbc04;">
+                    ⬇️ Download QR
+                </button>
+            </div>
+            
+            <div class="qr-code" id="qrCode">
+                <h4 style="margin: 15px 0 10px; color: #333;">📱 QR Code:</h4>
+                <div id="qrCodeContainer"></div>
+                <p class="help-text">Users can scan this to instantly access the photos</p>
+            </div>
+            
+            <div id="successMessage" class="success-message">
+                ✅ Link copied to clipboard!
+            </div>
+        </div>
+
+        <a href="/app" class="back-link">← Back to App</a>
+    </div>
+
+    <!-- QR Code Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" onload="console.log('✅ QRCode library loaded')" onerror="console.error('❌ QRCode library failed to load')"></script>
+
+    <script>
+        // Global variables
+        let qrCodeReady = false;
+        let currentQRDataURL = null;  // Store QR code for download
+        let generatedShareLink = '';  // Store generated link
+        
+        // Auto-fill Drive URL from URL parameters (when coming from main app)
+        window.addEventListener('load', function() {
+            // Check for URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const driveUrl = urlParams.get('drive');
+            const depth = urlParams.get('depth');
+            
+            // Auto-fill if coming from processing
+            if (driveUrl) {
+                document.getElementById('driveUrl').value = decodeURIComponent(driveUrl);
+                console.log('✅ Auto-filled Drive URL from processed folder');
+            }
+            
+            // Wait for QRCode library to load
+            setTimeout(() => {
+                qrCodeReady = typeof qrcode !== 'undefined';
+                if (qrCodeReady) {
+                    console.log('✅ QRCode library is ready');
+                } else {
+                    console.warn('⚠️ QRCode library not loaded, QR codes will not be generated');
+                }
+            }, 500);
+        });
+
+        function generateQRCode(text) {
+            const qrContainer = document.getElementById('qrCodeContainer');
+            
+            if (!text) {
+                qrContainer.innerHTML = '<p style="color: #999; margin-top: 10px;">No link to generate QR code for</p>';
+                return;
+            }
+
+            // Try multiple times with increasing delays
+            let attempts = 0;
+            const maxAttempts = 5;
+            
+            function tryGenerate() {
+                attempts++;
+                
+                if (typeof qrcode !== 'undefined') {
+                    try {
+                        // Generate QR code using qrcode-generator library
+                        const qr = qrcode(0, 'M');
+                        qr.addData(text);
+                        qr.make();
+                        
+                        // Create QR code as SVG with larger size for better scanning
+                        const cellSize = 6;
+                        const margin = 4;
+                        const qrSvg = qr.createSvgTag(cellSize, margin);
+                        
+                        qrContainer.innerHTML = qrSvg;
+                        
+                        // Store QR as data URL for download
+                        const svg = qrContainer.querySelector('svg');
+                        if (svg) {
+                            svg.setAttribute('width', '300');
+                            svg.setAttribute('height', '300');
+                            const svgData = new XMLSerializer().serializeToString(svg);
+                            currentQRDataURL = 'data:image/svg+xml;base64,' + btoa(svgData);
+                        }
+                        
+                        console.log('✅ QR code generated successfully');
+                    } catch (err) {
+                        console.error('QR code error:', err);
+                        if (attempts < maxAttempts) {
+                            setTimeout(tryGenerate, 200 * attempts);
+                        } else {
+                            qrContainer.innerHTML = '<p style="color: #999; margin-top: 10px;">QR code not available</p>';
+                        }
+                    }
+                } else {
+                    if (attempts < maxAttempts) {
+                        console.log(`QRCode library not ready, attempt ${attempts}/${maxAttempts}`);
+                        setTimeout(tryGenerate, 200 * attempts);
+                    } else {
+                        console.warn('QRCode library failed to load after multiple attempts');
+                        qrContainer.innerHTML = '<p style="color: #999; margin-top: 10px;">QR code not available (library failed to load)</p>';
+                    }
+                }
+            }
+            
+            tryGenerate();
+        }
+        
+
+        // Global variable to store logo filename
+        let logoFilename = null;
+
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            
+            if (!file) {
+                removeLogo();
+                return;
+            }
+            
+            // Check file size (2MB max)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Logo file is too large. Please choose a file smaller than 2MB.');
+                event.target.value = '';
+                return;
+            }
+            
+            // Check file type
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a valid image file (PNG, JPG, GIF).');
+                event.target.value = '';
+                return;
+            }
+            
+            // Upload logo to server
+            const formData = new FormData();
+            formData.append('logo', file);
+            
+            fetch('/upload-logo', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    logoFilename = data.filename;
+                    const preview = document.getElementById('logoPreview');
+                    const previewImg = document.getElementById('previewImg');
+                    previewImg.src = `/static/logos/${data.filename}`;
+                    preview.style.display = 'block';
+                } else {
+                    alert('Failed to upload logo: ' + data.error);
+                    event.target.value = '';
+                }
+            })
+            .catch(error => {
+                console.error('Logo upload error:', error);
+                alert('Failed to upload logo. Please try again.');
+                event.target.value = '';
+            });
+        }
+
+        function removeLogo() {
+            document.getElementById('companyLogo').value = '';
+            document.getElementById('logoPreview').style.display = 'none';
+            logoFilename = null;
+        }
+
+        function generateLink() {
+            const driveUrl = document.getElementById('driveUrl').value.trim();
+            const companyName = document.getElementById('companyName').value.trim();
+            const eventName = document.getElementById('eventName').value.trim();
+            const eventDate = document.getElementById('eventDate').value.trim();
+            
+            if (!driveUrl) {
+                alert('Please enter a Google Drive folder URL');
+                return;
+            }
+
+            // Validate it's a Drive URL
+            if (!driveUrl.includes('drive.google.com')) {
+                alert('Please enter a valid Google Drive URL');
+                return;
+            }
+
+            // Extract folder ID from URL
+            let folderId = driveUrl;
+            if (driveUrl.includes('/folders/')) {
+                folderId = driveUrl.split('/folders/')[1].split('/')[0].split('?')[0];
+            }
+            
+            // Show loading
+            const btn = event.target;
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = '⏳ Creating share session...';
+            
+            // Get admin user ID from auth status
+            fetch('/auth/status', { credentials: 'same-origin' })
+                .then(res => res.json())
+                .then(authData => {
+                    if (!authData.authenticated) {
+                        alert('Please login first');
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                        return;
+                    }
+                    
+                    const adminUserId = authData.user_email;
+                    
+                    // Create shareable session via API
+                    return fetch('/api/create-share-session', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            admin_user_id: adminUserId,
+                            folder_id: folderId,
+                            metadata: {
+                                drive_url: driveUrl,
+                                company_name: companyName,
+                                event_name: eventName,
+                                event_date: eventDate,
+                                logo_filename: logoFilename
+                            }
+                        })
+                    });
+                })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.textContent = originalText;
+                
+                if (data.success) {
+                    // Generate shareable link with session ID
+                    const baseUrl = window.location.origin;
+                    const shareableLink = `${baseUrl}/auto-process?session=${data.session_id}`;
+                    
+                    document.getElementById('generatedLink').textContent = shareableLink;
+                    document.getElementById('output').classList.add('show');
+                    generatedShareLink = shareableLink;
+                    generateQRCode(shareableLink);
+                    
+                    console.log('✅ Shareable session created:', data.session_id);
+                } else {
+                    alert('Failed to create share session: ' + data.error);
+                }
+            })
+            .catch(error => {
+                btn.disabled = false;
+                btn.textContent = originalText;
+                alert('Error creating share session: ' + error.message);
+            });
+        }
+
+        // NEW: Share via WhatsApp
+        function shareViaWhatsApp() {
+            if (!generatedShareLink) {
+                alert('Please generate a link first');
+                return;
+            }
+            
+            const eventName = document.getElementById('eventName').value.trim() || 'Event Photos';
+            const companyName = document.getElementById('companyName').value.trim() || 'CloudFace AI';
+            
+            const message = `🎉 *${eventName}* photos are ready!\n\n` +
+                          `${companyName} has shared photos with you.\n\n` +
+                          `Click to view and search:\n${generatedShareLink}\n\n` +
+                          `Powered by CloudFace AI ☁️`;
+            
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+        }
+
+        // NEW: Share via Email
+        function shareViaEmail() {
+            if (!generatedShareLink) {
+                alert('Please generate a link first');
+                return;
+            }
+            
+            const eventName = document.getElementById('eventName').value.trim() || 'Event Photos';
+            const companyName = document.getElementById('companyName').value.trim() || 'CloudFace AI';
+            
+            const subject = `${eventName} - Photo Access Link`;
+            const body = `Hello,\n\n` +
+                        `${companyName} has shared ${eventName} photos with you.\n\n` +
+                        `Click the link below to view and search your photos:\n` +
+                        `${generatedShareLink}\n\n` +
+                        `You can search for yourself by uploading a selfie.\n\n` +
+                        `Best regards,\n${companyName}\n\n` +
+                        `---\n` +
+                        `Powered by CloudFace AI - Privacy-First Face Recognition`;
+            
+            const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            window.location.href = mailtoUrl;
+        }
+
+        // NEW: Download QR Code
+        function downloadQR() {
+            if (!currentQRDataURL) {
+                alert('Please generate a QR code first');
+                return;
+            }
+            
+            const eventName = document.getElementById('eventName').value.trim() || 'Event';
+            const filename = `CloudFace_QR_${eventName.replace(/\s+/g, '_')}.svg`;
+            
+            const downloadLink = document.createElement('a');
+            downloadLink.href = currentQRDataURL;
+            downloadLink.download = filename;
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+            
+            // Show success message
+            const successMsg = document.getElementById('successMessage');
+            successMsg.textContent = '✅ QR Code downloaded!';
+            successMsg.classList.add('show');
+            setTimeout(() => successMsg.classList.remove('show'), 3000);
+        }
+
+        function copyToClipboard() {
+            // Get the actual shareable link (not the HTML content)
+            const linkElement = document.getElementById('generatedLink');
+            let link;
+            
+            // If it's HTML content (pre-process mode), extract the actual link
+            if (linkElement.innerHTML.includes('Step 2:')) {
+                const linkDiv = linkElement.querySelector('div:last-child');
+                link = linkDiv ? linkDiv.textContent.trim() : linkElement.textContent;
+            } else {
+                link = linkElement.textContent;
+            }
+            
+            navigator.clipboard.writeText(link).then(() => {
+                // Show success message
+                const successMsg = document.getElementById('successMessage');
+                successMsg.classList.add('show');
+                
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    successMsg.classList.remove('show');
+                }, 3000);
+            }).catch(err => {
+                alert('Failed to copy: ' + err);
+            });
+        }
+
+        // Allow Enter key to generate
+        document.getElementById('driveUrl').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                generateLink();
+            }
+        });
+    </script>
+</body>
+</html>
+

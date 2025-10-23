@@ -1,0 +1,582 @@
+<!-- 
+Beautiful Progress Bar Component for Facetak
+Add this to your existing templates without modifying other code
+-->
+
+<!-- Progress Bar Container -->
+<div id="progressContainer" class="progress-container" style="display: none;">
+    <div class="progress-header">
+        <h3>🔄 Processing Progress</h3>
+        <div class="progress-controls">
+            <button id="progressClose" class="progress-close-btn" onclick="hideProgressBar()">×</button>
+        </div>
+    </div>
+    
+    <!-- Overall Progress -->
+    <div class="overall-progress">
+        <div class="progress-label">
+            <span>Overall Progress</span>
+            <span id="overallPercentage">0%</span>
+        </div>
+        <div class="progress-bar">
+            <div id="overallProgressBar" class="progress-fill"></div>
+        </div>
+        <div id="estimatedTime" class="estimated-time">Initializing...</div>
+    </div>
+    
+    <!-- Current Step Progress (Only One Visible) -->
+    <div class="current-step-container">
+        <div id="currentStep" class="current-step" style="display: none;">
+            <div class="step-header">
+                <span id="stepIcon" class="step-icon">📥</span>
+                <span id="stepName" class="step-name">Downloading from Google Drive</span>
+                <span id="stepPercentage" class="step-percentage">0%</span>
+            </div>
+            <div class="step-progress">
+                <div class="step-progress-bar">
+                    <div id="stepProgressFill" class="step-progress-fill"></div>
+                </div>
+                <div id="stepStatus" class="step-status">Waiting...</div>
+                <div id="stepCount" class="step-count">0/0 files</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Step Navigation Dots -->
+    <div class="step-navigation">
+        <div class="step-dot" data-step="download" data-step-name="Downloading from Google Drive" data-step-icon="📥">
+            <span class="dot-icon">📥</span>
+            <span class="dot-label">Download</span>
+        </div>
+        <div class="step-dot" data-step="processing" data-step-name="Processing Photos" data-step-icon="🖼️">
+            <span class="dot-icon">🖼️</span>
+            <span class="dot-label">Process</span>
+        </div>
+        <div class="step-dot" data-step="face_detection" data-step-name="Face Detection" data-step-icon="👤">
+            <span class="dot-icon">👤</span>
+            <span class="dot-label">Detect</span>
+        </div>
+        <div class="step-dot" data-step="embedding" data-step-name="Creating Embeddings" data-step-icon="🧠">
+            <span class="dot-icon">🧠</span>
+            <span class="dot-label">Embed</span>
+        </div>
+        <div class="step-dot" data-step="storage" data-step-name="Saving to Database" data-step-icon="💾">
+            <span class="dot-icon">💾</span>
+            <span class="dot-label">Save</span>
+        </div>
+    </div>
+    
+    <!-- Errors and Warnings -->
+    <div id="progressMessages" class="progress-messages" style="display: none;">
+        <div id="progressErrors" class="progress-errors" style="display: none;">
+            <h4>❌ Errors</h4>
+            <div id="errorList"></div>
+        </div>
+        <div id="progressWarnings" class="progress-warnings" style="display: none;">
+            <h4>⚠️ Warnings</h4>
+            <div id="warningList"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Progress Bar Styles -->
+<style>
+.progress-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 500px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+    z-index: 10000;
+    font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #e8eaed;
+}
+
+.progress-header h3 {
+    margin: 0;
+    color: #202124;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.progress-close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #5f6368;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.progress-close-btn:hover {
+    background-color: #f1f3f4;
+}
+
+.overall-progress {
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e8eaed 100%);
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-weight: 500;
+    color: #202124;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 12px;
+    background: #e8eaed;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #1a73e8, #4285f4);
+    border-radius: 6px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.estimated-time {
+    font-size: 14px;
+    color: #5f6368;
+    text-align: center;
+}
+
+.current-step-container {
+    padding: 20px 24px;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.current-step {
+    width: 100%;
+    text-align: center;
+}
+
+.step-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    gap: 12px;
+}
+
+.step-icon {
+    font-size: 32px;
+}
+
+.step-name {
+    font-weight: 500;
+    color: #202124;
+    font-size: 16px;
+}
+
+.step-percentage {
+    font-weight: 600;
+    color: #1a73e8;
+    min-width: 40px;
+    text-align: right;
+}
+
+.step-progress-bar {
+    width: 100%;
+    height: 10px;
+    background: #e8eaed;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.step-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #1a73e8, #4285f4);
+    border-radius: 5px;
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.step-status {
+    font-size: 14px;
+    color: #5f6368;
+    margin-bottom: 8px;
+}
+
+.step-count {
+    font-size: 12px;
+    color: #9aa0a6;
+}
+
+/* Step Navigation Dots */
+.step-navigation {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 24px 20px;
+    flex-wrap: wrap;
+}
+
+.step-dot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    min-width: 60px;
+}
+
+.step-dot:hover {
+    background-color: #f1f3f4;
+}
+
+.step-dot.active {
+    background-color: #e8f0fe;
+}
+
+.step-dot.completed {
+    background-color: #e6f4ea;
+}
+
+.step-dot.waiting {
+    opacity: 0.5;
+}
+
+.dot-icon {
+    font-size: 20px;
+}
+
+.dot-label {
+    font-size: 10px;
+    color: #5f6368;
+    text-align: center;
+    font-weight: 500;
+}
+
+.step-dot.active .dot-label {
+    color: #1a73e8;
+    font-weight: 600;
+}
+
+.step-dot.completed .dot-label {
+    color: #34a853;
+    font-weight: 600;
+}
+
+.progress-messages {
+    padding: 0 24px 20px;
+}
+
+.progress-errors, .progress-warnings {
+    margin-bottom: 16px;
+}
+
+.progress-errors h4, .progress-warnings h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.progress-errors h4 {
+    color: #d93025;
+}
+
+.progress-warnings h4 {
+    color: #f29900;
+}
+
+#errorList, #warningList {
+    font-size: 13px;
+    color: #5f6368;
+    line-height: 1.4;
+}
+
+#errorList div, #warningList div {
+    padding: 4px 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+#errorList div:last-child, #warningList div:last-child {
+    border-bottom: none;
+}
+
+/* Animation for progress bars */
+@keyframes progressPulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
+}
+
+.progress-fill.active, .step-progress-fill.active {
+    animation: progressPulse 2s infinite;
+}
+
+/* Step transition animations */
+@keyframes stepFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.current-step {
+    animation: stepFadeIn 0.3s ease-out;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .progress-container {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .progress-header, .overall-progress, .current-step-container, .step-navigation {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    
+    .step-navigation {
+        gap: 4px;
+    }
+    
+    .step-dot {
+        min-width: 50px;
+        padding: 6px;
+    }
+    
+    .dot-icon {
+        font-size: 18px;
+    }
+    
+    .dot-label {
+        font-size: 9px;
+    }
+}
+</style>
+
+<!-- Progress Bar JavaScript -->
+<script>
+// Progress Bar Management
+let progressEventSource = null;
+let currentActiveStep = null;
+
+function showProgressBar() {
+    document.getElementById('progressContainer').style.display = 'block';
+    startProgressTracking();
+}
+
+function hideProgressBar() {
+    document.getElementById('progressContainer').style.display = 'none';
+    stopProgressTracking();
+}
+
+function startProgressTracking() {
+    // Close existing connection
+    if (progressEventSource) {
+        progressEventSource.close();
+    }
+    
+    // Start new SSE connection
+    progressEventSource = new EventSource('/progress/stream');
+    
+    progressEventSource.onmessage = function(event) {
+        const progressData = JSON.parse(event.data);
+        updateProgressDisplay(progressData);
+        
+        // Close connection when complete
+        if (progressData.overall >= 100) {
+            setTimeout(() => {
+                progressEventSource.close();
+                progressEventSource = null;
+            }, 2000);
+        }
+    };
+    
+    progressEventSource.onerror = function(error) {
+        console.error('Progress stream error:', error);
+        progressEventSource.close();
+        progressEventSource = null;
+    };
+}
+
+function stopProgressTracking() {
+    if (progressEventSource) {
+        progressEventSource.close();
+        progressEventSource = null;
+    }
+}
+
+function updateProgressDisplay(progressData) {
+    // Update overall progress
+    document.getElementById('overallPercentage').textContent = `${progressData.overall}%`;
+    document.getElementById('overallProgressBar').style.width = `${progressData.overall}%`;
+    
+    // Update estimated time
+    if (progressData.estimated_time) {
+        document.getElementById('estimatedTime').textContent = progressData.estimated_time;
+    }
+    
+    // Find the currently active step
+    let activeStep = null;
+    for (const [stepName, stepData] of Object.entries(progressData.steps)) {
+        if (stepData.progress > 0 && stepData.progress < 100) {
+            activeStep = stepName;
+            break;
+        }
+    }
+    
+    // If no active step, find the first step with progress > 0
+    if (!activeStep) {
+        for (const [stepName, stepData] of Object.entries(progressData.steps)) {
+            if (stepData.progress > 0) {
+                activeStep = stepName;
+                break;
+            }
+        }
+    }
+    
+    // Update current step display
+    if (activeStep && activeStep !== currentActiveStep) {
+        currentActiveStep = activeStep;
+        showCurrentStep(activeStep, progressData.steps[activeStep]);
+    }
+    
+    // Update step navigation dots
+    updateStepNavigation(progressData.steps);
+    
+    // Update errors and warnings
+    updateProgressMessages(progressData);
+}
+
+function showCurrentStep(stepName, stepData) {
+    const currentStepElement = document.getElementById('currentStep');
+    const stepIcon = document.getElementById('stepIcon');
+    const stepNameElement = document.getElementById('stepName');
+    const stepPercentage = document.getElementById('stepPercentage');
+    const stepProgressFill = document.getElementById('stepProgressFill');
+    const stepStatus = document.getElementById('stepStatus');
+    const stepCount = document.getElementById('stepCount');
+    
+    // Get step info from navigation dots
+    const stepDot = document.querySelector(`[data-step="${stepName}"]`);
+    if (stepDot) {
+        stepIcon.textContent = stepDot.dataset.stepIcon;
+        stepNameElement.textContent = stepDot.dataset.stepName;
+    }
+    
+    // Update progress
+    stepPercentage.textContent = `${stepData.progress}%`;
+    stepProgressFill.style.width = `${stepData.progress}%`;
+    stepStatus.textContent = stepData.status;
+    
+    if (stepData.total_files > 0) {
+        stepCount.textContent = `${stepData.processed_files}/${stepData.total_files} files`;
+    } else {
+        stepCount.textContent = 'Preparing...';
+    }
+    
+    // Show the current step
+    currentStepElement.style.display = 'block';
+    
+    // Add active animation
+    stepProgressFill.classList.add('active');
+}
+
+function updateStepNavigation(steps) {
+    Object.keys(steps).forEach(stepName => {
+        const stepDot = document.querySelector(`[data-step="${stepName}"]`);
+        const stepData = steps[stepName];
+        
+        if (stepDot) {
+            // Remove all classes
+            stepDot.classList.remove('active', 'completed', 'waiting');
+            
+            if (stepData.progress >= 100) {
+                stepDot.classList.add('completed');
+            } else if (stepData.progress > 0) {
+                stepDot.classList.add('active');
+            } else {
+                stepDot.classList.add('waiting');
+            }
+        }
+    });
+}
+
+function updateProgressMessages(progressData) {
+    const messagesContainer = document.getElementById('progressMessages');
+    const errorsContainer = document.getElementById('progressErrors');
+    const warningsContainer = document.getElementById('progressWarnings');
+    
+    // Handle errors
+    if (progressData.errors && progressData.errors.length > 0) {
+        const errorList = document.getElementById('errorList');
+        errorList.innerHTML = progressData.errors.map(error => 
+            `<div>${error.message}</div>`
+        ).join('');
+        errorsContainer.style.display = 'block';
+        messagesContainer.style.display = 'block';
+    } else {
+        errorsContainer.style.display = 'none';
+    }
+    
+    // Handle warnings
+    if (progressData.warnings && progressData.warnings.length > 0) {
+        const warningList = document.getElementById('warningList');
+        warningList.innerHTML = progressData.warnings.map(warning => 
+            `<div>${warning.message}</div>`
+        ).join('');
+        warningsContainer.style.display = 'block';
+        messagesContainer.style.display = 'block';
+    } else {
+        warningsContainer.style.display = 'none';
+    }
+    
+    // Hide messages container if no errors or warnings
+    if (!errorsContainer.style.display.includes('block') && !warningsContainer.style.display.includes('block')) {
+        messagesContainer.style.display = 'none';
+    }
+}
+
+// Auto-hide progress bar after completion
+function autoHideProgressBar() {
+    setTimeout(() => {
+        hideProgressBar();
+    }, 3000);
+}
+
+// Export functions for use in main app
+window.ProgressBar = {
+    show: showProgressBar,
+    hide: hideProgressBar,
+    start: startProgressTracking,
+    stop: stopProgressTracking
+};
+</script>

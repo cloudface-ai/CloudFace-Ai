@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Videos - CloudFace AI</title>
+    <link rel="icon" href="/static/Cloudface-ai-logo.png" type="image/png">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+        
+        .video-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+        
+        .video-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .video-info h3 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .video-info p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+        
+        .video-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-action {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .btn-action:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.5);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .video-details {
+            padding: 25px;
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .detail-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        .detail-icon.faces {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .detail-icon.duration {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .detail-icon.timestamps {
+            background: #e8f5e8;
+            color: #388e3c;
+        }
+        
+        .detail-text {
+            flex: 1;
+        }
+        
+        .detail-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 2px;
+        }
+        
+        .detail-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-icon {
+            font-size: 4rem;
+            color: #ccc;
+            margin-bottom: 20px;
+        }
+        
+        .empty-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .empty-desc {
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .refresh-btn:hover {
+            transform: translateY(-2px) rotate(180deg);
+            box-shadow: 0 12px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .video-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .video-actions {
+                justify-content: center;
+            }
+            
+            .detail-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .refresh-btn {
+                bottom: 20px;
+                right: 20px;
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1><i class="fas fa-video"></i> My Videos</h1>
+            <p>Your processed videos ready for face search</p>
+        </div>
+        
+        <!-- Statistics -->
+        {% if videos %}
+        <div class="stats-card">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="stat-item">
+                        <div class="stat-number">{{ videos|length }}</div>
+                        <div class="stat-label">Total Videos</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-item">
+                        <div class="stat-number">{{ videos|sum(attribute='faces_count') }}</div>
+                        <div class="stat-label">Faces Detected</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-item">
+                        <div class="stat-number">{{ videos|sum(attribute='unique_timestamps') if videos[0].unique_timestamps else 0 }}</div>
+                        <div class="stat-label">Unique Timestamps</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Videos List -->
+        {% if videos %}
+            {% for video in videos %}
+            <div class="video-card">
+                <div class="video-header">
+                    <div class="video-info">
+                        <h3><i class="fas fa-film"></i> {{ video.video_name }}</h3>
+                        <p>Video ID: {{ video.video_id }}</p>
+                    </div>
+                    <div class="video-actions">
+                        <a href="/video-search/{{ video.video_id }}" class="btn-action">
+                            <i class="fas fa-search"></i>
+                            Search Faces
+                        </a>
+                        <a href="/video-app" class="btn-action">
+                            <i class="fas fa-upload"></i>
+                            Upload More
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="video-details">
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <div class="detail-icon faces">
+                                <i class="fas fa-user-friends"></i>
+                            </div>
+                            <div class="detail-text">
+                                <div class="detail-label">Faces Detected</div>
+                                <div class="detail-value">{{ video.faces_count }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-icon timestamps">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="detail-text">
+                                <div class="detail-label">Unique Timestamps</div>
+                                <div class="detail-value">{{ video.unique_timestamps if video.unique_timestamps else 'N/A' }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="detail-item">
+                            <div class="detail-icon duration">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="detail-text">
+                                <div class="detail-label">Processed</div>
+                                <div class="detail-value">{{ video.first_processed|datetime_format if video.first_processed else 'Unknown' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <a href="/video-search/{{ video.video_id }}" class="btn btn-primary">
+                            <i class="fas fa-search"></i>
+                            Search for Faces in This Video
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <!-- Empty State -->
+            <div class="stats-card">
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-video-slash"></i>
+                    </div>
+                    <div class="empty-title">No Videos Yet</div>
+                    <div class="empty-desc">
+                        Upload your first video to start searching for faces.<br>
+                        Our AI will process the video and detect all faces for future searches.
+                    </div>
+                    <a href="/video-app" class="btn btn-primary">
+                        <i class="fas fa-upload"></i>
+                        Upload Your First Video
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Refresh Button -->
+    <button class="refresh-btn" onclick="refreshVideos()" title="Refresh Videos">
+        <i class="fas fa-sync-alt"></i>
+    </button>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function refreshVideos() {
+            window.location.reload();
+        }
+        
+        // Auto-refresh every 30 seconds if there are no videos (for processing status)
+        {% if not videos %}
+        setInterval(() => {
+            window.location.reload();
+        }, 30000);
+        {% endif %}
+    </script>
+</body>
+</html>

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Photos - CloudFace AI Photo Organization Dashboard</title>
+    <meta name="description" content="Access your organized photo collections with CloudFace AI. View face recognition results, search sessions, and manage your AI-organized photo library.">
+    <meta name="keywords" content="my photos CloudFace AI, photo organization dashboard, face recognition results, photo management, AI photo library">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://cloudface-ai.com/my-photos">
+    <meta property="og:title" content="My Photos - CloudFace AI Photo Organization Dashboard">
+    <meta property="og:description" content="Access your organized photo collections with CloudFace AI. View face recognition results and manage your photo library.">
+    <meta property="og:image" content="https://cloudface-ai.com/assets/my-photos-og-image.jpg">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://cloudface-ai.com/my-photos">
+    <meta property="twitter:title" content="My Photos - CloudFace AI Photo Organization Dashboard">
+    <meta property="twitter:description" content="Access your organized photo collections with CloudFace AI. View face recognition results and manage your photo library.">
+    <meta property="twitter:image" content="https://cloudface-ai.com/assets/my-photos-twitter-image.jpg">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://cloudface-ai.com/my-photos">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #1557b0;
+            --primary-light: #4285f4;
+            --accent: #34a853;
+            --surface: #ffffff;
+            --bg: #f8f9fa;
+            --border: #dadce0;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --text-tertiary: #9aa0a6;
+            --shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+            --shadow-hover: 0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15);
+            --radius: 8px;
+            --radius-sm: 4px;
+            --transition: all 0.2s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+            box-shadow: var(--shadow);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            font-weight: 500;
+        }
+
+        .nav-back {
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .nav-back:hover {
+            color: var(--primary-dark);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            font-weight: 400;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .folders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .folder-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+            overflow: hidden;
+        }
+
+        .folder-card:hover {
+            box-shadow: var(--shadow-hover);
+            border-color: var(--primary-light);
+            transform: translateY(-2px);
+        }
+
+        .folder-header {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            padding: 1.5rem;
+            position: relative;
+        }
+
+        .folder-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .folder-title {
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .folder-subtitle {
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        .folder-content {
+            padding: 1.5rem;
+        }
+
+        .folder-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .folder-stat {
+            text-align: center;
+        }
+
+        .folder-stat-number {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .folder-stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .folder-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--text-tertiary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-secondary);
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .error-state {
+            background: #fef7f0;
+            border: 1px solid #fcd34d;
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .error-state h3 {
+            color: #92400e;
+            margin-bottom: 0.5rem;
+        }
+
+        .error-state p {
+            color: #b45309;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .page-header h1 {
+                font-size: 2rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .folders-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        /* Folder Cover Photo Styles */
+        .folder-cover {
+            width: 100%;
+            height: 120px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 8px 8px 0 0;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .folder-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+        
+        .folder-cover-fallback {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            color: #6c757d;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+        
+        .folder-card {
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .folder-card .folder-header {
+            border-radius: 0;
+        }
+        
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">
+                <img src="/static/Cloudface-ai-logo.png" alt="Cloudface AI" style="height:1.3em; width:auto; margin-right:0.5rem;">
+                CloudFace AI
+            </a>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                <a href="/video-app" class="nav-back">Video Search</a>
+                <a href="/app" class="nav-back">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15,18 9,12 15,6"></polyline>
+                    </svg>
+                    Back to App
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1>🔍 My Found Photos</h1>
+            <p>Your face search results organized by search session</p>
+        </div>
+
+        {% if cache_stats.get('error') %}
+        <!-- Error State -->
+        <div class="error-state">
+            <h3>⚠️ Error Loading Photos</h3>
+            <p>{{ cache_stats.error }}</p>
+        </div>
+        {% elif cache_stats.get('cached_folders', 0) == 0 %}
+        <!-- No Search Results State -->
+        <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <h2>No Search Results Yet</h2>
+            <p>Your found photos will appear here after you search for people.</p>
+            <a href="/app" class="btn" style="margin-top: 1rem;">Start Face Search</a>
+        </div>
+        {% else %}
+        <!-- Search Results Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number">{{ cache_stats.get('total_matches', 0) }}</div>
+                <div class="stat-label">Found Photos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ cache_stats.get('cached_folders', 0) }}</div>
+                <div class="stat-label">Search Sessions</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ cache_stats.get('cache_size_mb', 0) }}MB</div>
+                <div class="stat-label">Search Cache</div>
+            </div>
+        </div>
+
+        <!-- Folders Grid -->
+        <div class="folders-grid">
+            {% for folder in cache_stats.get('folders', []) %}
+            <div class="folder-card">
+                {% if folder.cover_photo %}
+                <div class="folder-cover">
+                    <img src="/photo/{{ folder.cover_photo }}" alt="Cover photo" loading="lazy" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="folder-cover-fallback" style="display: none;">
+                        {% if folder.folder_id.startswith('search_') %}
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="M21 21l-4.35-4.35"/>
+                        </svg>
+                        {% else %}
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+                        </svg>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="folder-cover">
+                    <div class="folder-cover-fallback">
+                        {% if folder.folder_id.startswith('search_') %}
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="M21 21l-4.35-4.35"/>
+                        </svg>
+                        {% else %}
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+                        </svg>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                <div class="folder-header">
+                    <div class="folder-icon">
+                        {% if folder.folder_id.startswith('search_') %}
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"/>
+                            <path d="M21 21l-4.35-4.35"/>
+                        </svg>
+                        {% else %}
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+                        </svg>
+                        {% endif %}
+                    </div>
+                    <div class="folder-title">{{ folder.folder_name }}</div>
+                    <div class="folder-subtitle">{{ folder.folder_subtitle }}</div>
+                    <div class="folder-date">{{ folder.cached_at[:10] if folder.cached_at else 'Unknown date' }}</div>
+                </div>
+                <div class="folder-content">
+                    <div class="folder-stats">
+                        <div class="folder-stat">
+                            <div class="folder-stat-number">{{ folder.file_count }}</div>
+                            <div class="folder-stat-label">Total Photos and Videos</div>
+                        </div>
+                        <div class="folder-stat">
+                            <div class="folder-stat-number">{{ folder.match_count }}</div>
+                            <div class="folder-stat-label">Matches Found</div>
+                        </div>
+                    </div>
+                    <div class="folder-actions">
+                        <a href="/my-photos/folder/{{ folder.folder_id }}" class="btn">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"/>
+                                <path d="M21 21l-4.35-4.35"/>
+                            </svg>
+                            View Photos
+                        </a>
+                        <button class="btn btn-secondary" onclick="clearFolderCache('{{ folder.folder_id }}')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3,6 5,6 21,6"/>
+                                <path d="M19,6v14a2,2 0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2v2"/>
+                            </svg>
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function clearFolderCache(folderId) {
+            if (confirm('Clear cached results for this folder? You will need to reprocess it to see matches again.')) {
+                fetch(`/api/clear-cache/${folderId}`, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error clearing cache: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('Error clearing cache: ' + error.message);
+                });
+            }
+        }
+
+    </script>
+</body>
+</html>

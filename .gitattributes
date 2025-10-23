@@ -1,0 +1,8 @@
+sitemap.xml text eol=lf
+robots.txt text eol=lf
+* text=auto
+*.sh text eol=lf
+*.py text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf

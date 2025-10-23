@@ -1,0 +1,22 @@
+Traceback (most recent call last):
+  File "D:\Working\2\Facetak - working - Copy\firebase_store.py", line 51, in initialize_firebase
+    print("\u2705 Firebase Firestore client ready (environment variables)")
+  File "C:\Users\Vinod\AppData\Local\Programs\Python\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 0: character maps to <undefined>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Working\2\Facetak - working - Copy\web_server.py", line 38, in <module>
+    from firebase_store import save_face_embedding, fetch_embeddings_for_user
+  File "D:\Working\2\Facetak - working - Copy\firebase_store.py", line 59, in <module>
+    db = initialize_firebase()
+         ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Working\2\Facetak - working - Copy\firebase_store.py", line 55, in initialize_firebase
+    print(f"\u274c Firebase init failed: {e}")
+  File "C:\Users\Vinod\AppData\Local\Programs\Python\Python311\Lib\encodings\cp1252.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u274c' in position 0: character maps to <undefined>

@@ -1,0 +1,64 @@
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /blog
+Allow: /contact
+Allow: /how-it-works
+Allow: /app
+Allow: /pricing
+Allow: /privacy
+Allow: /terms
+Allow: /refund
+Allow: /video-app
+Allow: /my-photos
+Allow: /landing
+
+# Allow all blog posts for SEO
+Allow: /blog/best-face-search-apps-2025
+Allow: /blog/cloudface-ai-privacy-secure
+Allow: /blog/google-drive-face-search-guide
+Allow: /blog/face-recognition-dark-blurry-photos
+Allow: /blog/fortune-500-photo-software
+Allow: /blog/coca-cola-photo-management
+Allow: /blog/nike-photo-organization
+Allow: /blog/red-bull-formula1-photography
+Allow: /blog/spotify-music-events
+Allow: /blog/professional-photographers-cloudface-ai
+Allow: /blog/government-transportation-live-tracking
+Allow: /blog/worlds-first-privacy-face-recognition
+Allow: /blog/gdpr-face-recognition-privacy-compliance
+Allow: /blog/privacy-destruction-major-apps-facebook-instagram
+Allow: /blog/india-privacy-laws-international-human-rights
+Allow: /blog/privacy-experts-expose-big-tech-surveillance
+
+# Disallow admin and private areas
+Disallow: /admin/
+Disallow: /private/
+Disallow: /api/
+Disallow: /storage/
+Disallow: /temp/
+Disallow: /credentials/
+Disallow: /logs/
+Disallow: /models/
+Disallow: /sample_photos/
+Disallow: /facetak_database/
+
+# Allow important files
+Allow: /sitemap.xml
+Allow: /favicon.ico
+Allow: /assets/
+Allow: /static/
+Allow: /manifest.json
+Allow: /sw.js
+
+# Note: Crawl-delay is not supported by Google
+
+# Sitemap location
+Sitemap: https://cloudface-ai.com/sitemap.xml
+
+# Additional search engine bots
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /

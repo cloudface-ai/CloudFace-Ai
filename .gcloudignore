@@ -1,0 +1,65 @@
+# This file specifies files that are *not* uploaded to Google Cloud Platform
+# using gcloud. It follows the same syntax as .gitignore, with the addition of
+# "#!include" directives (which insert the entries of the given .gitignore-style
+# file at that point).
+
+#!include:.gitignore
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Development files
+.env
+.vscode/
+.idea/
+*.log
+
+# Backup files
+backup_*/
+*_backup*
+*.bak
+
+# Temporary processing files
+temp_processing_*.jpg
+temp_processing_*.png
+
+# Large model files (upload separately if needed)
+models/large_models/
+*.h5
+*.pkl
+*.joblib
+
+# Test files
+test_*.py
+tests/
+sample_photos/
+
+# Node modules
+node_modules/
+
+# Build files
+build/
+dist/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local development
+local_settings.py
+*.sqlite3
+
+# Documentation
+*.md
+wiki/
+blog_templates/
+
+# Deployment files for other platforms
+railway.json
+nixpacks.toml
+Procfile
+deploy_*.bat
+*.ps1

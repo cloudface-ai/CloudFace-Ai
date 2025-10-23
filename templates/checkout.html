@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - CloudFace AI</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #1557b0;
+            --primary-light: #4285f4;
+            --accent: #34a853;
+            --surface: #ffffff;
+            --bg: #f8f9fa;
+            --border: #dadce0;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --text-tertiary: #9aa0a6;
+            --shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+            --shadow-hover: 0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15);
+            --radius: 8px;
+            --radius-sm: 4px;
+            --transition: all 0.2s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 0;
+            box-shadow: var(--shadow);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            font-weight: 500;
+        }
+
+        .nav-back {
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .nav-back:hover {
+            color: var(--primary-dark);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .checkout-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .checkout-header h1 {
+            font-size: 2.5rem;
+            font-weight: 400;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .checkout-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .plan-summary {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            height: fit-content;
+        }
+
+        .plan-summary h3 {
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+        }
+
+        .plan-details {
+            margin-bottom: 1.5rem;
+        }
+
+        .plan-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-price {
+            font-size: 2rem;
+            font-weight: 300;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .plan-features {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .plan-features li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .feature-icon {
+            width: 16px;
+            height: 16px;
+            color: var(--accent);
+        }
+
+        .payment-section {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .payment-section h3 {
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+        }
+
+        .payment-methods {
+            margin-bottom: 2rem;
+        }
+
+        .payment-method {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .payment-method:hover {
+            border-color: var(--primary);
+            background: var(--bg);
+        }
+
+        .payment-method.selected {
+            border-color: var(--primary);
+            background: rgba(26, 115, 232, 0.05);
+        }
+
+        .payment-radio {
+            width: 20px;
+            height: 20px;
+        }
+
+        .payment-info {
+            flex: 1;
+        }
+
+        .payment-name {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .payment-desc {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .payment-icons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .payment-icon {
+            width: 32px;
+            height: 20px;
+            background: var(--border);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            background: var(--text-tertiary);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--border);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--text-tertiary);
+        }
+
+        .security-notice {
+            background: rgba(52, 168, 83, 0.1);
+            border: 1px solid var(--accent);
+            border-radius: var(--radius-sm);
+            padding: 1rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .security-notice svg {
+            color: var(--accent);
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .checkout-content {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .checkout-header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">
+                <img src="/static/Cloudface-ai-logo.png" alt="Cloudface AI" style="height:1.3em; width:auto; margin-right:0.5rem;">
+                CloudFace AI
+            </a>
+            <a href="/pricing" class="nav-back">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15,18 9,12 15,6"></polyline>
+                </svg>
+                Back to Pricing
+            </a>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Checkout Header -->
+        <div class="checkout-header">
+            <h1>💳 Secure Checkout</h1>
+            <p>Complete your purchase securely</p>
+        </div>
+
+        <div class="checkout-content">
+            <!-- Plan Summary -->
+            <div class="plan-summary">
+                <h3>📋 Order Summary</h3>
+                
+                <div class="plan-details">
+                    <div class="plan-name">{{ plan.name }} Plan</div>
+                    <div class="plan-price">
+                        {% if currency == 'inr' %}
+                            ₹{{ "{:,}".format(plan.price) }}
+                        {% else %}
+                            ${{ plan.price }}
+                        {% endif %}
+                        <span style="font-size: 1rem; color: var(--text-secondary);">per year</span>
+                    </div>
+                </div>
+
+                <ul class="plan-features">
+                    {% for feature in plan.features %}
+                    <li>
+                        <svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="20,6 9,17 4,12"></polyline>
+                        </svg>
+                        {{ feature }}
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                <div class="plan-limits" style="margin-top: 1.5rem; padding: 1rem; background: var(--bg); border-radius: var(--radius-sm);">
+                    <strong>{{ "{:,}".format(plan.images) }}</strong> images per year
+                    {% if plan.videos > 0 %}
+                    <br><strong>{{ plan.videos }}</strong> videos per year
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Payment Section -->
+            <div class="payment-section">
+                <h3>💳 Payment Method</h3>
+                
+                <div class="security-notice">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    <div>
+                        <strong>Secure Payment</strong><br>
+                        Your payment information is encrypted and secure
+                    </div>
+                </div>
+
+                <div class="payment-methods">
+                    {% if currency == 'inr' %}
+                    <!-- Razorpay for India -->
+                    <div class="payment-method selected" data-method="razorpay">
+                        <input type="radio" name="payment_method" value="razorpay" class="payment-radio" checked>
+                        <div class="payment-info">
+                            <div class="payment-name">🇮🇳 Indian Payment Methods</div>
+                            <div class="payment-desc">UPI, Cards, Net Banking, Wallets</div>
+                        </div>
+                        <div class="payment-icons">
+                            <div class="payment-icon">UPI</div>
+                            <div class="payment-icon">💳</div>
+                            <div class="payment-icon">🏦</div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <!-- PayPal for International -->
+                    <div class="payment-method selected" data-method="paypal">
+                        <input type="radio" name="payment_method" value="paypal" class="payment-radio" checked>
+                        <div class="payment-info">
+                            <div class="payment-name">🌍 PayPal</div>
+                            <div class="payment-desc">Credit Cards, Debit Cards, PayPal Balance</div>
+                        </div>
+                        <div class="payment-icons">
+                            <div class="payment-icon">💳</div>
+                            <div class="payment-icon">PP</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="checkout-actions">
+                    <button id="paymentBtn" class="btn" onclick="processPayment()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                            <line x1="1" y1="10" x2="23" y2="10"/>
+                        </svg>
+                        <span id="paymentBtnText">
+                            Complete Payment 
+                            {% if currency == 'inr' %}
+                                (₹{{ "{:,}".format(plan.price) }})
+                            {% else %}
+                                (${{ plan.price }})
+                            {% endif %}
+                        </span>
+                        <div class="loading-spinner" id="paymentSpinner"></div>
+                    </button>
+                    
+                    <a href="/pricing" class="btn btn-secondary" style="margin-top: 1rem;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15,18 9,12 15,6"></polyline>
+                        </svg>
+                        Back to Pricing
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Razorpay Script for India -->
+    {% if currency == 'inr' %}
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    {% endif %}
+
+    <!-- PayPal Script for International -->
+    {% if currency == 'usd' %}
+    <script src="https://www.paypal.com/sdk/js?client-id={{ payment_methods.get('paypal_client_id', 'demo') }}&currency=USD"></script>
+    {% endif %}
+
+    <script>
+        const planData = {
+            id: '{{ plan_id }}',
+            name: '{{ plan.name }}',
+            price: {{ plan.price }},
+            currency: '{{ currency }}'
+        };
+
+        function processPayment() {
+            const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
+            const paymentBtn = document.getElementById('paymentBtn');
+            const spinner = document.getElementById('paymentSpinner');
+            const btnText = document.getElementById('paymentBtnText');
+            
+            // Show loading
+            paymentBtn.disabled = true;
+            spinner.style.display = 'inline-block';
+            btnText.textContent = 'Processing...';
+            
+            if (paymentMethod === 'razorpay') {
+                processRazorpayPayment();
+            } else if (paymentMethod === 'paypal') {
+                processPayPalPayment();
+            }
+        }
+
+        function processRazorpayPayment() {
+            // Create Razorpay order
+            fetch('/api/create-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    plan_id: planData.id,
+                    currency: planData.currency
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Payment creation response:', data);
+                if (data.success) {
+                    // Open Razorpay checkout
+                    const options = {
+                        key: data.key,
+                        amount: data.amount * 100, // Convert to paise
+                        currency: 'INR',
+                        name: 'CloudFace AI',
+                        description: `${planData.name} Plan Subscription`,
+                        order_id: data.order_id,
+                        handler: function(response) {
+                            // Verify payment
+                            verifyPayment({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                                plan_id: planData.id,
+                                currency: planData.currency,
+                                amount: planData.price,
+                                method: 'razorpay'
+                            });
+                        },
+                        prefill: {
+                            email: '{{ user_id }}',
+                            contact: ''
+                        },
+                        theme: {
+                            color: '#1a73e8'
+                        },
+                        modal: {
+                            ondismiss: function() {
+                                resetPaymentButton();
+                            }
+                        }
+                    };
+                    
+                    const rzp = new Razorpay(options);
+                    rzp.open();
+                } else {
+                    console.error('Payment creation error:', data.error);
+                    alert('Error creating payment: ' + data.error);
+                    resetPaymentButton();
+                }
+            })
+            .catch(error => {
+                alert('Payment creation failed: ' + error.message);
+                resetPaymentButton();
+            });
+        }
+
+        function processPayPalPayment() {
+            // PayPal integration would go here
+            alert('PayPal integration coming soon! Please use Indian payment methods for now.');
+            resetPaymentButton();
+        }
+
+        function verifyPayment(paymentData) {
+            fetch('/api/verify-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(paymentData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Payment successful
+                    alert('🎉 Payment successful! Your plan has been upgraded.');
+                    window.location.href = data.redirect || '/app';
+                } else {
+                    alert('Payment verification failed: ' + data.error);
+                    resetPaymentButton();
+                }
+            })
+            .catch(error => {
+                alert('Payment verification error: ' + error.message);
+                resetPaymentButton();
+            });
+        }
+
+        function resetPaymentButton() {
+            const paymentBtn = document.getElementById('paymentBtn');
+            const spinner = document.getElementById('paymentSpinner');
+            const btnText = document.getElementById('paymentBtnText');
+            
+            paymentBtn.disabled = false;
+            spinner.style.display = 'none';
+            btnText.textContent = `Complete Payment (${planData.currency === 'inr' ? '₹' : '$'}${planData.price.toLocaleString()})`;
+        }
+
+        // Payment method selection
+        document.addEventListener('DOMContentLoaded', function() {
+            const paymentMethods = document.querySelectorAll('.payment-method');
+            paymentMethods.forEach(method => {
+                method.addEventListener('click', function() {
+                    paymentMethods.forEach(m => m.classList.remove('selected'));
+                    this.classList.add('selected');
+                    this.querySelector('.payment-radio').checked = true;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

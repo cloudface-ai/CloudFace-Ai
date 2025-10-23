@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Face Search - CloudFace AI</title>
+    <meta name="description" content="Search for faces in video content with CloudFace AI's experimental video face recognition technology. Upload videos and find specific people instantly.">
+    <meta name="keywords" content="video face search, face recognition in videos, video facial recognition, AI video analysis, CloudFace AI video search">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://cloudface-ai.com/video-app">
+    <meta property="og:title" content="Video Face Search - CloudFace AI">
+    <meta property="og:description" content="Search for faces in video content with CloudFace AI's experimental video face recognition technology.">
+    <meta property="og:image" content="https://cloudface-ai.com/assets/video-search-og-image.jpg">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://cloudface-ai.com/video-app">
+    <meta property="twitter:title" content="Video Face Search - CloudFace AI">
+    <meta property="twitter:description" content="Search for faces in video content with CloudFace AI's experimental video face recognition technology.">
+    <meta property="twitter:image" content="https://cloudface-ai.com/assets/video-search-twitter-image.jpg">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://cloudface-ai.com/video-app">
+    <link rel="icon" href="/static/Cloudface-ai-logo.png" type="image/png">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #1557b0;
+            --primary-light: #4285f4;
+            --accent: #34a853;
+            --surface: #ffffff;
+            --bg: #f8f9fa;
+            --border: #dadce0;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --text-tertiary: #9aa0a6;
+            --shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+            --shadow-hover: 0 1px 3px 0 rgba(60,64,67,.3), 0 4px 8px 3px rgba(60,64,67,.15);
+            --radius: 8px;
+            --radius-sm: 4px;
+            --transition: all 0.2s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+            transition: var(--transition);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-hover);
+        }
+
+        .card-body {
+            padding: 2rem;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--primary);
+            border-radius: var(--radius);
+            padding: 3rem 1.5rem;
+            text-align: center;
+            background: rgba(26, 115, 232, 0.05);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-dark);
+            background: rgba(26, 115, 232, 0.1);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--primary-dark);
+            background: rgba(26, 115, 232, 0.15);
+            transform: scale(1.02);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .upload-subtext {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .btn {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            margin: 0.5rem 0.25rem;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            background: var(--text-tertiary);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .progress-container {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .progress {
+            height: 25px;
+            border-radius: 15px;
+            background: #e9ecef;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+        
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .result-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .result-success {
+            border-left: 5px solid #28a745;
+        }
+        
+        .result-error {
+            border-left: 5px solid #dc3545;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .feature-card:hover {
+            box-shadow: var(--shadow-hover);
+            transform: translateY(-2px);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        .feature-desc {
+            color: var(--text-secondary);
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+        
+        .supported-formats {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .format-tag {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            margin: 5px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .upload-card {
+                padding: 20px;
+            }
+            
+            .upload-area {
+                padding: 40px 15px;
+            }
+            
+            .upload-icon {
+                font-size: 3rem;
+            }
+            
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+
+        /* Standard Header Styles */
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            background: rgba(255,255,255,.95);
+        }
+
+        .header-top {
+            background: var(--primary);
+            color: #fff;
+            padding: 4px 0;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .header-main {
+            padding: 1px 0;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: .5rem;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .nav-toggle {
+            background: none;
+            border: none;
+            cursor: pointer;
+            display: none;
+            padding: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .nav-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            list-style: none;
+        }
+
+        .nav-menu a {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: var(--transition);
+            padding: .5rem 1rem;
+            border-radius: var(--radius-sm);
+        }
+
+        .nav-menu a:hover {
+            color: var(--primary);
+            background: var(--bg);
+        }
+
+        .nav-menu a.active {
+            color: var(--primary);
+            background: var(--bg);
+        }
+
+        .cta-button {
+            background: var(--primary);
+            color: #fff;
+            padding: .75rem 1.5rem;
+            border-radius: var(--radius);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all .1s ease;
+        }
+
+        .cta-button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        @media (max-width: 768px) {
+            .nav-toggle {
+                display: flex;
+            }
+
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: var(--surface);
+                border-top: 1px solid var(--border);
+                box-shadow: var(--shadow);
+                border-radius: 0 0 var(--radius) var(--radius);
+                flex-direction: column;
+                padding: 1rem 0;
+            }
+
+            .nav-menu.active {
+                display: flex;
+            }
+
+            .nav-menu a {
+                display: block;
+                padding: 16px 20px;
+                border-bottom: 1px solid var(--border);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-top">
+            <span>Find any photo in your cloud with AI—instantly</span>
+        </div>
+        <div class="header-main">
+            <div class="container">
+                <div class="header-content">
+                    <a href="/" class="logo">
+                        <img src="/static/Cloudface-ai-logo.png" alt="Cloudface AI" style="height:1.3em; width:auto; vertical-align:middle;">
+                        <span style="margin-left:.4em;">Cloudface AI</span>
+                    </a>
+                    <button class="nav-toggle" onclick="toggleNav()" aria-label="Toggle navigation menu">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                        </svg>
+                    </button>
+                    <nav class="nav-menu" id="navMenu">
+                        <a href="/">Home</a>
+                        <a href="/about">About</a>
+                        <a href="/video-app" class="active">Video Search</a>
+                        <a href="/blog">Blog</a>
+                        <a href="/pricing">Pricing</a>
+                        <a href="/how-it-works">How It Works</a>
+                        <a href="/#features">Features</a>
+                        <a href="/app" class="cta-button">Try App</a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1><i class="fas fa-video"></i> Video Face Search</h1>
+            <p>Upload videos and find faces with AI-powered recognition</p>
+        </div>
+        
+        <!-- Upload Card -->
+        <div class="card">
+            <div class="card-body">
+                <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <div class="upload-text">Drop your video here or click to browse</div>
+                <div class="upload-subtext">Supports MP4, AVI, MOV, MKV, WMV, FLV</div>
+                <input type="file" id="videoFile" class="file-input" accept=".mp4,.avi,.mov,.mkv,.wmv,.flv">
+            </div>
+            
+                <div style="text-align: center; margin-top: 1.5rem;">
+                    <button class="btn" id="uploadBtn" disabled>
+                        <i class="fas fa-upload"></i> Upload & Process Video
+                    </button>
+                </div>
+            
+                <!-- Progress Container -->
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress">
+                        <div class="progress-bar" id="progressBar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">Preparing...</div>
+                </div>
+                
+                <!-- Result Container -->
+                <div class="result-card" id="resultCard">
+                    <div id="resultContent"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Supported Formats -->
+        <div class="card">
+            <div class="card-body">
+                <h5 style="margin-bottom: 1rem; color: var(--text-primary); font-weight: 500;">
+                    <i class="fas fa-check-circle" style="color: var(--accent);"></i> Supported Video Formats
+                </h5>
+                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    <span style="background: var(--primary); color: white; padding: 0.25rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 500;">MP4</span>
+                    <span style="background: var(--primary); color: white; padding: 0.25rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 500;">AVI</span>
+                    <span style="background: var(--primary); color: white; padding: 0.25rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 500;">MOV</span>
+                    <span style="background: var(--primary); color: white; padding: 0.25rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 500;">MKV</span>
+                    <span style="background: var(--primary); color: white; padding: 0.25rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 500;">WMV</span>
+                    <span style="background: var(--primary); color: white; padding: 0.25rem 0.75rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 500;">FLV</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- My Videos Section -->
+        <div class="card">
+            <div class="card-body">
+                <h3 style="margin-bottom: 1rem; color: var(--text-primary); font-weight: 500;">
+                    <i class="fas fa-film" style="color: var(--primary);"></i> My Processed Videos
+                </h3>
+                <div id="myVideosList" style="text-align: center; padding: 2rem; background: #f8f9fa; border-radius: 8px; border: 2px dashed #ddd;">
+                    <i class="fas fa-video" style="font-size: 2rem; color: #ccc; margin-bottom: 1rem;"></i>
+                    <p style="color: #666; margin-bottom: 1rem;">No videos processed yet</p>
+                    <p style="font-size: 0.9rem; color: #999;">Upload your first video above to get started</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-brain"></i>
+                </div>
+                <div class="feature-title">AI Face Detection</div>
+                <div class="feature-desc">
+                    Advanced AI algorithms detect and extract faces from every frame of your video with high accuracy.
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="feature-title">Precise Search</div>
+                <div class="feature-desc">
+                    Search for specific people within your videos using a simple selfie photo as reference.
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="feature-title">Timestamp Results</div>
+                <div class="feature-desc">
+                    Get exact timestamps where the person appears, making it easy to find specific moments.
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="feature-title">Privacy Protected</div>
+                <div class="feature-desc">
+                    Your videos are processed securely on our servers and immediately deleted after analysis. We never store your videos—only face embeddings in your Google Drive.
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let selectedFile = null;
+        
+        // Upload area interactions
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('videoFile');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const resultCard = document.getElementById('resultCard');
+        const resultContent = document.getElementById('resultContent');
+        
+        // Drag and drop functionality
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+        
+        // Click to browse
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+        
+        function handleFileSelect(file) {
+            // Check file type
+            const allowedTypes = ['.mp4', '.avi', '.mov', '.mkv', '.wmv', '.flv'];
+            const fileExt = '.' + file.name.split('.').pop().toLowerCase();
+            
+            if (!allowedTypes.includes(fileExt)) {
+                showResult('error', 'Unsupported file format. Please select a video file (MP4, AVI, MOV, MKV, WMV, FLV).');
+                return;
+            }
+            
+            // Check file size (optional - 500MB limit)
+            const maxSize = 500 * 1024 * 1024; // 500MB
+            if (file.size > maxSize) {
+                showResult('error', 'File size too large. Please select a video under 500MB.');
+                return;
+            }
+            
+            selectedFile = file;
+            uploadBtn.disabled = false;
+            
+            // Update upload area
+            uploadArea.innerHTML = `
+                <div class="upload-icon">
+                    <i class="fas fa-video" style="color: #28a745;"></i>
+                </div>
+                <div class="upload-text" style="color: #28a745;">${file.name}</div>
+                <div class="upload-subtext">Ready to upload</div>
+            `;
+        }
+        
+        // Upload button click
+        uploadBtn.addEventListener('click', () => {
+            if (!selectedFile) return;
+            
+            uploadVideo();
+        });
+        
+        function uploadVideo() {
+            const formData = new FormData();
+            formData.append('video', selectedFile);
+            
+            // Show progress
+            progressContainer.style.display = 'block';
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            // Simulate progress (in real implementation, you'd use WebSocket or polling)
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 90) progress = 90;
+                
+                progressBar.style.width = progress + '%';
+                progressText.textContent = `Processing video... ${Math.round(progress)}%`;
+            }, 500);
+            
+            // Upload video
+            fetch('/upload-video', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+                progressText.textContent = 'Complete!';
+                
+                if (data.success) {
+                    showResult('success', `
+                        <h4><i class="fas fa-check-circle text-success"></i> Video Processed Successfully!</h4>
+                        <div class="mt-3">
+                            <p><strong>Video:</strong> ${data.video_name}</p>
+                            <p><strong>Faces Found:</strong> ${data.faces_found}</p>
+                            <p><strong>Processing Time:</strong> ${data.processing_time}s</p>
+                        </div>
+                        <div class="mt-4">
+                            <a href="/my-videos" class="btn btn-primary">
+                                <i class="fas fa-video"></i> View My Videos
+                            </a>
+                            <a href="/video-search/${data.video_id}" class="btn btn-success">
+                                <i class="fas fa-search"></i> Search This Video
+                            </a>
+                        </div>
+                    `);
+                } else {
+                    showResult('error', `
+                        <h4><i class="fas fa-exclamation-triangle text-danger"></i> Upload Failed</h4>
+                        <p>${data.error}</p>
+                        <button class="btn btn-primary" onclick="resetUpload()">
+                            <i class="fas fa-redo"></i> Try Again
+                        </button>
+                    `);
+                }
+            })
+            .catch(error => {
+                clearInterval(progressInterval);
+                showResult('error', `
+                    <h4><i class="fas fa-exclamation-triangle text-danger"></i> Upload Error</h4>
+                    <p>Network error occurred. Please try again.</p>
+                    <button class="btn btn-primary" onclick="resetUpload()">
+                        <i class="fas fa-redo"></i> Try Again
+                    </button>
+                `);
+            })
+            .finally(() => {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload & Process Video';
+            });
+        }
+        
+        function showResult(type, content) {
+            resultCard.className = `result-card result-${type}`;
+            resultContent.innerHTML = content;
+            resultCard.style.display = 'block';
+            
+            // Scroll to result
+            resultCard.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function resetUpload() {
+            selectedFile = null;
+            uploadBtn.disabled = true;
+            progressContainer.style.display = 'none';
+            resultCard.style.display = 'none';
+            
+            // Reset upload area
+            uploadArea.innerHTML = `
+                <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                </div>
+                <div class="upload-text">Drop your video here or click to browse</div>
+                <div class="upload-subtext">Supports MP4, AVI, MOV, MKV, WMV, FLV</div>
+            `;
+        }
+
+        // Load user's videos on page load
+        function loadMyVideos() {
+            fetch('/my-videos')
+            .then(response => response.text())
+            .then(html => {
+                // Extract video data from the response
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const videos = doc.querySelectorAll('.video-card');
+                
+                if (videos.length > 0) {
+                    const videosList = document.getElementById('myVideosList');
+                    videosList.innerHTML = `
+                        <div style="display: grid; gap: 1rem;">
+                            ${Array.from(videos).map(video => `
+                                <div style="background: white; border: 1px solid var(--border); border-radius: 8px; padding: 1rem;">
+                                    <h4 style="margin-bottom: 0.5rem; color: var(--text-primary);">${video.querySelector('h3').textContent}</h4>
+                                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">${video.querySelector('p').textContent}</p>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <a href="${video.querySelector('a[href*="video-search"]').href}" class="btn" style="flex: 1;">
+                                            <i class="fas fa-search"></i> Search Faces
+                                        </a>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.log('No videos found or error loading videos');
+            });
+        }
+
+        // Load videos when page loads
+        document.addEventListener('DOMContentLoaded', loadMyVideos);
+
+        function toggleNav() {
+            const navMenu = document.getElementById('navMenu');
+            navMenu.classList.toggle('active');
+        }
+    </script>
+</body>
+</html>

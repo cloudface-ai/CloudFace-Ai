@@ -1,0 +1,3626 @@
+?<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="google-site-verification" content="google149ef140e8719d8c.html">
+    
+    <!-- Primary Meta Tags -->
+    <title>CloudFace AI - AI-Powered Face Recognition & Photo Organization App</title>
+    <meta name="title" content="CloudFace AI - AI-Powered Face Recognition & Photo Organization App">
+    <meta name="description" content="Find anyone in your photos instantly with AI-powered face recognition. Organize photos across Google Drive with privacy-first technology. Upload a selfie and discover every photo.">
+    <meta name="keywords" content="face recognition, AI photo organization, Google Drive photos, photo search, facial recognition software, photo management, AI photo finder, cloud photo organization">
+    <meta name="author" content="CloudFace AI">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="revisit-after" content="7 days">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://cloudface-ai.com/">
+    <meta property="og:title" content="CloudFace AI - AI-Powered Face Recognition & Photo Organization App">
+    <meta property="og:description" content="Find anyone in your photos instantly with AI-powered face recognition. Organize photos across Google Drive with privacy-first technology.">
+    <meta property="og:image" content="https://cloudface-ai.com/assets/og-image.jpg">
+    <meta property="og:site_name" content="CloudFace AI">
+    <meta property="og:locale" content="en_US">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://cloudface-ai.com/">
+    <meta property="twitter:title" content="CloudFace AI - AI-Powered Face Recognition & Photo Organization App">
+    <meta property="twitter:description" content="Find anyone in your photos instantly with AI-powered face recognition. Organize photos across Google Drive with privacy-first technology.">
+    <meta property="twitter:image" content="https://cloudface-ai.com/assets/twitter-image.jpg">
+    
+    <!-- Additional SEO Meta Tags -->
+    <!-- <meta name="theme-color" content="#1a73e8"> --> <!-- Firefox incompatible, commented out -->
+    <meta name="msapplication-TileColor" content="#1a73e8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="CloudFace AI">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://cloudface-ai.com/">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    
+    <!-- Preconnect to external domains for performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- DNS Prefetch -->
+    <link rel="dns-prefetch" href="//www.google-analytics.com">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y08XH5V9JT"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-Y08XH5V9JT', {
+            page_title: 'CloudFace AI - Homepage',
+            page_location: window.location.href,
+            custom_map: {
+                'custom_parameter_1': 'face_recognition_app'
+            }
+        });
+        
+        // Track face search events
+        function trackFaceSearch(sessionType) {
+            gtag('event', 'face_search_started', {
+                'event_category': 'engagement',
+                'event_label': sessionType,
+                'value': 1
+            });
+        }
+        
+        // Track photo processing events
+        function trackPhotoProcessing(photoCount) {
+            gtag('event', 'photos_processed', {
+                'event_category': 'engagement',
+                'event_label': 'photo_processing',
+                'value': photoCount
+            });
+        }
+    </script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        // Service Worker registration disabled - sw.js not available
+        // if ('serviceWorker' in navigator) {
+        //     window.addEventListener('load', () => {
+        //         navigator.serviceWorker.register('/sw.js')
+        //             .then((registration) => {
+        //                 console.log('SW registered: ', registration);
+        //             })
+        //             .catch((registrationError) => {
+        //                 console.log('SW registration failed: ', registrationError);
+        //             });
+        //     });
+        // }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>*{margin:0;padding:0;box-sizing:border-box}:root{--primary:#1a73e8;--primary-light:#4285f4;--primary-dark:#0d47a1;--accent:#ea4335;--accent-light:#f28b82;--success:#34a853;--warning:#fbbc04;--bg:#fafafa;--surface:#fff;--text-primary:#202124;--text-secondary:#5f6368;--text-tertiary:#9aa0a6;--border:#dadce0;--shadow:0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.24);--shadow-hover:0 14px 28px rgba(0,0,0,.25),0 10px 10px rgba(0,0,0,.22);--radius:16px;--radius-sm:8px;--transition:none}body{font-family:'Google Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text-primary);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+.header{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);background:rgba(255,255,255,.95)}.header-top{background:var(--primary);color:#fff;padding:4px 0;font-size:12px;text-align:center}.header-top a{color:#fff;text-decoration:none;margin:0 8px;display:inline-flex;align-items:center;gap:4px}.header-top svg{width:14px;height:14px;fill:currentColor}.header-main{padding:1px 0}.header-content{max-width:1200px;margin:0 auto;padding:0 1rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem}.logo{font-size:18px;font-weight:500;color:var(--primary);text-decoration:none;display:flex;align-items:center;gap:4px}.logo-icon{width:16px;height:16px;background:linear-gradient(135deg,var(--primary),var(--primary-light));border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff}.logo-icon svg{width:10px;height:10px;fill:currentColor}.nav-toggle{background:none;border:none;color:var(--text-primary);cursor:pointer;padding:4px;border-radius:var(--radius-sm);transition:var(--transition);display:none;align-items:center;justify-content:center}.nav-toggle svg{width:24px;height:24px;fill:currentColor}.nav-toggle:hover{
+            background: var(--bg);
+        }
+
+.nav-menu{display:flex;align-items:center;gap:1rem;list-style:none}.nav-menu a{color:var(--text-primary);text-decoration:none;font-weight:500;transition:var(--transition);padding:.5rem 1rem;border-radius:var(--radius-sm)}.nav-menu a:hover{color:var(--primary);background:var(--bg)}.nav-menu a.active{color:var(--primary);background:var(--bg)}.cta-button{background:var(--primary);color:#fff;padding:.75rem 1.5rem;border-radius:var(--radius);text-decoration:none;font-weight:600;transition:all .1s ease}.cta-button:hover{background:var(--primary-dark);transform:translateY(-2px);box-shadow:var(--shadow-hover)}.header-title{text-align:center;margin:2rem 0}.header-title h1{font-size:2.5rem;font-weight:400;color:var(--text-primary);margin-bottom:.5rem}.header-title p{font-size:1.1rem;color:var(--text-secondary)}
+
+.container{max-width:1200px;margin:0 auto;padding:2rem 1rem}.main-content{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-bottom:2rem}.section{background:var(--surface);padding:2rem;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border);transition:var(--transition);position:relative;overflow:hidden}.section::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--primary),var(--accent))}.section:hover{border-color:var(--primary-light);background:var(--bg)}.section h2{font-size:1.5rem;font-weight:500;color:var(--text-primary);margin-bottom:1.5rem}
+
+.file-upload{border:2px dashed var(--border);border-radius:var(--radius);padding:2rem;text-align:center;margin:1rem 0;cursor:pointer;transition:var(--transition);background:var(--bg)}.file-upload:hover{border-color:var(--primary);background:rgba(26,115,232,.05)}.file-upload input{display:none}.file-upload p{color:var(--text-secondary);margin:.5rem 0}
+
+input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:1rem;transition:var(--transition);margin:.5rem 0}input[type="text"]:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,115,232,.1)}input[type="range"]{width:100%;margin:.5rem 0}label{color:var(--text-secondary);font-weight:500}.btn{background:var(--primary);color:#fff;border:none;padding:.75rem 1.5rem;border-radius:var(--radius-sm);cursor:pointer;font-size:1rem;font-weight:500;margin:.5rem .25rem;transition:var(--transition);box-shadow:var(--shadow)}.btn:hover{background:var(--primary-dark)}.btn:disabled{background:var(--text-tertiary);cursor:not-allowed;transform:none;box-shadow:var(--shadow)}.btn-success{background:#28a745;color:#fff}.btn-success:hover{background:#218838}.btn-danger{background:#dc3545;color:#fff}.btn-danger:hover{background:#c82333}.btn-secondary{background:#6c757d;color:#fff}.btn-secondary:hover{background:#5a6268}.feedback-buttons{display:flex;gap:.5rem;margin:.5rem 0;justify-content:center}.feedback-btn{background:var(--primary);color:#fff;border:none;padding:.4rem .8rem;border-radius:var(--radius-sm);cursor:pointer;font-size:.8rem;font-weight:500;margin:.2rem;transition:all 0.3s ease;box-shadow:var(--shadow);opacity:1;transform:scale(1)}.feedback-btn:hover{background:var(--primary-dark);transform:scale(1.05)}.feedback-btn:disabled{background:var(--text-tertiary);cursor:not-allowed;transform:scale(1);opacity:0.6}.feedback-btn.fade-away{opacity:0;transform:scale(0.8);transition:all 0.5s ease}.feedback-btn.btn-success{background:#28a745}.feedback-btn.btn-success:hover{background:#218838}.feedback-btn.btn-danger{background:#dc3545}.feedback-btn.btn-danger:hover{background:#c82333}.threshold-container{background:linear-gradient(135deg,var(--surface),var(--bg));border:2px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin:1rem 0;box-shadow:var(--shadow);transition:var(--transition)}.threshold-container:hover{border-color:var(--primary-light);transform:translateY(-2px)}.threshold-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}.threshold-header h3{margin:0;color:var(--text-primary);font-size:1.2rem}.threshold-display{text-align:right}.threshold-value{font-size:2rem;font-weight:bold;color:var(--primary);text-shadow:0 2px 4px rgba(26,115,232,.3)}.threshold-label{display:block;font-size:0.9rem;color:var(--text-secondary);margin-top:0.2rem}.threshold-slider-container{position:relative;margin:1.5rem 0}.threshold-slider{width:100%;height:8px;border-radius:4px;background:transparent;outline:none;cursor:pointer;position:relative;z-index:2}.threshold-slider::-webkit-slider-thumb{appearance:none;width:24px;height:24px;border-radius:50%;background:var(--primary);cursor:pointer;box-shadow:0 4px 8px rgba(26,115,232,.4);transition:var(--transition)}.threshold-slider::-webkit-slider-thumb:hover{transform:scale(1.2);box-shadow:0 6px 12px rgba(26,115,232,.6)}.threshold-slider::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:var(--primary);cursor:pointer;border:none;box-shadow:0 4px 8px rgba(26,115,232,.4)}.slider-track{position:absolute;top:50%;left:0;right:0;height:8px;background:var(--border);border-radius:4px;transform:translateY(-50%);z-index:1}.slider-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:4px;transition:width 0.3s ease;width:75%}.threshold-labels{display:flex;justify-content:space-between;margin-top:1rem}.threshold-point{text-align:center;flex:1}.threshold-icon{font-size:1.5rem;display:block;margin-bottom:0.5rem}.threshold-text{display:block;font-weight:500;color:var(--text-primary);margin-bottom:0.2rem}.threshold-percent{font-size:0.8rem;color:var(--text-secondary)}.threshold-description{background:rgba(26,115,232,.05);border-left:4px solid var(--primary);padding:1rem;margin-top:1rem;border-radius:0 var(--radius-sm) var(--radius-sm) 0}.threshold-description p{margin:0;color:var(--text-primary);line-height:1.5}.search-mode-container{background:linear-gradient(135deg,var(--surface),var(--bg));border:2px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin:1rem 0;box-shadow:var(--shadow);transition:all 0.3s ease;animation:slideInDown 0.5s ease}.search-mode-container:hover{border-color:var(--primary-light);transform:translateY(-1px)}.search-mode-container h3{margin:0 0 1rem 0;color:var(--text-primary);font-size:1.2rem}.search-mode-options{display:flex;gap:1rem;justify-content:center}.search-mode-option{position:relative;cursor:pointer}.search-mode-option input[type="radio"]{position:absolute;opacity:0;pointer-events:none}.mode-card{background:var(--bg);border:2px solid var(--border);border-radius:var(--radius);padding:1.5rem;text-align:center;transition:all 0.3s ease;min-width:150px;cursor:pointer;animation:fadeInUp 0.6s ease}.mode-card:hover{border-color:var(--primary-light);transform:translateY(-3px) scale(1.02);box-shadow:0 8px 25px rgba(26,115,232,.15)}.search-mode-option input:checked + .mode-card{border-color:var(--primary);background:rgba(26,115,232,.05);box-shadow:0 4px 12px rgba(26,115,232,.2);transform:translateY(-2px) scale(1.05)}.mode-icon{font-size:2rem;display:block;margin-bottom:0.5rem;transition:transform 0.3s ease}.mode-card:hover .mode-icon{transform:scale(1.1)}.mode-title{display:block;font-weight:600;color:var(--text-primary);margin-bottom:0.3rem;transition:color 0.3s ease}.mode-description{font-size:0.9rem;color:var(--text-secondary);transition:color 0.3s ease}.cloud-search-container{background:linear-gradient(135deg,var(--surface),var(--bg));border:2px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin:1rem 0;box-shadow:var(--shadow);transition:all 0.3s ease;animation:slideInUp 0.5s ease}.cloud-search-container:hover{border-color:var(--primary-light);transform:translateY(-1px)}.cloud-search-container h3{margin:0 0 1rem 0;color:var(--text-primary);font-size:1.2rem}.url-input-container{display:flex;gap:1rem;align-items:center;margin-bottom:1rem}.url-input{flex:1;padding:.75rem;border:2px solid var(--border);border-radius:var(--radius-sm);font-size:1rem;transition:all 0.3s ease;background:var(--bg)}.url-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(26,115,232,.1);transform:translateY(-1px)}.url-input::placeholder{color:var(--text-secondary)}.drive-info{background:rgba(52,168,83,.05);border:1px solid var(--success);border-radius:var(--radius-sm);padding:1rem;margin-top:1rem;animation:slideInUp 0.5s ease}.drive-stats{display:flex;justify-content:space-around;gap:1rem}.local-search-container{background:linear-gradient(135deg,var(--surface),var(--bg));border:2px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin:1rem 0;box-shadow:var(--shadow);transition:all 0.3s ease;animation:slideInUp 0.5s ease}.local-search-container:hover{border-color:var(--primary-light);transform:translateY(-1px)}.local-search-container h3{margin:0 0 1rem 0;color:var(--text-primary);font-size:1.2rem}.folder-selector{text-align:center;margin-bottom:1rem}.btn-outline{background:transparent;color:var(--primary);border:2px solid var(--primary);padding:.75rem 1.5rem;border-radius:var(--radius-sm);cursor:pointer;font-size:1rem;font-weight:500;transition:all 0.3s ease}.btn-outline:hover{background:var(--primary);color:#fff;transform:translateY(-2px) scale(1.05);box-shadow:0 6px 20px rgba(26,115,232,.3)}.selected-folder-path{background:rgba(26,115,232,.05);border:1px solid var(--primary);border-radius:var(--radius-sm);padding:1rem;margin-top:1rem;color:var(--text-primary);font-family:monospace;word-break:break-all;animation:fadeIn 0.5s ease}.folder-info{background:rgba(52,168,83,.05);border:1px solid var(--success);border-radius:var(--radius-sm);padding:1rem;margin-top:1rem;animation:slideInUp 0.5s ease}.folder-stats{display:flex;justify-content:space-around;gap:1rem}.stat-item{display:flex;align-items:center;gap:0.5rem;transition:transform 0.3s ease}.stat-item:hover{transform:scale(1.05)}.stat-icon{font-size:1.2rem;transition:transform 0.3s ease}.stat-item:hover .stat-icon{transform:scale(1.2)}.stat-text{color:var(--text-primary);font-weight:500}.cloud-services{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin:1rem 0}.service-option{position:relative;cursor:pointer}.service-option input[type="radio"]{position:absolute;opacity:0;pointer-events:none}.service-card{background:var(--bg);border:2px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center;transition:all 0.3s ease;cursor:pointer;animation:fadeInUp 0.6s ease}.service-card:hover{border-color:var(--primary-light);transform:translateY(-2px) scale(1.02);box-shadow:0 6px 20px rgba(26,115,232,.15)}.service-option input:checked + .service-card{border-color:var(--primary);background:rgba(26,115,232,.05);box-shadow:0 4px 12px rgba(26,115,232,.2);transform:translateY(-2px) scale(1.05)}.service-icon{font-size:1.5rem;display:block;margin-bottom:0.5rem;transition:transform 0.3s ease}.service-card:hover .service-icon{transform:scale(1.1)}.service-name{display:block;font-weight:600;color:var(--text-primary);font-size:0.9rem;transition:color 0.3s ease}.checkbox-container{margin:1rem 0}.checkbox-container label{display:flex;align-items:center;gap:0.5rem;cursor:pointer;color:var(--text-secondary)}.checkbox-container input[type="checkbox"]{width:16px;height:16px;cursor:pointer}.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:flex;justify-content:center;align-items:center;z-index:1000;animation:fadeIn 0.3s ease}.modal-content{background:var(--surface);border-radius:var(--radius);box-shadow:0 20px 60px rgba(0,0,0,0.3);max-width:500px;width:90%;max-height:80vh;overflow-y:auto;animation:slideInUp 0.3s ease}.modal-header{display:flex;justify-content:space-between;align-items:center;padding:1.5rem;border-bottom:1px solid var(--border)}.modal-header h3{margin:0;color:var(--text-primary);font-size:1.3rem}.modal-close{background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--text-secondary);transition:color 0.3s ease;padding:0;width:30px;height:30px;display:flex;align-items:center;justify-content:center}.modal-close:hover{color:var(--accent)}.modal-body{padding:1.5rem}.modal-footer{display:flex;justify-content:flex-end;gap:1rem;padding:1.5rem;border-top:1px solid var(--border)}.modal-footer .btn{margin:0}@keyframes slideInDown{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}@keyframes slideInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}@keyframes fadeInUp{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}@keyframes fadeIn{from{opacity:0}to{opacity:1}}.status{padding:1rem;margin:1rem 0;border-radius:var(--radius-sm);text-align:center;font-weight:500}.status.success{background:rgba(52,168,83,.1);color:var(--success);border:1px solid rgba(52,168,83,.3)}.status.error{background:rgba(234,67,53,.1);color:var(--accent);border:1px solid rgba(234,67,53,.3)}.status.info{background:rgba(26,115,232,.1);color:var(--primary);border:1px solid rgba(26,115,232,.3)}.status.warning{background:rgba(255,193,7,.1);color:#856404;border:1px solid rgba(255,193,7,.3)}.loading{display:none;text-align:center;margin:1rem 0}.spinner{border:4px solid var(--border);border-top:4px solid var(--primary);border-radius:50%;width:40px;height:40px;margin:0 auto}
+
+
+
+        /* Results */
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .photo-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .photo-card:hover {
+            background: var(--bg);
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .photo-info {
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .photo-info h4 {
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .photo-info p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Modal/Lightbox styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            -webkit-backdrop-filter: blur(5px);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 90%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: var(--radius);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1001;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .modal-close:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: var(--radius-sm);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-info h3 {
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+
+        .modal-info p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        /* Authentication Status styles */
+        .auth-status {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin: 1rem 0;
+            box-shadow: var(--shadow);
+        }
+
+        .auth-status p {
+            margin: 0.5rem 0;
+            font-size: 1rem;
+            color: var(--text-primary);
+        }
+
+        .auth-status .btn {
+            margin: 0.5rem 0.25rem;
+        }
+
+        /* Footer Styles */
+        .footer {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            margin-top: 4rem;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h3 {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .footer-section p {
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-section ul li a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .footer-section ul li a:hover {
+            color: var(--primary);
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .social-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: var(--bg);
+            border-radius: 50%;
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+
+        .social-link:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .social-link svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid var(--border);
+            padding: 1.5rem 0;
+        }
+
+        .footer-bottom-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .footer-left p {
+            color: var(--text-tertiary);
+            font-size: 14px;
+            margin: 0 0 0.25rem 0;
+            line-height: 1.4;
+        }
+
+        .footer-left p .heart {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .footer-left p:last-child {
+            margin-bottom: 0;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            transition: var(--transition);
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        .footer-bottom p {
+            color: var(--text-tertiary);
+            font-size: 14px;
+            margin: 0;
+        }
+
+        /* Fix color contrast for accessibility */
+        .footer p {
+            color: #3c4043 !important; /* Darker color for better contrast */
+        }
+        
+        .footer .text-tertiary,
+        .footer .text-secondary {
+            color: #3c4043 !important;
+        }
+
+        /* Fix CTA button contrast */
+        .cta-button {
+            color: #ffffff !important; /* Ensure white text for maximum contrast */
+            font-weight: 700 !important; /* Make text bolder for better readability */
+        }
+
+        /* Fix footer text contrast */
+        .footer-section p {
+            color: #2d3748 !important; /* Darker color for better contrast */
+        }
+
+        .footer-section ul li a {
+            color: #2d3748 !important; /* Darker color for better contrast */
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .header-title h1 {
+                font-size: 2rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .section {
+                padding: 1.5rem;
+            }
+
+            .nav-toggle {
+                display: flex;
+            }
+
+            .nav-menu {
+                display: none;
+                position: absolute;
+                top: 100%;
+                left: 0;
+                right: 0;
+                background: var(--surface);
+                border-top: 1px solid var(--border);
+                box-shadow: var(--shadow);
+                border-radius: 0 0 var(--radius) var(--radius);
+                flex-direction: column;
+                padding: 1rem 0;
+            }
+
+            .nav-menu.active {
+                display: flex;
+            }
+
+            .nav-menu a {
+                display: block;
+                padding: 16px 20px;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .nav-toggle {
+                display: flex;
+            }
+
+            .footer-bottom-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .card {
+                padding: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header-title h1 {
+                font-size: 1.75rem;
+            }
+
+            .btn {
+                padding: 0.75rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Inline Progress Bar Styles */
+        .progress-container {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+
+        .progress-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .progress-header h3 {
+            margin: 0 0 8px 0;
+            color: var(--primary);
+            font-size: 18px;
+        }
+
+        .progress-header p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .progress-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .progress-step {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+            opacity: 0.5;
+        }
+
+        .progress-step.active {
+            opacity: 1;
+            border-color: var(--primary);
+            background: #f0f7ff;
+            box-shadow: 0 2px 8px rgba(26, 115, 232, 0.1);
+        }
+
+        .progress-step.completed {
+            opacity: 1;
+            border-color: #28a745;
+            background: #f8fff9;
+        }
+
+        .step-icon {
+            font-size: 20px;
+            margin-right: 12px;
+            min-width: 24px;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .step-description {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .step-status {
+            font-size: 16px;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        .progress-step.active .step-status {
+            animation: pulse 1.5s infinite;
+        }
+
+        .progress-step.completed .step-status {
+            color: #28a745;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .or-divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            position: relative;
+        }
+
+        .or-divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .or-divider span {
+            background: var(--background);
+            padding: 0 1rem;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .threshold-options {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .threshold-option {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            transition: var(--transition);
+            flex: 1;
+            text-align: center;
+        }
+
+        .threshold-option:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .threshold-option input[type="radio"] {
+            margin-right: 0.5rem;
+        }
+
+        .threshold-option input[type="radio"]:checked + .threshold-label {
+            color: white;
+            font-weight: 600;
+        }
+
+        .threshold-option:has(input:checked) {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+            transform: scale(1.02);
+        }
+
+        .threshold-option {
+            transition: all 0.2s ease;
+        }
+
+        .threshold-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .file-upload input[type="text"] {
+            display: block !important;
+            cursor: text;
+            pointer-events: auto;
+        }
+    </style>
+
+        <!-- Structured Data (JSON-LD) for SEO -->
+        <script type="application/ld+json">
+        {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": "CloudFace AI - Index",
+            "description": "AI-powered face recognition technology for photo organization",
+            "url": "https://cloudface-ai.com/index",
+            "author": {
+                "@type": "Organization",
+                "name": "CloudFace AI",
+                "url": "https://cloudface-ai.com"
+            },
+            "publisher": {
+                "@type": "Organization",
+                "name": "CloudFace AI",
+                "url": "https://cloudface-ai.com"
+            }
+        }
+        </script>
+        
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-top">
+            <span>Find any photo in your cloud with AI—instantly</span>
+        </div>
+        <div class="header-main">
+            <div class="container">
+                <div class="header-content">
+                    <a href="/" class="logo">
+                        <img src="/static/Cloudface-ai-logo.png" alt="Cloudface AI" style="height:1.3em; width:auto; vertical-align:middle;">
+                        <span style="margin-left:.4em;">Cloudface AI</span>
+                    </a>
+                    <button class="nav-toggle" onclick="toggleNav()" aria-label="Toggle navigation menu">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+                        </svg>
+                    </button>
+                    <nav class="nav-menu" id="navMenu">
+                        <a href="/" class="active">Home</a>
+                        <a href="/my-photos" id="myPhotosBtn" style="display: none;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle;">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                <polyline points="21,15 16,10 5,21"/>
+                            </svg>
+                            My Photos
+                        </a>
+                        <a href="/about">About</a>
+                        <a href="/video-app">Video Search</a>
+                        <a href="/blog">Blog</a>
+                        <a href="/pricing">Pricing</a>
+                        <a href="/how-it-works">How It Works</a>
+                        <a href="/#features">Features</a>
+                        <a href="/app" class="cta-button">Try App</a>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="header-title">
+            <h1>CloudFace AI Engine</h1>
+            <p>Find faces in your photos using advanced AI technology</p>
+        </div>
+
+        <!-- Authentication Status -->
+        <div id="authStatus" class="auth-status">
+            <div id="notAuthenticated" style="display: none;">
+                <div style="text-align: center; padding: 2rem;">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color: var(--primary); margin-bottom: 1rem;">
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                        <polyline points="10,17 15,12 10,7"/>
+                        <line x1="15" y1="12" x2="3" y2="12"/>
+                    </svg>
+                    <h2 style="margin-bottom: 1rem; color: var(--text-primary);">Welcome to CloudFace AI</h2>
+                    <p style="margin-bottom: 1.5rem; color: var(--text-secondary); font-size: 1.1rem;">
+                        To use our AI-powered face recognition, you need to sign in with your Google account to access your Google Drive photos.
+                    </p>
+                    <button class="btn" onclick="handleGoogleLogin()" style="background: var(--primary); font-size: 1.1rem; padding: 1rem 2rem;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                        </svg>
+                        Sign in with Google
+                    </button>
+                    <p style="margin-top: 1rem; color: var(--text-tertiary); font-size: 0.9rem;">
+                        Your privacy is protected. We only access photos you explicitly choose to process.
+                    </p>
+                </div>
+            </div>
+            <div id="authenticated" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <p style="margin: 0; color: var(--text-primary); font-weight: 500;">
+                            ✅ Signed in as: <span id="userEmail" style="color: var(--primary);"></span>
+                        </p>
+                        <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">
+                            You can now process Google Drive photos and search for faces
+                        </p>
+                    </div>
+                    <button class="btn" onclick="window.location.href='/auth/logout'" style="background: var(--accent);">
+                        Sign Out
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="mainContent" class="main-content" style="display: none;">
+            <!-- Single Step: Process Photos -->
+            <div class="section">
+                <h2>Step 1. Process your photos</h2>
+                
+                <!-- Cloud URL Option -->
+                <div class="file-upload">
+                    <div onclick="focusDriveUrl()">
+                        <input type="text" id="driveUrl" placeholder="Paste your Google Drive folder URL here" onkeypress="handleKeyPress(event)" oninput="handleDriveUrlInput(event)" onpaste="setTimeout(() => handleDriveUrlInput(event), 10)">
+                        <p>☁️ Enter your Google Drive folder URL</p>
+                    </div>
+                    
+                    <div class="help-guide">
+                        <details>
+                            <summary>📖 How to process your Google Drive folder</summary>
+                            <ol>
+                                <li><strong>Share your folder with our bot:</strong> Add <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-family: monospace;">cloudface-ai-bot@mevscrowd.iam.gserviceaccount.com</code> as a viewer</li>
+                                <li><strong>Get the folder link:</strong> Right-click your folder and select "Get link"</li>
+                                <li><strong>Paste the link above</strong> and click "Process Photos"</li>
+                            </ol>
+                            <p style="margin-top: 1rem; padding: 0.8rem; background: #e8f5e8; border-radius: 6px; border-left: 4px solid #4caf50;">
+                                <strong>💡 Why share with bot?</strong> This avoids Google's verification process and works instantly!
+                            </p>
+                        </details>
+                    </div>
+                    
+                    <button type="button" class="btn btn-secondary" onclick="clearDriveUrl(); event.stopPropagation();" style="display: none; margin-top: 0.5rem; font-size: 0.8rem;" id="clearDriveBtn">
+                        🧹 Clear URL
+                    </button>
+                </div>
+                
+                <!-- Folder Depth Control -->
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label for="maxDepth" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+                        📁 Folder Depth: <span id="depthValue">10</span> levels deep
+                    </label>
+                    <input type="range" id="maxDepth" min="1" max="20" value="10" step="1" 
+                           style="width: 100%; margin: 0.5rem 0;" 
+                           oninput="document.getElementById('depthValue').textContent = this.value">
+                    <small style="color: #666; font-size: 0.9rem;">
+                        How many subfolder levels to scan recursively (1-20)
+                    </small>
+                </div>
+                
+                <div class="or-divider">
+                    <span>or</span>
+                </div>
+                
+                <!-- Local Folder Option (Hidden for now) -->
+                <div class="folder-selector" style="display: none;">
+                    <button type="button" class="btn btn-outline" onclick="selectLocalFolder()">
+                        📂 Select local folder
+                    </button>
+                    <input type="file" id="localFolderInput" webkitdirectory directory multiple style="display: none;" onchange="handleLocalFolderSelection(this)">
+                    <div class="help-guide">
+                        <details>
+                            <summary>📖 How to select local photos</summary>
+                            <ol>
+                                <li>Click "Select local folder" above</li>
+                                <li>Choose a folder containing your photos</li>
+                                <li>Make sure the folder has image files (JPG, PNG, etc.)</li>
+                                <li>Click "Process Photos" when ready</li>
+                            </ol>
+                        </details>
+                    </div>
+                    <div id="selectedFolderPath" class="selected-folder-path"></div>
+                    <button type="button" class="btn btn-secondary" onclick="clearLocalFolder()" style="display: none; margin-top: 0.5rem; font-size: 0.8rem;" id="clearFolderBtn">
+                        🧹 Clear Folder
+                    </button>
+                </div>
+                
+                <div class="folder-info" id="folderInfo" style="display: none;">
+                    <div class="folder-stats">
+                        <span class="stat-item">
+                            <span class="stat-icon">📷</span>
+                            <span class="stat-text">Photos: <span id="photoCount">0</span></span>
+                        </span>
+                        <span class="stat-item">
+                            <span class="stat-icon">📁</span>
+                            <span class="stat-text">Folders: <span id="folderCount">0</span></span>
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="checkbox-container">
+                    <label>
+                        <input type="checkbox" id="forceReprocess">
+                        🔄 Reprocess existing photos
+                    </label>
+                    <small style="display: block; margin-top: 4px; color: #666; font-size: 12px;">
+                        Skip this unless you need to reprocess photos that were already analyzed
+                    </small>
+                </div>
+                
+                <button class="btn" onclick="processPhotos()">Process Photos</button>
+                <div id="processStatus" class="status info" style="display: none;"></div>
+                <div id="processLoading" class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+
+            <!-- Step 2: Find a Person -->
+            <div class="section">
+                <h2>Step 2. Find a Person</h2>
+                <div class="file-upload" onclick="document.getElementById('selfieFile').click()">
+                    <input type="file" id="selfieFile" accept="image/*" onchange="handleFileSelect(event)">
+                    <p>📷 Click to select a selfie photo</p>
+                    <p>or drag and drop here</p>
+                </div>
+                                 <div id="fileInfo" style="display: none;">
+                     <p><strong>Selected:</strong> <span id="fileName"></span></p>
+                     <p><strong>Size:</strong> <span id="fileSize"></span></p>
+                 </div>
+                 
+                 <!-- Selfie Preview Container -->
+                 <div id="selfiePreviewContainer" style="margin-top: 1rem; text-align: center; display: none;">
+                     <h3>Selected Selfie Preview</h3>
+                     <img id="selfiePreview" src="" alt="Selected Selfie" style="max-width: 100%; height: auto; border-radius: var(--radius-sm);" loading="lazy">
+                 </div>
+
+                <div class="threshold-container">
+                    <h3>Search Precision</h3>
+                    <div class="threshold-options">
+                        <label class="threshold-option">
+                            <input type="radio" name="threshold" value="0.65">
+                            <span class="threshold-label">Precise</span>
+                        </label>
+                        <label class="threshold-option">
+                            <input type="radio" name="threshold" value="0.5" checked>
+                            <span class="threshold-label">Balanced</span>
+                        </label>
+                        <label class="threshold-option">
+                            <input type="radio" name="threshold" value="0.4">
+                            <span class="threshold-label">Broad</span>
+                        </label>
+                    </div>
+                    <div class="help-guide">
+                        <details>
+                            <summary>💡 What do these settings mean?</summary>
+                            <ul>
+                                <li><strong>Precise (65%):</strong> Find only very similar faces - fewer results, higher confidence</li>
+                                <li><strong>Balanced (50%):</strong> Recommended - good mix of accuracy and coverage</li>
+                                <li><strong>Broad (40%):</strong> Find more matches - includes different angles and lighting</li>
+                            </ul>
+                        </details>
+                    </div>
+                </div>
+
+                <button class="btn" id="searchBtn" onclick="searchForPerson()" disabled>Find My Photos</button>
+                <div id="searchStatus" class="status info" style="display: none;"></div>
+                <div id="searchLoading" class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Results Section -->
+        <div class="section" style="grid-column: 1 / -1; margin-top: 2rem;">
+            <h2>Search Results</h2>
+            <div id="downloadAllContainer" style="text-align: center; margin-bottom: 1rem; display: none;">
+                <button class="btn" onclick="downloadAllPhotos()" style="background: var(--success); display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7,10 12,15 17,10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Download All as ZIP
+                </button>
+                <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.9rem;">
+                    Creates a ZIP file with all matched photos for easy download
+                </p>
+            </div>
+            <div id="results" class="results"></div>
+        </div>
+        </div>
+
+        <!-- Include Enterprise Testimonials after Search Results -->
+        {% include 'testimonials-section.html' %}
+    </div>
+
+    <!-- Modal for enlarged photos -->
+    <div id="photoModal" class="modal" onclick="closeModal()">
+        <span class="modal-close" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="modalImage" alt="CloudFace AI" loading="lazy">
+        <div class="modal-info">
+            <h3 id="modalTitle">Photo Details</h3>
+            <p id="modalPath">Path: </p>
+            <p id="modalSimilarity">Similarity: </p>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        
+        // Progress Bar Functions - Define early to avoid "not defined" errors
+        function showProgressBar() {
+            document.getElementById('progressContainer').style.display = 'block';
+            startProgressTracking();
+        }
+
+        function hideProgressBar() {
+            document.getElementById('progressContainer').style.display = 'none';
+            stopProgressTracking();
+        }
+
+        // Local Progress Bar Functions
+        function showLocalProgressBar(fileCount) {
+            // Create or show local progress container
+            let localProgressContainer = document.getElementById('localProgressContainer');
+            if (!localProgressContainer) {
+                localProgressContainer = document.createElement('div');
+                localProgressContainer.id = 'localProgressContainer';
+                localProgressContainer.innerHTML = `
+                    <div class="local-progress-overlay">
+                        <div class="local-progress-container">
+                            <div class="local-progress-header">
+                                <h3>📁 Processing Local Photos</h3>
+                            </div>
+                            <div class="local-progress-status">
+                                <div id="localProgressStatus">Uploading files...</div>
+                                <div id="localProgressDetails">Please wait while we process your photos</div>
+                            </div>
+                            <div class="local-main-progress">
+                                <div class="local-progress-bar">
+                                    <div id="localProgressFill" class="local-progress-fill"></div>
+                                </div>
+                                <div class="local-progress-percentage" id="localProgressPercentage">0%</div>
+                            </div>
+                            <div class="local-current-operation" id="localCurrentOperation">
+                                <div class="local-operation-icon" id="localOperationIcon">⏳</div>
+                                <div class="local-operation-text" id="localOperationText">Getting ready...</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(localProgressContainer);
+            }
+            
+            // Show the container
+            localProgressContainer.style.display = 'block';
+            
+            // Initialize progress
+            updateLocalProgress(0, 'Uploading files...', `Processing ${fileCount} photos`);
+        }
+
+        function hideLocalProgressBar() {
+            const container = document.getElementById('localProgressContainer');
+            if (container) {
+                container.style.display = 'none';
+            }
+        }
+
+        function updateLocalProgress(percentage, status, details) {
+            const progressFill = document.getElementById('localProgressFill');
+            const progressPercentage = document.getElementById('localProgressPercentage');
+            const progressStatus = document.getElementById('localProgressStatus');
+            const progressDetails = document.getElementById('localProgressDetails');
+            const operationIcon = document.getElementById('localOperationIcon');
+            const operationText = document.getElementById('localOperationText');
+
+            if (progressFill && progressPercentage) {
+                progressFill.style.width = percentage + '%';
+                progressPercentage.textContent = percentage + '%';
+            }
+
+            if (progressStatus) progressStatus.textContent = status;
+            if (progressDetails) progressDetails.textContent = details;
+            
+            if (operationIcon && operationText) {
+                if (percentage >= 100) {
+                    operationIcon.textContent = '✅';
+                    operationText.textContent = 'Processing complete!';
+                } else if (percentage > 0) {
+                    operationIcon.textContent = '🔄';
+                    operationText.textContent = 'Processing photos...';
+                } else {
+                    operationIcon.textContent = '⏳';
+                    operationText.textContent = 'Getting ready...';
+                }
+            }
+        }
+
+        function startLocalProgressPolling() {
+            // Poll for completion every 2 seconds
+            const pollInterval = setInterval(() => {
+                fetch('/progress', { credentials: 'same-origin' })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('📊 Local progress polling response:', data);
+                        if (data && data.progress_data) {
+                            const progress = data.progress_data.overall || 0;
+                            const currentStep = data.progress_data.current_step || 'Processing photos...';
+                            const folderInfo = data.progress_data.folder_info || {};
+                            
+                            updateLocalProgress(progress, currentStep, `Processing ${folderInfo.files_found || 0} photos`);
+                            
+                            if (progress >= 100) {
+                                clearInterval(pollInterval);
+                                setTimeout(() => {
+                                    hideLocalProgressBar();
+                                    showStatus('processStatus', '✅ Local photos processed successfully!', 'success');
+                                    document.getElementById('searchBtn').disabled = false;
+                                }, 1500);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.log('❌ Local progress polling error:', error);
+                        clearInterval(pollInterval);
+                        hideLocalProgressBar();
+                    });
+            }, 2000);
+        }
+
+        function startProgressTracking() {
+            console.log('🔄 Starting progress tracking...');
+            
+            // Close existing connection
+            if (window.progressEventSource) {
+                window.progressEventSource.close();
+            }
+            
+            // Set up completion timeout (fallback)
+            if (window.completionTimeout) {
+                clearTimeout(window.completionTimeout);
+            }
+            window.completionTimeout = setTimeout(() => {
+                console.log('⏰ Completion timeout reached - forcing completion');
+                const progressStatus = document.getElementById('progressStatus');
+                const progressDetails = document.getElementById('progressDetails');
+                const operationIcon = document.getElementById('operationIcon');
+                const operationText = document.getElementById('operationText');
+                const nextSteps = document.getElementById('nextSteps');
+                
+                if (progressStatus) progressStatus.textContent = '✅ Processing complete!';
+                if (progressDetails) progressDetails.textContent = 'Your photos are ready for face search!';
+                if (operationIcon) operationIcon.textContent = '✅';
+                if (operationText) operationText.textContent = 'Processing complete!';
+                if (nextSteps) nextSteps.style.display = 'block';
+                
+                // Keep progress bar open to show Share button - don't auto-hide
+                showStatus('processStatus', '✅ Processing complete! You can now search for faces in your photos.', 'success');
+                document.getElementById('searchBtn').disabled = false;
+                // User can manually close the progress bar to see the Share button
+                
+                stopProgressTracking();
+            }, 1800000); // 30 minutes timeout (for large folders like 589 files)
+            
+            // Start new SSE connection
+            window.progressEventSource = new EventSource('/progress/stream');
+            
+            window.progressEventSource.onmessage = function(event) {
+                try {
+                    // Handle close messages
+                    if (event.data.includes('"close":true')) {
+                        console.log('📡 Progress stream closing...');
+                        setTimeout(() => {
+                            if (window.progressEventSource) {
+                                window.progressEventSource.close();
+                                window.progressEventSource = null;
+                            }
+                        }, 1000);
+                        return;
+                    }
+                    
+                    const progressData = JSON.parse(event.data);
+                    
+                    // Handle error messages
+                    if (progressData.error) {
+                        console.warn('⚠️ Progress stream warning:', progressData.error);
+                        if (progressData.error_count && progressData.error_count > 3) {
+                            console.error('❌ Too many progress stream errors, reconnecting...');
+                            setTimeout(() => {
+                                if (window.progressEventSource) {
+                                    window.progressEventSource.close();
+                                    window.progressEventSource = null;
+                                }
+                                startProgressTracking();
+                            }, 2000);
+                        }
+                        return;
+                    }
+                    
+                    // Fallback: compute overall from steps if missing/zero but steps progressing
+                    if ((progressData.overall === undefined || progressData.overall === null || isNaN(progressData.overall) || progressData.overall < 1)
+                        && progressData.steps && typeof progressData.steps === 'object') {
+                        let sum = 0, count = 0;
+                        for (const step of Object.values(progressData.steps)) {
+                            if (step && typeof step.progress === 'number') { sum += step.progress; count++; }
+                        }
+                        if (count > 0) {
+                            const derived = Math.min(100, Math.max(0, Math.round(sum / count)));
+                            if (!isNaN(derived)) progressData.overall = derived;
+                        }
+                    }
+
+                    updateProgressDisplay(progressData);
+                    
+                    // Handle completion with search-ready message
+                    if (progressData.search_ready || (progressData.overall >= 100 && progressData.completion_message)) {
+                        console.log('✅ Processing complete, enabling search...');
+                        
+                        // Enable search button
+                        const searchBtn = document.getElementById('searchBtn');
+                        if (searchBtn) {
+                            searchBtn.disabled = false;
+                            searchBtn.textContent = 'Find My Photos';
+                            searchBtn.style.background = 'var(--accent)';
+                        }
+                        
+                        // Show completion message
+                        if (progressData.completion_message || progressData.current_step) {
+                            const message = progressData.completion_message || progressData.current_step;
+                            showStatus('processStatus', message, 'success');
+                        }
+                        
+                        // Close SSE connection and auto-hide progress
+                        setTimeout(() => {
+                            if (window.progressEventSource) {
+                                window.progressEventSource.close();
+                                window.progressEventSource = null;
+                            }
+                            // Keep progress bar open to show Share button - let user close manually
+                        }, 2000);
+                    }
+                } catch (error) {
+                    console.error('❌ Progress stream parsing error:', error);
+                    console.log('Raw event data:', event.data);
+                }
+            };
+            
+            window.progressEventSource.onerror = function(error) {
+                console.error('❌ Progress stream error:', error);
+                window.progressEventSource.close();
+                window.progressEventSource = null;
+            };
+        }
+
+        function stopProgressTracking() {
+            if (window.progressEventSource) {
+                window.progressEventSource.close();
+                window.progressEventSource = null;
+            }
+        }
+
+        function updateProgressDisplay(progressData) {
+            console.log('🔄 Updating progress display:', progressData);
+            
+            // Check if processing is complete
+            const overallProgress = progressData.overall || 0;
+            const isComplete = overallProgress >= 100;
+            const searchReady = progressData.search_ready || false;
+            
+            console.log(`📊 Progress: ${overallProgress}%, Complete: ${isComplete}, Search Ready: ${searchReady}`);
+            
+            // Update folder information
+            if (progressData.folder_info) {
+                const folderPath = document.getElementById('folderPath');
+                const fileCount = document.getElementById('fileCount');
+                
+                if (folderPath) {
+                    folderPath.textContent = progressData.folder_info.folder_path;
+                }
+                
+                if (fileCount) {
+                    const totalFiles = progressData.folder_info.total_files || 0;
+                    const filesFound = progressData.folder_info.files_found || 0;
+                    
+                    if (totalFiles > 0) {
+                        fileCount.textContent = `Found ${totalFiles.toLocaleString()} images`;
+                    } else if (filesFound > 0) {
+                        fileCount.textContent = `Found ${filesFound.toLocaleString()} images`;
+                    } else {
+                        fileCount.textContent = 'Scanning for images...';
+                    }
+                }
+            }
+            
+            // Update main progress (simplified progress bar)
+            const mainProgressBar = document.getElementById('mainProgressBar');
+            const mainPercentage = document.getElementById('mainPercentage');
+            
+            if (mainProgressBar && mainPercentage) {
+                const overallProgress = progressData.overall || 0;
+                mainProgressBar.style.width = overallProgress + '%';
+                mainPercentage.textContent = overallProgress + '%';
+                console.log(`📊 Progress updated: ${overallProgress}%`);
+            }
+            
+            // Update status (simplified progress bar)
+            const progressStatus = document.getElementById('progressStatus');
+            const progressDetails = document.getElementById('progressDetails');
+            const operationIcon = document.getElementById('operationIcon');
+            const operationText = document.getElementById('operationText');
+            const nextSteps = document.getElementById('nextSteps');
+
+            if (progressStatus) {
+                const currentStep = progressData.current_step || 'Processing...';
+                progressStatus.textContent = currentStep;
+                console.log(`📝 Status updated: ${currentStep}`);
+                
+                // Check for completion message from progress tracker
+                if (progressData.completion_message) {
+                    progressStatus.textContent = progressData.completion_message;
+                }
+            }
+
+            if (progressDetails) {
+                const folderInfo = progressData.folder_info || {};
+                const totalFiles = folderInfo.total_files || 0;
+                const filesFound = folderInfo.files_found || 0;
+                
+                if (totalFiles > 0) {
+                    progressDetails.textContent = `Processing ${filesFound} of ${totalFiles} photos`;
+                } else {
+                    progressDetails.textContent = 'Getting ready to process your photos...';
+                }
+            }
+            
+            // Update current operation (simplified progress bar)
+            if (operationIcon && operationText) {
+                const steps = progressData.steps || {};
+                let currentStep = null;
+                let currentIcon = '⏳';
+
+                // Find the active step
+                Object.keys(steps).forEach(stepName => {
+                    const step = steps[stepName];
+                    if (step.progress > 0 && step.progress < 100) {
+                        currentStep = step;
+                        currentIcon = step.icon || '⏳';
+                    }
+                });
+
+                if (currentStep) {
+                    operationIcon.textContent = currentIcon;
+                    operationText.textContent = `${currentStep.status} (${currentStep.processed_files}/${currentStep.total_files})`;
+                    console.log(`🔧 Operation: ${currentStep.status}`);
+                } else if (progressData.search_ready || ((progressData.overall || 0) >= 100 && progressData.completion_message)) {
+                    // Show complete when search_ready flag is set OR overall is 100% with completion message
+                    operationIcon.textContent = '✅';
+                    operationText.textContent = 'Processing complete!';
+                    
+                    // Update status to show completion message
+                    if (progressStatus) {
+                        progressStatus.textContent = '✅ Processing done, now search your photos!';
+                    }
+                    if (progressDetails) {
+                        progressDetails.textContent = 'Your photos are ready for face search!';
+                    }
+                    
+                    // Show next steps
+                    if (nextSteps) {
+                        nextSteps.style.display = 'block';
+                    }
+                    
+                    // Keep progress bar open to show Share button
+                    showStatus('processStatus', '✅ Processing complete! You can now search for faces in your photos.', 'success');
+                    document.getElementById('searchBtn').disabled = false;
+                    
+                    // Stop progress tracking when complete
+                    stopProgressTracking();
+                    
+                    // Clear completion timeout
+                    if (window.completionTimeout) {
+                        clearTimeout(window.completionTimeout);
+                        window.completionTimeout = null;
+                    }
+                } else {
+                    operationIcon.textContent = '⏳';
+                    operationText.textContent = 'Getting ready...';
+                }
+            }
+        }
+
+        function showCurrentStep(stepName, stepData) {
+            const currentStepElement = document.getElementById('currentStep');
+            const stepIcon = document.getElementById('stepIcon');
+            const stepNameElement = document.getElementById('stepName');
+            const stepPercentage = document.getElementById('stepPercentage');
+            const stepProgressFill = document.getElementById('stepProgressFill');
+            const stepStatus = document.getElementById('stepStatus');
+            const stepCount = document.getElementById('stepCount');
+            
+            if (!currentStepElement) return;
+            
+            // Get step info from navigation dots
+            const stepDot = document.querySelector(`[data-step="${stepName}"]`);
+            if (stepDot) {
+                if (stepIcon) stepIcon.textContent = stepDot.dataset.stepIcon || '📥';
+                if (stepNameElement) stepNameElement.textContent = stepDot.dataset.stepName || stepName;
+            }
+            
+            // Update progress
+            if (stepPercentage) stepPercentage.textContent = `${stepData.progress}%`;
+            if (stepProgressFill) stepProgressFill.style.width = `${stepData.progress}%`;
+            if (stepStatus) stepStatus.textContent = stepData.status || 'Processing...';
+            
+            if (stepCount) {
+                if (stepData.total_files > 0) {
+                    stepCount.textContent = `${stepData.processed_files}/${stepData.total_files} files`;
+                } else {
+                    stepCount.textContent = 'Preparing...';
+                }
+            }
+            
+            // Show the current step
+            currentStepElement.style.display = 'block';
+            
+            // Add active animation
+            if (stepProgressFill) {
+                stepProgressFill.classList.add('active');
+            }
+        }
+
+        function updateStepNavigation(steps) {
+            Object.keys(steps).forEach(stepName => {
+                const stepDot = document.querySelector(`[data-step="${stepName}"]`);
+                const stepData = steps[stepName];
+                
+                if (stepDot) {
+                    // Remove all classes
+                    stepDot.classList.remove('active', 'completed', 'waiting');
+                    
+                    if (stepData.progress >= 100) {
+                        stepDot.classList.add('completed');
+                    } else if (stepData.progress > 0) {
+                        stepDot.classList.add('active');
+                    } else {
+                        stepDot.classList.add('waiting');
+                    }
+                }
+            });
+        }
+        
+        function handleGoogleLogin() {
+            console.log('🔑 Starting Google OAuth login...');
+            try {
+                window.location.href = '/auth/login';
+            } catch (error) {
+                console.error('❌ OAuth error:', error);
+                alert('Error starting Google login. Please try again.');
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                processPhotos();
+            }
+        }
+        
+        function handleDriveUrlInput(event) {
+            // Handle mutual exclusion between Drive URL and local folder
+            const driveUrl = event.target.value.trim();
+            
+            console.log('🔧 DEBUG: Drive URL input changed:', driveUrl);
+            
+            if (driveUrl) {
+                // Drive URL entered - disable local folder
+                console.log('🔒 Locking local folder');
+                lockLocalFolder(true);
+                // Show clear button for Drive URL
+                document.getElementById('clearDriveBtn').style.display = 'inline-block';
+                
+                // Auto-scroll to Process Photos button when URL is pasted
+                setTimeout(() => {
+                    const processBtn = document.querySelector('button[onclick="processPhotos()"]');
+                    if (processBtn) {
+                        processBtn.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'center' 
+                        });
+                        console.log('📜 Auto-scrolled to Process Photos button');
+                    }
+                }, 100); // Small delay to ensure UI is updated
+            } else {
+                // Drive URL cleared - enable local folder
+                console.log('🔓 Unlocking local folder');
+                lockLocalFolder(false);
+                // Hide clear button for Drive URL
+                document.getElementById('clearDriveBtn').style.display = 'none';
+            }
+        }
+        
+        function lockLocalFolder(lock) {
+            console.log('🔧 DEBUG: lockLocalFolder called with:', lock);
+            
+            const folderSelector = document.querySelector('.folder-selector');
+            const folderButton = folderSelector ? folderSelector.querySelector('.btn') : null;
+            const clearFolderBtn = document.getElementById('clearFolderBtn');
+            
+            console.log('🔧 DEBUG: Elements found:', {
+                folderSelector: !!folderSelector,
+                folderButton: !!folderButton,
+                clearFolderBtn: !!clearFolderBtn
+            });
+            
+            if (!folderSelector || !folderButton) {
+                console.error('❌ Could not find folder elements');
+                return;
+            }
+            
+            if (lock) {
+                // Lock local folder selection
+                console.log('🔒 Applying lock styles to local folder');
+                folderSelector.style.opacity = '0.5';
+                folderSelector.style.pointerEvents = 'none';
+                folderSelector.style.filter = 'grayscale(1)';
+                folderButton.disabled = true;
+                folderButton.style.background = '#ccc';
+                folderButton.style.cursor = 'not-allowed';
+                folderButton.title = 'Clear Drive URL to use local folder selection';
+                if (clearFolderBtn) clearFolderBtn.style.display = 'none';
+            } else {
+                // Unlock local folder selection
+                console.log('🔓 Removing lock styles from local folder');
+                folderSelector.style.opacity = '1';
+                folderSelector.style.pointerEvents = 'auto';
+                folderSelector.style.filter = 'none';
+                folderButton.disabled = false;
+                folderButton.style.background = '';
+                folderButton.style.cursor = 'pointer';
+                folderButton.title = 'Select local folder';
+                // Clear button visibility handled by selection state
+            }
+        }
+        
+        function lockDriveUrl(lock) {
+            const driveUrlInput = document.getElementById('driveUrl');
+            const driveUrlContainer = driveUrlInput.parentElement;
+            const clearDriveBtn = document.getElementById('clearDriveBtn');
+            
+            if (lock) {
+                // Lock Drive URL input
+                driveUrlContainer.style.opacity = '0.5';
+                driveUrlContainer.style.pointerEvents = 'none';
+                driveUrlContainer.style.filter = 'grayscale(1)';
+                driveUrlInput.disabled = true;
+                driveUrlInput.placeholder = 'Clear local folder selection to use Drive URL';
+                driveUrlInput.title = 'Clear local folder selection to use Drive URL';
+                if (clearDriveBtn) clearDriveBtn.style.display = 'none';
+            } else {
+                // Unlock Drive URL input
+                driveUrlContainer.style.opacity = '1';
+                driveUrlContainer.style.pointerEvents = 'auto';
+                driveUrlContainer.style.filter = 'none';
+                driveUrlInput.disabled = false;
+                driveUrlInput.placeholder = 'Paste your cloud URL to process photos';
+                driveUrlInput.title = '';
+                // Clear button visibility handled by input state
+            }
+        }
+
+        function focusDriveUrl() {
+            console.log('🔍 focusDriveUrl called');
+            const input = document.getElementById('driveUrl');
+            console.log('🔍 Input element:', input);
+            if (input) {
+                input.focus();
+                input.select();
+                console.log('✅ Input focused and selected');
+            } else {
+                console.error('❌ Input element not found');
+            }
+        }
+        
+        // Check authentication status when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuthStatus();
+            
+            // Check for session ID (shared/pre-processed photos)
+            const urlParams = new URLSearchParams(window.location.search);
+            const sessionId = urlParams.get('session');
+            const autoDriveUrl = urlParams.get('auto_drive');
+            
+            if (sessionId) {
+                console.log('🔗 Shared session detected:', sessionId);
+                
+                // Load pre-processed session data
+                setTimeout(() => {
+                    const authSection = document.getElementById('authenticated');
+                    if (authSection && authSection.style.display === 'block') {
+                        console.log('✅ User authenticated, loading shared session');
+                        loadSharedSession(sessionId);
+                    } else {
+                        console.log('⚠️ User not authenticated, will load session after login');
+                        // Store session ID to load after authentication
+                        sessionStorage.setItem('pendingSessionId', sessionId);
+                    }
+                }, 2000);
+            }
+            // Auto-process feature: Check for auto_drive URL parameter
+            else if (autoDriveUrl) {
+                console.log('🚀 Auto-process mode detected:', autoDriveUrl);
+                
+                // Auto-fill the Drive URL field
+                const driveInput = document.getElementById('driveUrl');
+                if (driveInput) {
+                    driveInput.value = autoDriveUrl;
+                    console.log('✅ Drive URL auto-filled');
+                    
+                    // Wait for authentication check to complete, then auto-start
+                    setTimeout(() => {
+                        const authSection = document.getElementById('authenticated');
+                        if (authSection && authSection.style.display === 'block') {
+                            console.log('✅ User authenticated, starting auto-process');
+                            showStatus('processStatus', '🚀 Auto-processing your photos...', 'info');
+                            processPhotos();
+                        } else {
+                            console.log('⚠️ User not authenticated yet, waiting for login');
+                        }
+                    }, 2000);
+                }
+            }
+        });
+        
+        function checkAuthStatus() {
+            fetch('/auth/status', { credentials: 'same-origin' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.authenticated) {
+                        document.getElementById('authenticated').style.display = 'block';
+                        document.getElementById('notAuthenticated').style.display = 'none';
+                        document.getElementById('mainContent').style.display = 'grid';
+                        document.getElementById('userEmail').textContent = data.user.email;
+                        // Show My Photos button when authenticated
+                        document.getElementById('myPhotosBtn').style.display = 'block';
+                    } else {
+                        document.getElementById('authenticated').style.display = 'none';
+                        document.getElementById('notAuthenticated').style.display = 'block';
+                        document.getElementById('mainContent').style.display = 'none';
+                        // Hide My Photos button when not authenticated
+                        document.getElementById('myPhotosBtn').style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking auth status:', error);
+                    document.getElementById('notAuthenticated').style.display = 'block';
+                    document.getElementById('mainContent').style.display = 'none';
+                });
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFile = file;
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileSize').textContent = formatFileSize(file.size);
+                document.getElementById('fileInfo').style.display = 'block';
+                document.getElementById('searchBtn').disabled = false;
+                
+                // Show success status
+                const status = document.getElementById('searchStatus');
+                status.textContent = `✅ Selected: ${file.name} (${formatFileSize(file.size)})`;
+                status.className = 'status success';
+                status.style.display = 'block';
+                
+                // Use FileReader to read file as data URL and display it
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Get the image and container elements
+                    const previewContainer = document.getElementById('selfiePreviewContainer');
+                    const previewImage = document.getElementById('selfiePreview');
+                    
+                    // Set the image source to the data URL
+                    previewImage.src = e.target.result;
+                    
+                    // Make the preview container visible
+                    previewContainer.style.display = 'block';
+                    
+                    // Store the data URL for later use
+                    selectedFile.dataURL = e.target.result;
+                    
+                    console.log('📁 File read as data URL:', e.target.result.substring(0, 50) + '...');
+                };
+                
+                reader.onerror = function() {
+                    console.error('❌ Error reading file:', reader.error);
+                    const status = document.getElementById('searchStatus');
+                    status.textContent = `❌ Error reading file: ${reader.error}`;
+                    status.className = 'status error';
+                    status.style.display = 'block';
+                };
+                
+                // Read the file as a data URL
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+
+        // Local search functionality
+        let selectedLocalFiles = [];
+        let currentSearchMode = 'cloud';
+
+        function toggleSearchMode(mode) {
+            currentSearchMode = mode;
+            const localContainer = document.getElementById('localSearchContainer');
+            const cloudContainer = document.getElementById('cloudSearchContainer');
+            
+            if (mode === 'local') {
+                localContainer.style.display = 'block';
+                cloudContainer.style.display = 'none';
+                console.log('🔍 Switched to Local Search mode');
+            } else {
+                localContainer.style.display = 'none';
+                cloudContainer.style.display = 'block';
+                selectedLocalFiles = [];
+                console.log('☁️ Switched to Cloud Search mode');
+            }
+        }
+
+        function selectLocalFolder() {
+            const folderInput = document.getElementById('localFolderInput');
+            folderInput.click();
+        }
+        
+        function clearLocalFolder() {
+            // Clear local folder selection
+            selectedLocalFiles = [];
+            document.getElementById('localFolderInput').value = '';
+            document.getElementById('selectedFolderPath').textContent = '';
+            document.getElementById('folderInfo').style.display = 'none';
+            document.getElementById('clearFolderBtn').style.display = 'none';
+            
+            // Remove depth warning if exists
+            const depthWarning = document.getElementById('depthWarning');
+            if (depthWarning) {
+                depthWarning.remove();
+            }
+            
+            // Disable search button
+            document.getElementById('searchBtn').disabled = true;
+            document.getElementById('searchBtn').textContent = 'Find My Photos';
+            
+            // Unlock Drive URL
+            lockDriveUrl(false);
+            
+            console.log('🧹 Local folder selection cleared');
+        }
+        
+        function clearDriveUrl() {
+            // Clear Drive URL
+            document.getElementById('driveUrl').value = '';
+            document.getElementById('clearDriveBtn').style.display = 'none';
+            
+            // Unlock local folder
+            lockLocalFolder(false);
+            
+            console.log('🧹 Drive URL cleared');
+        }
+
+        function handleLocalFolderSelection(input) {
+            const files = Array.from(input.files);
+            selectedLocalFiles = files;
+            
+            // Filter for image files
+            const imageFiles = files.filter(file => {
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp', 'image/webp'];
+                return validTypes.includes(file.type);
+            });
+            
+            // Analyze folder structure for multi-folder support
+            const folderStructure = {};
+            let maxDepth = 0;
+            
+            imageFiles.forEach(file => {
+                const pathParts = file.webkitRelativePath.split('/');
+                const folderPath = pathParts.slice(0, -1).join('/') || 'root';
+                const depth = pathParts.length - 1;
+                
+                maxDepth = Math.max(maxDepth, depth);
+                folderStructure[folderPath] = (folderStructure[folderPath] || 0) + 1;
+            });
+            
+            const folderCount = Object.keys(folderStructure).length;
+            
+            console.log(`📁 Selected folder with ${files.length} files`);
+            console.log(`📷 Found ${imageFiles.length} image files across ${folderCount} folders`);
+            console.log(`📁 Maximum depth: ${maxDepth} levels`);
+            
+            // Update UI with enhanced folder info
+            const rootFolder = files.length > 0 ? files[0].webkitRelativePath.split('/')[0] : 'Unknown';
+            const folderSummary = folderCount > 1 ? `${rootFolder} + ${folderCount-1} subfolders` : rootFolder;
+            
+            document.getElementById('selectedFolderPath').textContent = `📁 Selected: ${folderSummary}`;
+            document.getElementById('photoCount').textContent = imageFiles.length;
+            document.getElementById('folderCount').textContent = folderCount;
+            
+            // Add depth warning if needed
+            const folderInfo = document.getElementById('folderInfo');
+            folderInfo.style.display = 'block';
+            
+            // Add or update depth warning
+            let depthWarning = document.getElementById('depthWarning');
+            if (maxDepth > 3) {
+                if (!depthWarning) {
+                    depthWarning = document.createElement('div');
+                    depthWarning.id = 'depthWarning';
+                    depthWarning.style.cssText = 'margin-top: 0.5rem; padding: 0.5rem; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 4px; color: #856404; font-size: 0.9rem;';
+                    folderInfo.appendChild(depthWarning);
+                }
+                depthWarning.innerHTML = `⚠️ Deep folder structure detected (${maxDepth} levels). Processing may take longer.`;
+            } else if (depthWarning) {
+                depthWarning.remove();
+            }
+            
+            // Enable search button
+            document.getElementById('searchBtn').disabled = false;
+            document.getElementById('searchBtn').textContent = `🔍 Search ${imageFiles.length} Photos`;
+            
+            // Lock Drive URL input when local folder is selected
+            if (imageFiles.length > 0) {
+                lockDriveUrl(true);
+                // Show clear button for local folder
+                document.getElementById('clearFolderBtn').style.display = 'inline-block';
+            }
+        }
+
+        function processDriveFolder() {
+            const driveUrl = document.getElementById('driveUrl').value;
+            
+            if (!driveUrl) {
+                showStatus('searchStatus', '❌ Please enter a Google Drive URL', 'error');
+                return;
+            }
+            
+            console.log(`☁️ Processing Google Drive folder: ${driveUrl}`);
+            
+            // Show loading
+            showStatus('searchStatus', '☁️ Processing Google Drive folder...', 'info');
+            document.getElementById('searchLoading').style.display = 'block';
+            
+            // Simulate processing with mock data
+            setTimeout(() => {
+                const mockPhotoCount = Math.floor(Math.random() * 100) + 50; // 50-150 photos
+                const mockFolderCount = Math.floor(Math.random() * 10) + 5; // 5-15 folders
+                
+                // Update UI
+                document.getElementById('drivePhotoCount').textContent = mockPhotoCount;
+                document.getElementById('driveFolderCount').textContent = mockFolderCount;
+                document.getElementById('driveInfo').style.display = 'block';
+                
+                // Enable search button
+                document.getElementById('searchBtn').disabled = false;
+                document.getElementById('searchBtn').textContent = `🔍 Search ${mockPhotoCount} Photos`;
+                
+                document.getElementById('searchLoading').style.display = 'none';
+                showStatus('searchStatus', `✅ Processed Google Drive folder with ${mockPhotoCount} photos!`, 'success');
+                
+                console.log(`✅ Google Drive processing completed: ${mockPhotoCount} photos, ${mockFolderCount} folders`);
+            }, 2000);
+        }
+
+        function searchLocalPhotos() {
+            if (selectedLocalFiles.length === 0) {
+                showStatus('searchStatus', '❌ Please select a folder first', 'error');
+                return;
+            }
+            
+            const threshold = document.getElementById('thresholdSlider').value / 100;
+            const imageFiles = selectedLocalFiles.filter(file => {
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp', 'image/webp'];
+                return validTypes.includes(file.type);
+            });
+            
+            console.log(`🔍 Starting local search with ${imageFiles.length} photos`);
+            console.log(`🎯 Threshold: ${threshold}`);
+            
+            // Show loading
+            showStatus('searchStatus', `🔍 Searching ${imageFiles.length} local photos...`, 'info');
+            document.getElementById('searchLoading').style.display = 'block';
+            
+            // For now, simulate local search with mock results
+            setTimeout(() => {
+                const mockResults = imageFiles.slice(0, 5).map((file, index) => ({
+                    photo_name: file.name,
+                    photo_path: file.webkitRelativePath,
+                    similarity: 0.7 + (Math.random() * 0.3) // 0.7 to 1.0
+                }));
+                
+                console.log(`✅ Local search completed: ${mockResults.length} matches`);
+                displayResults(mockResults);
+                
+                document.getElementById('searchLoading').style.display = 'none';
+                showStatus('searchStatus', `✅ Found ${mockResults.length} matches in local photos!`, 'success');
+            }, 2000);
+        }
+
+        function processPhotos() {
+            const driveUrl = document.getElementById('driveUrl').value.trim();
+            const forceReprocess = document.getElementById('forceReprocess').checked;
+            const selectedFolder = document.getElementById('selectedFolderPath').textContent;
+            
+            // Check if cloud URL is provided
+            if (driveUrl) {
+                processDriveFolder(driveUrl, forceReprocess);
+            }
+            // Check if local folder is selected
+            else if (selectedFolder && selectedFolder !== 'No folder selected') {
+                processLocalFolder();
+            }
+            else {
+                showStatus('processStatus', 'Please either enter a cloud URL or select a local folder', 'error');
+                return;
+            }
+        }
+
+        function processLocalFolder() {
+            if (!selectedLocalFiles || selectedLocalFiles.length === 0) {
+                showStatus('processStatus', 'Please select a local folder first', 'error');
+                return;
+            }
+
+            const forceReprocess = document.getElementById('forceReprocess').checked;
+
+            // Show local progress bar
+            const fileCount = selectedLocalFiles.length;
+            showLocalProgressBar(fileCount);
+
+            // Create FormData to upload files
+            const formData = new FormData();
+            
+            // Add all selected files to FormData
+            for (let i = 0; i < selectedLocalFiles.length; i++) {
+                formData.append('files', selectedLocalFiles[i]);
+            }
+            
+            // Add other parameters
+            formData.append('force_reprocess', forceReprocess);
+
+            // Debug: Log what we're sending
+            console.log(`📤 Uploading ${selectedLocalFiles.length} files to /process_local`);
+            console.log('📋 FormData contents:', Array.from(formData.entries()).map(([key, value]) => 
+                key === 'files' ? `${key}: ${value.name} (${value.size} bytes)` : `${key}: ${value}`
+            ));
+
+            // Send files to backend
+            fetch('/process_local', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                console.log('📡 Response status:', response.status);
+                console.log('📡 Response headers:', response.headers);
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    if (data.status === 'processing') {
+                        // Update progress to show processing
+                        updateLocalProgress(50, 'Processing photos...', `Analyzing ${fileCount} photos`);
+                        
+                        // Start polling for completion
+                        startLocalProgressPolling();
+                    } else {
+                        // Immediate completion
+                        updateLocalProgress(100, 'Complete!', `Processed ${data.processed_count} faces`);
+                        setTimeout(() => {
+                            hideLocalProgressBar();
+                        const message = data.cached_result ? 
+                            `✅ ${data.message} (using cache)` : 
+                            `✅ Successfully processed ${data.processed_count} faces from ${data.total_files} uploaded images`;
+                        showStatus('processStatus', message, 'success');
+                        document.getElementById('searchBtn').disabled = false;
+                        }, 2000);
+                    }
+                } else {
+                    hideLocalProgressBar();
+                    let errorMessage = data.error || 'Unknown error occurred';
+                    
+                    if (data.upgrade_needed) {
+                        errorMessage += ` <a href="/pricing" style="color: var(--primary); text-decoration: underline;">Upgrade your plan</a>`;
+                    }
+                    
+                    showStatus('processStatus', `❌ ${errorMessage}`, 'error');
+                }
+            })
+            .catch(error => {
+                hideLocalProgressBar();
+                console.error('Error:', error);
+                showStatus('processStatus', `❌ Network error: ${error.message}`, 'error');
+            });
+        }
+
+
+
+        function processDriveFolder(driveUrl, forceReprocess) {
+            
+            if (!driveUrl) {
+                showStatus('processStatus', 'Please enter a Google Drive URL', 'error');
+                return;
+            }
+
+            // Always use bot method (service account)
+            const endpoint = '/process_drive_shared';
+
+            // Start progress tracking
+            document.getElementById('processLoading').style.display = 'block';
+            const statusMessage = 'Processing with bot (no sign-in required)...';
+            showStatus('processStatus', statusMessage, 'info');
+
+            // Send request to backend
+            fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    drive_url: driveUrl,
+                    force_reprocess: forceReprocess,
+                    max_depth: parseInt(document.getElementById('maxDepth').value) || 10
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('processLoading').style.display = 'none';
+                if (data.success) {
+                    if (data.status === 'processing') {
+                        showStatus('processStatus', `🔄 ${data.message}`, 'info');
+                        // Show the beautiful progress bar
+                        showProgressBar();
+                    } else if (data.status === 'completed') {
+                        // Bot method completed immediately - show progress bar briefly then success
+                        showStatus('processStatus', `🔄 ${data.message}`, 'info');
+                        showProgressBar();
+                        
+                        // Simulate progress completion
+                        setTimeout(() => {
+                            const message = data.message || `✅ Processed ${data.processed_count} photos successfully!`;
+                            showStatus('processStatus', `✅ ${message}`, 'success');
+                            
+                            // Show next steps with share button
+                            const nextSteps = document.getElementById('nextSteps');
+                            if (nextSteps) nextSteps.style.display = 'block';
+                        }, 1000);
+                    } else {
+                        const message = data.message || `✅ Processed ${data.processed_count} photos successfully!`;
+                        showStatus('processStatus', `✅ ${message}`, 'success');
+                        // Keep progress bar open to show Share button
+                    }
+                } else {
+                    showStatus('processStatus', `❌ Error: ${data.error}`, 'error');
+                    // hideProgressBar(); // Keep open even on error for debugging
+                }
+            })
+            .catch(error => {
+                document.getElementById('processLoading').style.display = 'none';
+                showStatus('processStatus', `❌ Error: ${error.message}`, 'error');
+            });
+        }
+
+        // Open share page with processed folder URL
+        function openSharePage() {
+            const driveUrlInput = document.getElementById('driveUrl');
+            const folderDepthInput = document.getElementById('folderDepth');
+            
+            if (!driveUrlInput || !driveUrlInput.value.trim()) {
+                alert('No Drive URL found. Please process photos first.');
+                return;
+            }
+            
+            const driveUrl = driveUrlInput.value.trim();
+            const folderDepth = folderDepthInput ? folderDepthInput.value : '10';
+            
+            // Open link generator with pre-filled Drive URL and folder info
+            const shareUrl = `/admin/link-generator?drive=${encodeURIComponent(driveUrl)}&depth=${folderDepth}`;
+            window.open(shareUrl, '_blank');
+        }
+
+        // NEW: Load pre-processed shared session
+        function loadSharedSession(sessionId) {
+            console.log('📥 Loading shared session:', sessionId);
+            
+            // Show loading message
+            showStatus('processStatus', '📥 Loading pre-processed photos from shared session...', 'info');
+            
+            // Call backend to load session
+            fetch(`/api/load-share-session/${sessionId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log('✅ Session data loaded:', data);
+                        
+                        // Lock entire Step 1 section for shared sessions
+                        const step1Section = document.querySelector('.section:first-of-type');
+                        const processBtn = document.querySelector('.btn[onclick="processPhotos()"]');
+                        const driveInput = document.getElementById('driveUrl');
+                        const folderDepthInput = document.getElementById('folderDepth');
+                        const reprocessCheckbox = document.getElementById('forceReprocess');
+                        const localFolderBtn = document.querySelector('.btn-outline[onclick="selectLocalFolder()"]');
+                        
+                        // Hide/disable all Step 1 inputs
+                        if (driveInput) driveInput.style.display = 'none';
+                        if (folderDepthInput) folderDepthInput.parentElement.style.display = 'none';
+                        if (reprocessCheckbox) reprocessCheckbox.parentElement.style.display = 'none';
+                        if (localFolderBtn) localFolderBtn.parentElement.style.display = 'none';
+                        if (processBtn) processBtn.style.display = 'none';
+                        
+                        // Show simple message in Step 1
+                        if (step1Section) {
+                            const existingStatus = step1Section.querySelector('#processStatus');
+                            if (existingStatus) existingStatus.style.display = 'none';
+                            
+                            const simpleMsg = document.createElement('div');
+                            simpleMsg.style.cssText = 'padding: 2rem; text-align: center; background: linear-gradient(135deg, #34a853, #0d8f3f); color: white; border-radius: 12px; margin: 1rem 0;';
+                            const eventName = data.metadata.event_name || 'Photos';
+                            simpleMsg.innerHTML = `
+                                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">✅</div>
+                                <div style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem;">${eventName} Ready!</div>
+                                <div style="font-size: 0.95rem; opacity: 0.9;">Upload your selfie in Step 2 and find yourself instantly</div>
+                            `;
+                            step1Section.appendChild(simpleMsg);
+                        }
+                        
+                        // Enable search immediately
+                        const searchBtn = document.getElementById('searchBtn');
+                        if (searchBtn) {
+                            searchBtn.disabled = false;
+                        }
+                        
+                        // Scroll to search section
+                        setTimeout(() => {
+                            const searchSection = document.querySelector('.section:nth-child(2)');
+                            if (searchSection) {
+                                searchSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }
+                        }, 500);
+                        
+                        console.log('✅ Shared session loaded - Step 1 locked, Step 2 ready');
+                    } else {
+                        showStatus('processStatus', `❌ ${data.error}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading session:', error);
+                    showStatus('processStatus', '❌ Failed to load shared session', 'error');
+                });
+        }
+
+        function searchForPerson() {
+            if (!selectedFile) {
+                showStatus('searchStatus', 'Please select a selfie photo first', 'error');
+                return;
+            }
+
+            // Check search mode and route accordingly
+            if (currentSearchMode === 'local') {
+                searchLocalPhotos();
+                return;
+            }
+
+            const threshold = document.querySelector('input[name="threshold"]:checked').value;
+            
+            console.log('🔍 Starting search with:');
+            console.log('🔍 Selected file:', selectedFile);
+            console.log('🔍 File name:', selectedFile.name);
+            console.log('🔍 File size:', selectedFile.size);
+            console.log('🔍 File type:', selectedFile.type);
+            console.log('🔍 Threshold:', threshold);
+            console.log('🔍 Has dataURL:', !!selectedFile.dataURL);
+            
+            // Show loading
+            document.getElementById('searchLoading').style.display = 'block';
+            showStatus('searchStatus', 'Searching for matches...', 'info');
+
+            // Create form data
+            const formData = new FormData();
+            formData.append('selfie', selectedFile);
+            formData.append('threshold', threshold);
+
+            console.log('🔍 FormData created with:');
+            console.log('🔍 - selfie:', selectedFile);
+            console.log('🔍 - threshold:', threshold);
+
+            // Send request to backend
+            fetch('/search', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                console.log('🔍 Raw response:', response);
+                console.log('🔍 Response status:', response.status);
+                console.log('🔍 Response headers:', response.headers);
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('searchLoading').style.display = 'none';
+                console.log('🔍 Search response data:', data);
+                console.log('🔍 Response success:', data.success);
+                console.log('🔍 Raw JSON string:', JSON.stringify(data, null, 2));
+                
+                // Enhanced match detection - check multiple possible fields
+                let matches = data.matches || data.results || data.data || [];
+                let matchCount = matches.length;
+                
+                console.log('🔍 Matches array:', matches);
+                console.log('🔍 Matches count:', matchCount);
+                console.log('🔍 Faces detected:', data.faces_detected);
+                console.log('🔍 Response message:', data.message);
+                
+                // Handle different response scenarios
+                if (!data.success) {
+                    displayResults([]);
+                    showStatus('searchStatus', data.error || data.message || '❌ Search failed', 'error');
+                    return;
+                }
+                
+                // Priority 1: Check if we actually have matches (regardless of faces_detected)
+                if (matchCount > 0) {
+                    console.log('🔍 First match sample:', matches[0]);
+                    console.log('🔍 All match keys:', matches.map(m => Object.keys(m)));
+                    displayResults(matches);
+                    showStatus('searchStatus', `✅ Found ${matchCount} matches!`, 'success');
+                    return;
+                }
+                
+                // Priority 2: Check faces_detected only if no matches found
+                if (data.faces_detected === 0) {
+                    displayResults([]);
+                    showStatus('searchStatus', '⚠️ No face detected in your selfie. Please try with a clearer photo.', 'warning');
+                    return;
+                }
+                
+                // Priority 3: No matches but face was detected
+                displayResults([]);
+                const message = data.message || '❌ No matches found above the similarity threshold';
+                showStatus('searchStatus', message, 'info');
+            })
+            .catch(error => {
+                console.error('❌ Search error:', error);
+                document.getElementById('searchLoading').style.display = 'none';
+                showStatus('searchStatus', `❌ Error: ${error.message}`, 'error');
+            });
+        }
+
+        function confirmSearch() {
+            // Check search mode and route accordingly
+            if (currentSearchMode === 'local') {
+                searchLocalPhotos();
+                return;
+            }
+
+            const threshold = document.getElementById('thresholdSlider').value / 100;
+            
+            console.log('🔍 Starting search with:');
+            console.log('🔍 Selected file:', selectedFile);
+            console.log('🔍 File name:', selectedFile.name);
+            console.log('🔍 File size:', selectedFile.size);
+            console.log('🔍 File type:', selectedFile.type);
+            console.log('🔍 Threshold:', threshold);
+            console.log('🔍 Has dataURL:', !!selectedFile.dataURL);
+            
+            // Show loading
+            document.getElementById('searchLoading').style.display = 'block';
+            showStatus('searchStatus', 'Searching for matches...', 'info');
+
+            // Create form data
+            const formData = new FormData();
+            formData.append('selfie', selectedFile);
+            formData.append('threshold', threshold);
+
+            console.log('🔍 FormData created with:');
+            console.log('🔍 - selfie:', selectedFile);
+            console.log('🔍 - threshold:', threshold);
+
+            // Send request to backend
+            fetch('/search', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                console.log('🔍 Raw response:', response);
+                console.log('🔍 Response status:', response.status);
+                console.log('🔍 Response headers:', response.headers);
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('searchLoading').style.display = 'none';
+                console.log('🔍 Search response data:', data);
+                console.log('🔍 Response success:', data.success);
+                console.log('🔍 Matches count:', data.matches ? data.matches.length : 'No matches field');
+                
+                if (data.matches && data.matches.length > 0) {
+                    console.log('🔍 First match sample:', data.matches[0]);
+                    console.log('🔍 All match keys:', data.matches.map(m => Object.keys(m)));
+                }
+                
+                if (data.success) {
+                    showStatus('searchStatus', `✅ Found ${data.matches.length} matches!`, 'success');
+                    displayResults(data.matches);
+                } else {
+                    showStatus('searchStatus', `❌ Error: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                document.getElementById('searchLoading').style.display = 'none';
+                console.error('🔍 Search error:', error);
+                showStatus('searchStatus', `❌ Error: ${error.message}`, 'error');
+            });
+        }
+
+        function displayResults(matches) {
+            const resultsDiv = document.getElementById('results');
+            const downloadAllContainer = document.getElementById('downloadAllContainer');
+            resultsDiv.innerHTML = '';
+            
+            console.log('🔍 Displaying results:', matches);
+            console.log('📁 Results div:', resultsDiv);
+
+            if (!matches || matches.length === 0) {
+                downloadAllContainer.style.display = 'none';
+                resultsDiv.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No matches found</p>';
+                return;
+            }
+            
+            // Load learning stats (hidden from user)
+            // loadLearningStats(); // Hidden for now
+            
+            // Show download all button when there are results
+            downloadAllContainer.style.display = 'block';
+
+            matches.forEach((match, index) => {
+                console.log(`📸 Processing match ${index}:`, match);
+                console.log(`📸 Match keys:`, Object.keys(match));
+                console.log(`📸 photo_path:`, match.photo_path);
+                console.log(`📸 photo_name:`, match.photo_name);
+                console.log(`📸 photo_reference:`, match.photo_reference);
+                console.log(`📸 similarity:`, match.similarity);
+                console.log(`📸 similarity_score:`, match.similarity_score);
+                console.log(`📸 similarity_percent:`, match.similarity_percent);
+                
+                const photoCard = document.createElement('div');
+                photoCard.className = 'photo-card';
+                
+                // Use the full photo_path for the photo source to get original files
+                const photoPath = match.photo_path || match.photo_reference || 'unknown.jpg';
+                console.log(`📁 Photo path: ${photoPath}`);
+                console.log(`📁 Photo path type:`, typeof photoPath);
+                console.log(`📁 Photo path length:`, photoPath.length);
+                
+                // Check if path contains forward slashes that might cause issues
+                if (photoPath.includes('/')) {
+                    console.log(`⚠️ WARNING: Path contains forward slashes: ${photoPath}`);
+                    console.log(`⚠️ This might cause file serving issues!`);
+                }
+                
+                // Create the photo card with original file path
+                const photoUrl = `/photo/${photoPath}`;
+                console.log(`🌐 Photo URL: ${photoUrl}`);
+                console.log(`🌐 Raw path: ${photoPath}`);
+                
+                photoCard.innerHTML = `
+                    <img src="${photoUrl}" alt="Match" 
+                         onload="console.log('✅ Image loaded successfully:', '${photoPath}')"
+                         onerror="console.log('❌ Image failed to load:', '${photoPath}', 'URL:', this.src, 'Error details:', event); this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjE1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxNTAlIiBmaWxsPSIjZjBmMGYwIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlPC90ZXh0Pjwvc3ZnPg=='"
+                                     style="cursor: pointer;"
+                         onclick="openModal('${photoPath}', '${match.photo_name || 'Unknown'}', ${match.similarity || 0})" loading="lazy">
+                    <div class="photo-info">
+                        <h4>${match.photo_name || 'Unknown'}</h4>
+                        <p>Similarity: ${((match.similarity || 0) * 100).toFixed(1)}%</p>
+                        <div class="feedback-buttons">
+                            <button class="feedback-btn btn-success" onclick="recordFeedback('${photoPath}', true, ${match.similarity || 0}, this)" title="This is the correct person">
+                                ✅ Correct
+                            </button>
+                            <button class="feedback-btn btn-danger" onclick="recordFeedback('${photoPath}', false, ${match.similarity || 0}, this)" title="This is NOT the correct person">
+                                ❌ Wrong
+                            </button>
+                        </div>
+                        <button class="btn btn-secondary" onclick="downloadPhoto('${photoPath}')">Download</button>
+                    </div>
+                `;
+                
+                resultsDiv.appendChild(photoCard);
+                console.log(`✅ Added photo card ${index} with path: ${photoPath}`);
+                console.log(`✅ Photo card HTML created successfully`);
+            });
+        }
+
+        function downloadPhoto(photoPath) {
+            // Create download link for original file
+            const link = document.createElement('a');
+            link.href = `/photo/${encodeURIComponent(photoPath)}`;
+            link.download = photoPath.split('/').pop() || 'photo.jpg';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Record download as positive feedback for learning
+            recordDownloadFeedback(photoPath);
+        }
+        
+        function recordDownloadFeedback(photoPath) {
+            console.log(`📥 Recording download feedback: ${photoPath}`);
+            
+            // Find the similarity score for this photo
+            const photoCard = document.querySelector(`[onclick*="${photoPath}"]`);
+            let similarityScore = 0.8; // Default similarity
+            
+            if (photoCard) {
+                const similarityText = photoCard.querySelector('p');
+                if (similarityText) {
+                    const match = similarityText.textContent.match(/(\d+\.?\d*)%/);
+                    if (match) {
+                        similarityScore = parseFloat(match[1]) / 100;
+                    }
+                }
+            }
+            
+            // Send download feedback to server
+            fetch('/download-feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    photo_reference: photoPath,
+                    similarity_score: similarityScore
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ Download feedback recorded successfully!');
+                    // showStatus('searchStatus', `🧠 Download recorded - system is learning!`, 'success'); // Hidden message
+                } else {
+                    console.log('⚠️ Download feedback failed:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error recording download feedback:', error);
+            });
+        }
+
+        function recordFeedback(photoPath, isCorrect, similarity, buttonElement) {
+            console.log(`📝 Recording feedback: ${photoPath} -> ${isCorrect ? '✅ CORRECT' : '❌ WRONG'}`);
+            
+            // Get the current selfie path (you might need to store this globally)
+            const selfiePath = selectedFile ? selectedFile.name : 'unknown';
+            
+            // Find the parent container with both buttons
+            const feedbackContainer = buttonElement.closest('.feedback-buttons');
+            const allButtons = feedbackContainer.querySelectorAll('.feedback-btn');
+            
+            // Disable all buttons immediately
+            allButtons.forEach(btn => {
+                btn.disabled = true;
+                if (btn === buttonElement) {
+                    btn.textContent = isCorrect ? '✅ Recording...' : '❌ Recording...';
+                } else {
+                    btn.textContent = '⏳ Recording...';
+                }
+            });
+            
+            // Send feedback to server
+            fetch('/feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify({
+                    photo_reference: photoPath,
+                    is_correct: isCorrect,
+                    selfie_path: selfiePath,
+                    similarity_score: similarity
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('✅ Feedback recorded successfully!');
+                    // showStatus('searchStatus', `🧠 Feedback recorded! The system is learning...`, 'success'); // Hidden message
+                    
+                    // Update all button texts
+                    allButtons.forEach(btn => {
+                        if (btn === buttonElement) {
+                            btn.textContent = isCorrect ? '✅ Recorded!' : '❌ Recorded!';
+                        } else {
+                            btn.textContent = '✅ Recorded!';
+                        }
+                    });
+                    
+                    // Add fade-away effect to all buttons after a short delay
+                    setTimeout(() => {
+                        allButtons.forEach(btn => {
+                            btn.classList.add('fade-away');
+                        });
+                        
+                        // Hide all buttons completely after fade animation
+                        setTimeout(() => {
+                            allButtons.forEach(btn => {
+                                btn.style.display = 'none';
+                            });
+                        }, 500); // Match the CSS transition duration
+                    }, 1000); // Wait 1 second before starting fade
+                    
+                } else {
+                    console.error('❌ Failed to record feedback:', data.error);
+                    showStatus('searchStatus', `❌ Failed to record feedback: ${data.error}`, 'error');
+                    
+                    // Re-enable all buttons on error
+                    allButtons.forEach(btn => {
+                        btn.disabled = false;
+                        if (btn === buttonElement) {
+                            btn.textContent = isCorrect ? '✅ Correct' : '❌ Wrong';
+                        } else {
+                            btn.textContent = btn.classList.contains('btn-success') ? '✅ Correct' : '❌ Wrong';
+                        }
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('❌ Error recording feedback:', error);
+                showStatus('searchStatus', `❌ Error recording feedback: ${error.message}`, 'error');
+                
+                // Re-enable all buttons on error
+                allButtons.forEach(btn => {
+                    btn.disabled = false;
+                    if (btn === buttonElement) {
+                        btn.textContent = isCorrect ? '✅ Correct' : '❌ Wrong';
+                    } else {
+                        btn.textContent = btn.classList.contains('btn-success') ? '✅ Correct' : '❌ Wrong';
+                    }
+                });
+            });
+        }
+
+        function loadLearningStats() {
+            fetch('/learning-stats', { credentials: 'same-origin' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.stats) {
+                        displayLearningStats(data.stats);
+                    }
+                })
+                .catch(error => {
+                    console.log('Learning stats not available:', error);
+                });
+        }
+        
+        function displayLearningStats(stats) {
+            // Create learning stats display
+            const learningDiv = document.createElement('div');
+            learningDiv.className = 'learning-stats';
+            learningDiv.innerHTML = `
+                <div class="learning-header">
+                    <h3>🧠 AI Learning Progress</h3>
+                    <div class="learning-indicator ${stats.learning_active ? 'active' : 'inactive'}">
+                        ${stats.learning_active ? '✅ Learning Active' : '⏳ Learning Pending'}
+                    </div>
+                </div>
+                <div class="learning-metrics">
+                    <div class="metric">
+                        <span class="metric-value">${stats.accuracy_percentage}%</span>
+                        <span class="metric-label">Accuracy</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-value">${stats.total_feedback}</span>
+                        <span class="metric-label">Feedback Points</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-value">${(stats.current_threshold * 100).toFixed(0)}%</span>
+                        <span class="metric-label">Threshold</span>
+                    </div>
+                </div>
+                <div class="learning-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${stats.accuracy_percentage}%"></div>
+                    </div>
+                    <p class="learning-tip">
+                        ${stats.learning_active ? 
+                            'The AI is learning from your feedback to improve accuracy!' : 
+                            'Rate a few results to activate AI learning (${5 - stats.total_feedback} more needed)'}
+                    </p>
+                </div>
+            `;
+            
+            // Insert learning stats at the top of results
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.insertBefore(learningDiv, resultsDiv.firstChild);
+        }
+
+        function downloadAllPhotos() {
+            const resultsDiv = document.getElementById('results');
+            const photoCards = resultsDiv.querySelectorAll('.photo-card');
+            
+            if (photoCards.length === 0) {
+                showStatus('searchStatus', 'No photos to download', 'error');
+                return;
+            }
+            
+            console.log(`📦 Starting ZIP creation for ${photoCards.length} photos...`);
+            
+            // Show loading status
+            const downloadBtn = document.querySelector('#downloadAllContainer .btn');
+            const originalText = downloadBtn.textContent;
+            downloadBtn.textContent = '⏳ Creating ZIP...';
+            downloadBtn.disabled = true;
+            
+            // Collect all photo paths
+            const photoPaths = [];
+            photoCards.forEach((card) => {
+                const img = card.querySelector('img');
+                const onclickAttr = img.getAttribute('onclick');
+                
+                // Extract photo path from onclick="openModal('PHOTO_PATH', ...)"
+                if (onclickAttr && onclickAttr.includes("openModal('")) {
+                    const startIndex = onclickAttr.indexOf("openModal('") + 11;
+                    const endIndex = onclickAttr.indexOf("'", startIndex);
+                    if (endIndex > startIndex) {
+                        const photoPath = onclickAttr.substring(startIndex, endIndex);
+                        photoPaths.push(photoPath);
+                    }
+                }
+            });
+            
+            if (photoPaths.length === 0) {
+                showStatus('searchStatus', 'No valid photo paths found', 'error');
+                downloadBtn.textContent = originalText;
+                downloadBtn.disabled = false;
+                return;
+            }
+            
+            // Create ZIP file using JSZip
+            const JSZip = window.JSZip;
+            if (!JSZip) {
+                showStatus('searchStatus', 'JSZip library not loaded. Please refresh the page.', 'error');
+                downloadBtn.textContent = originalText;
+                downloadBtn.disabled = false;
+                return;
+            }
+            
+            const zip = new JSZip();
+            let processedCount = 0;
+            let failedCount = 0;
+            
+            // Process each photo and add to ZIP
+            photoPaths.forEach((photoPath, index) => {
+                fetch(`/photo/${encodeURIComponent(photoPath)}`, { credentials: 'same-origin' })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        // Get filename from path
+                        const filename = photoPath.split('/').pop() || `photo_${index + 1}.jpg`;
+                        
+                        // Add to ZIP
+                        zip.file(filename, blob);
+                        processedCount++;
+                        console.log(`✅ Added to ZIP: ${filename}`);
+                        
+                        // Check if all photos are processed
+                        if (processedCount + failedCount === photoPaths.length) {
+                            createAndDownloadZip();
+                        }
+                    })
+                    .catch(error => {
+                        failedCount++;
+                        console.error(`❌ Failed to process ${photoPath}:`, error);
+                        
+                        // Check if all photos are processed
+                        if (processedCount + failedCount === photoPaths.length) {
+                            createAndDownloadZip();
+                        }
+                    });
+            });
+            
+            function createAndDownloadZip() {
+                try {
+                    // Generate ZIP file
+                    zip.generateAsync({type: 'blob'})
+                        .then(content => {
+                            // Create download link for ZIP
+                            const link = document.createElement('a');
+                            link.href = URL.createObjectURL(content);
+                            link.download = `matched_photos_${new Date().toISOString().slice(0, 10)}.zip`;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            
+                            // Reset button
+                            downloadBtn.textContent = originalText;
+                            downloadBtn.disabled = false;
+                            
+                            const message = `ZIP created with ${processedCount} photos${failedCount > 0 ? `, ${failedCount} failed` : ''}`;
+                            showStatus('searchStatus', message, failedCount > 0 ? 'warning' : 'success');
+                            
+                            console.log(`📦 ZIP creation complete: ${processedCount} successful, ${failedCount} failed`);
+                        })
+                        .catch(error => {
+                            console.error('❌ Failed to create ZIP:', error);
+                            showStatus('searchStatus', 'Failed to create ZIP file', 'error');
+                            downloadBtn.textContent = originalText;
+                            downloadBtn.disabled = false;
+                        });
+                } catch (error) {
+                    console.error('❌ Error in ZIP creation:', error);
+                    showStatus('searchStatus', 'Error creating ZIP file', 'error');
+                    downloadBtn.textContent = originalText;
+                    downloadBtn.disabled = false;
+                }
+            }
+        }
+
+        function showStatus(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `status ${type}`;
+            element.style.display = 'block';
+        }
+
+
+
+
+
+        // Drag and drop functionality
+        const fileUpload = document.querySelector('.file-upload');
+        
+        fileUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUpload.style.borderColor = '#007bff';
+        });
+        
+        fileUpload.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            fileUpload.style.borderColor = '#ccc';
+        });
+        
+        fileUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUpload.style.borderColor = '#ccc';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('selfieFile').files = files;
+                handleFileSelect({ target: { files: files } });
+            }
+        });
+        
+        // Modal functions
+        function openModal(photoPath, photoName, similarity) {
+            const modal = document.getElementById('photoModal');
+            const modalImg = document.getElementById('modalImage');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalPathElement = document.getElementById('modalPath');
+            const modalSimilarity = document.getElementById('modalSimilarity');
+            
+            modalImg.src = `/photo/${encodeURIComponent(photoPath)}`;
+            modalTitle.textContent = photoName;
+            modalPathElement.textContent = `Path: ${photoPath}`;
+            modalSimilarity.textContent = `Similarity: ${(similarity * 100).toFixed(1)}%`;
+            
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden'; // Prevent scrolling
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('photoModal');
+            modal.style.display = 'none';
+            document.body.style.overflow = 'auto'; // Restore scrolling
+        }
+        
+        // Close modal when clicking outside the image
+        window.onclick = function(event) {
+            const modal = document.getElementById('photoModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+        
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // Mobile navigation toggle
+        function toggleNav() {
+            document.getElementById('navMenu').classList.toggle('active');
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const nav = document.getElementById('navMenu');
+            const toggle = document.querySelector('.nav-toggle');
+            if (!nav.contains(e.target) && !toggle.contains(e.target)) {
+                nav.classList.remove('active');
+            }
+        });
+
+        // Add scroll effect to header
+        window.addEventListener('scroll', function() {
+            const header = document.querySelector('.header');
+            if (window.scrollY > 100) {
+                header.style.background = 'rgba(255, 255, 255, 0.98)';
+            } else {
+                header.style.background = 'rgba(255, 255, 255, 0.95)';
+            }
+        });
+    </script>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>About CloudFace AI</h3>
+                    <p>We create AI-powered face recognition technology that helps you discover and organize photos across your digital life. Our focus is on privacy, performance, and beautiful user experience.</p>
+                    <div class="social-links">
+                         <a href="#" class="social-link" aria-label="Follow @whoisvinodkumar on Twitter">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                            </svg>
+                        </a>
+                         <a href="#" class="social-link" aria-label="Follow @whoisvinodkumar on Instagram">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                            </svg>
+                        </a>
+                         <a href="#" class="social-link" aria-label="Subscribe to @whoisvinodkumar on YouTube">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                            </svg>
+                        </a>
+                         <a href="#" class="social-link" aria-label="Connect with @whoisvinodkumar on LinkedIn">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="/how-it-works">How It Works</a></li>
+                        <li><a href="#privacy">Privacy</a></li>
+                                                 <li><a href="/#features">Pricing</a></li>
+                        <li><a href="/blog">Blog</a></li>
+                        <li><a href="/app">Try App</a></li>
+                        <li><a href="/contact">Contact Us</a></li>
+                    </ul>
+                </div>
+                
+                                 <div class="footer-section">
+                     <h3>Services</h3>
+                     <ul>
+                         <li><a href="/#features">Face Recognition</a></li>
+                         <li><a href="/#features">Photo Organization</a></li>
+                         <li><a href="/#features">Google Drive Integration</a></li>
+                         <li><a href="/#features">AI Processing</a></li>
+                         <li><a href="/contact">Support</a></li>
+                     </ul>
+                 </div>
+                
+                <div class="footer-section">
+                    <h3>Contact Info</h3>
+                    <p>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="display: inline; margin-right: 8px;">
+                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                        </svg>
+                        E-2/22, Block E2, <br>DLF Phase 1, Sector 26A,<br>Gurugram, Haryana<br>122003
+                    </p>
+                    <p>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="display: inline; margin-right: 8px;">
+                            <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
+                        </svg>
+                        +91 9718686723
+                    </p>
+                    <p>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="display: inline; margin-right: 8px;">
+                            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                        </svg>
+                        support@cloudface-ai.com
+                    </p>
+                    <p>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" style="display: inline; margin-right: 8px;">
+                            <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"/>
+                            <path d="M12.5 7H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                        </svg>
+                        Mon-Fri: 10:00 AM-5:30 PM
+                    </p>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <div class="footer-bottom-content">
+                    <div class="footer-left">
+                        <p>&copy; 2025 cloudface-ai.com. All rights reserved.</p>
+                        <p>A product of Elephic Technologies</p>
+                        <p>Made with <span class="heart">❤</span> in Gurugram, India</p>
+                    </div>
+                    <div class="footer-links">
+                        <a href="/privacy">Privacy Policy</a>
+                        <a href="/terms">Terms & Conditions</a>
+                        <a href="/pricing">Pricing</a>
+                        <a href="/refund">Refund Policy</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Simplified Progress Bar Component -->
+    <div id="progressContainer" class="progress-container" style="display: none;">
+        <div class="progress-header">
+            <div class="progress-title">
+                <div class="progress-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                        <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h3 id="progressTitle">Processing Photos</h3>
+            </div>
+            <div class="progress-controls">
+                <button id="progressClose" class="progress-close-btn" onclick="hideProgressBar()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Simple Status Display -->
+        <div class="progress-status">
+            <div class="status-text" id="progressStatus">Initializing...</div>
+            <div class="status-details" id="progressDetails">Please wait while we process your photos</div>
+        </div>
+        
+        <!-- Main Progress Bar -->
+        <div class="main-progress">
+            <div class="progress-bar">
+                <div id="mainProgressBar" class="progress-fill"></div>
+            </div>
+            <div class="progress-percentage" id="mainPercentage">0%</div>
+        </div>
+        
+        <!-- Current Operation -->
+        <div class="current-operation" id="currentOperation">
+            <div class="operation-icon" id="operationIcon">⏳</div>
+            <div class="operation-text" id="operationText">Getting ready...</div>
+        </div>
+        
+        <!-- Next Steps (shown when complete) -->
+        <div id="nextSteps" class="next-steps" style="display: none;">
+            <div class="next-steps-title">🎉 Processing Complete!</div>
+            <div class="next-steps-content">
+                <p>Your photos have been processed successfully.</p>
+                <p><strong>Next:</strong> Go to Step 2 to search for faces in your photos.</p>
+                
+                <!-- Share Button (NEW) -->
+                <button 
+                    id="shareNowBtn" 
+                    onclick="openSharePage()" 
+                    style="margin-top: 15px; padding: 12px 24px; background: linear-gradient(135deg, #34a853, #0d8f3f); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s ease;"
+                    onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(52,168,83,0.3)'"
+                    onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'"
+                >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="18" cy="5" r="3"/>
+                        <circle cx="6" cy="12" r="3"/>
+                        <circle cx="18" cy="19" r="3"/>
+                        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                    </svg>
+                    📤 Share Now - Create Link for Others
+                </button>
+                <p style="font-size: 12px; color: #666; margin-top: 8px; text-align: center;">
+                    Share these processed photos with your team or clients
+                </p>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Simplified Progress Bar Styles -->
+    <style>
+    .progress-container {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        max-width: 500px;
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        z-index: 10000;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+    }
+
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px 16px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    }
+
+    .progress-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .progress-icon {
+        width: 28px;
+        height: 28px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+    }
+
+    .progress-title h3 {
+        margin: 0;
+        color: #1a1a1a;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .progress-close-btn {
+        background: none;
+        border: none;
+        color: #8e8e93;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 6px;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+
+    .progress-close-btn:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+        color: #1a1a1a;
+    }
+
+    .progress-status {
+        padding: 20px 24px 16px;
+        text-align: center;
+    }
+
+    .status-text {
+        font-size: 16px;
+        font-weight: 500;
+        color: #1a1a1a;
+        margin-bottom: 4px;
+    }
+
+    .status-details {
+        font-size: 14px;
+        color: #666;
+    }
+
+    .main-progress {
+        padding: 0 24px 20px;
+        text-align: center;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #f0f0f0;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 8px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+        width: 0%;
+    }
+
+    .progress-percentage {
+        font-size: 14px;
+        font-weight: 600;
+        color: #667eea;
+    }
+
+    .current-operation {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 24px;
+        background: #f8f9fa;
+        margin: 0 24px 20px;
+        border-radius: 8px;
+    }
+
+    .operation-icon {
+        font-size: 18px;
+    }
+
+    .operation-text {
+        font-size: 14px;
+        color: #333;
+    }
+
+    .next-steps {
+        padding: 20px 24px;
+        background: #f0f8ff;
+        margin: 0 24px 24px;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+    }
+
+    .next-steps-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin-bottom: 8px;
+    }
+
+    .next-steps-content {
+        font-size: 14px;
+        color: #333;
+        line-height: 1.5;
+    }
+
+    .next-steps-content p {
+        margin: 4px 0;
+    }
+
+    /* Local Progress Bar Styles */
+    .local-progress-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10001;
+    }
+
+    .local-progress-container {
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        width: 90%;
+        max-width: 450px;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .local-progress-header {
+        padding: 20px 24px 16px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        text-align: center;
+    }
+
+    .local-progress-header h3 {
+        margin: 0;
+        color: #1a1a1a;
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .local-progress-status {
+        padding: 20px 24px 16px;
+        text-align: center;
+    }
+
+    #localProgressStatus {
+        font-size: 16px;
+        font-weight: 500;
+        color: #1a1a1a;
+        margin-bottom: 4px;
+    }
+
+    #localProgressDetails {
+        font-size: 14px;
+        color: #666;
+    }
+
+    .local-main-progress {
+        padding: 0 24px 20px;
+        text-align: center;
+    }
+
+    .local-progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #f0f0f0;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 8px;
+    }
+
+    .local-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        border-radius: 4px;
+        transition: width 0.3s ease;
+        width: 0%;
+    }
+
+    .local-progress-percentage {
+        font-size: 14px;
+        font-weight: 600;
+        color: #667eea;
+    }
+
+    .local-current-operation {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 16px 24px 24px;
+        background: #f8f9fa;
+        margin: 0 24px 0;
+        border-radius: 8px;
+    }
+
+    .local-operation-icon {
+        font-size: 18px;
+    }
+
+    .local-operation-text {
+        font-size: 14px;
+        color: #333;
+    }
+
+    /* Help Guide Styles */
+    .help-guide {
+        margin-top: 12px;
+        font-size: 14px;
+    }
+
+    .help-guide details {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 12px;
+        cursor: pointer;
+    }
+
+    .help-guide summary {
+        font-weight: 500;
+        color: #495057;
+        outline: none;
+        list-style: none;
+    }
+
+    .help-guide summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .help-guide summary::before {
+        content: "▶";
+        margin-right: 8px;
+        transition: transform 0.2s ease;
+    }
+
+    .help-guide details[open] summary::before {
+        transform: rotate(90deg);
+    }
+
+    .help-guide ol, .help-guide ul {
+        margin: 12px 0 0 0;
+        padding-left: 20px;
+    }
+
+    .help-guide li {
+        margin: 6px 0;
+        color: #495057;
+        line-height: 1.4;
+    }
+
+    .help-guide small {
+        display: block;
+        color: #6c757d;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .beta-badge {
+        background: linear-gradient(135deg, #ff6b35, #f7931e);
+        color: white;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 8px;
+        margin-left: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 4px rgba(255, 107, 53, 0.3);
+    }
+
+    .threshold-option small {
+        display: block;
+        color: #6c757d;
+        font-size: 11px;
+        margin-top: 2px;
+        font-weight: normal;
+    }
+
+    .folder-path {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        color: #475569;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .file-count {
+        color: #1e293b;
+        font-size: 16px;
+        font-weight: 600;
+    }
+
+    .overall-progress {
+        padding: 24px 28px;
+        background: #ffffff;
+    }
+
+    .progress-label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        font-weight: 600;
+        color: #1a1a1a;
+        font-size: 15px;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background: #f1f5f9;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 12px;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        border-radius: 4px;
+        transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 0%;
+    }
+
+    .estimated-time {
+        font-size: 13px;
+        color: #64748b;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .current-step-container {
+        padding: 20px 28px;
+        min-height: 140px;
+        display: block;
+    }
+
+    .current-step { width: 100%; }
+
+    .step-header {
+        display: grid;
+        grid-template-columns: 40px 1fr auto;
+        align-items: center;
+        column-gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .step-icon {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        flex-shrink: 0;
+    }
+
+    .step-info { display: flex; align-items: baseline; gap: 10px; }
+
+    .step-name {
+        font-weight: 600;
+        color: #1a1a1a;
+        font-size: 16px;
+    }
+
+    .step-percentage {
+        font-weight: 700;
+        color: #667eea;
+        font-size: 16px;
+    }
+
+    .step-progress-bar {
+        width: 100%;
+        height: 6px;
+        background: #f1f5f9;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 10px;
+    }
+
+    .step-progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        border-radius: 3px;
+        transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        width: 0%;
+    }
+
+    .step-status { font-size: 14px; color: #64748b; font-weight: 500; }
+    .step-count { font-size: 13px; color: #6b7280; }
+    .step-meta-row { display: flex; justify-content: space-between; align-items: baseline; }
+
+    .step-count {
+        font-size: 13px;
+        color: #94a3b8;
+        font-weight: 500;
+    }
+
+    /* Step Navigation Dots */
+    .step-navigation {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        padding: 0 24px 20px;
+        flex-wrap: wrap;
+    }
+
+    .step-dot {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 8px;
+        transition: all 0.2s;
+        min-width: 60px;
+    }
+
+    .step-dot:hover {
+        background-color: #f1f3f4;
+    }
+
+    .step-dot.active {
+        background-color: #e8f0fe;
+    }
+
+    .step-dot.completed {
+        background-color: #e6f4ea;
+    }
+
+    .step-dot.waiting {
+        opacity: 0.5;
+    }
+
+    .dot-icon {
+        font-size: 20px;
+    }
+
+    .dot-label {
+        font-size: 10px;
+        color: #5f6368;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .step-dot.active .dot-label {
+        color: #1a73e8;
+        font-weight: 600;
+    }
+
+    .step-dot.completed .dot-label {
+        color: #34a853;
+        font-weight: 600;
+    }
+
+    .progress-messages {
+        padding: 0 24px 20px;
+    }
+
+    .progress-errors, .progress-warnings {
+        margin-bottom: 16px;
+    }
+
+    .progress-errors h4, .progress-warnings h4 {
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .progress-errors h4 {
+        color: #d93025;
+    }
+
+    .progress-warnings h4 {
+        color: #f29900;
+    }
+
+    #errorList, #warningList {
+        font-size: 13px;
+        color: #5f6368;
+        line-height: 1.4;
+    }
+
+    #errorList div, #warningList div {
+        padding: 4px 0;
+        border-bottom: 1px solid #f1f3f4;
+    }
+
+    #errorList div:last-child, #warningList div:last-child {
+        border-bottom: none;
+    }
+
+    /* Animation for progress bars */
+    @keyframes progressPulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.7; }
+        100% { opacity: 1; }
+    }
+
+
+    .progress-fill.active, .step-progress-fill.active {
+        animation: progressPulse 2s infinite;
+    }
+
+    /* Step transition animations */
+    @keyframes stepFadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .current-step {
+        animation: stepFadeIn 0.3s ease-out;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .progress-container {
+            width: 95%;
+            max-height: 90vh;
+        }
+
+        /* Make share button more touch-friendly on mobile */
+        #shareNowBtn {
+            font-size: 16px !important;
+            padding: 16px 20px !important;
+            gap: 10px !important;
+        }
+
+        #shareNowBtn svg {
+            width: 20px !important;
+            height: 20px !important;
+        }
+        
+        .progress-header, .overall-progress, .current-step-container, .step-navigation {
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+        
+        .step-navigation {
+            gap: 4px;
+        }
+        
+        .step-dot {
+            min-width: 50px;
+            padding: 6px;
+        }
+        
+        .dot-icon {
+            font-size: 18px;
+        }
+        
+        .dot-label {
+            font-size: 9px;
+        }
+    }
+    </style>
+
+    <!-- Progress Bar JavaScript -->
+    <script>
+    // Progress Bar Management
+    let progressEventSource = null;
+    let currentActiveStep = null;
+
+    // Functions moved to first script section to avoid "not defined" errors
+
+    // Export functions for use in main app - define immediately after functions
+    window.ProgressBar = {
+        show: showProgressBar,
+        hide: hideProgressBar,
+        start: startProgressTracking,
+        stop: stopProgressTracking,
+        test: function() { console.log('ProgressBar test function called'); }
+    };
+
+    // Add event listener for progress close button
+    document.addEventListener('DOMContentLoaded', function() {
+        const closeBtn = document.getElementById('progressClose');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function() {
+                hideProgressBar();
+            });
+        }
+    });
+
+    // Duplicate functions removed - using ones from first script section
+
+    // Duplicate updateProgressDisplay removed - using enhanced version from first script section
+
+    // Duplicate showCurrentStep removed - using version from first script section
+
+    </script>
+</body>
+</html>
