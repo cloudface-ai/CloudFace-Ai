@@ -1119,10 +1119,19 @@ def create_payment():
         
         # Create payment order
         if currency == 'inr':
-            result = payment_gateway.create_razorpay_order(
-                plan['price'], plan['name'], session['user_id']
-            )
-            print(f"💳 Razorpay order result: {result}")
+            # Try to use Razorpay subscription first
+            razorpay_plan_id = payment_gateway.get_razorpay_plan_id(plan_id)
+            if razorpay_plan_id:
+                result = payment_gateway.create_razorpay_subscription(
+                    razorpay_plan_id, session['user_id']
+                )
+                print(f"💳 Razorpay subscription result: {result}")
+            else:
+                # Fallback to one-time payment
+                result = payment_gateway.create_razorpay_order(
+                    plan['price'], plan['name'], session['user_id']
+                )
+                print(f"💳 Razorpay order result: {result}")
         else:
             result = payment_gateway.create_paypal_order(
                 plan['price'], plan['name'], session['user_id']

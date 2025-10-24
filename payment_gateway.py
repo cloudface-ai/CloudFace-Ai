@@ -32,7 +32,65 @@ class PaymentGateway:
         # Payment logs directory
         self.logs_dir = "storage/payment_logs"
         os.makedirs(self.logs_dir, exist_ok=True)
+        
+        # Razorpay plan ID mapping
+        self.razorpay_plans = {
+            'free': None,  # No payment needed
+            'standard': os.getenv('RAZORPAY_PLAN_STANDARD'),
+            'pro': os.getenv('RAZORPAY_PLAN_PRO'),
+            'pro_plus': os.getenv('RAZORPAY_PLAN_BUSINESS'),
+            'everything': os.getenv('RAZORPAY_PLAN_BUSINESS_PLUS'),
+            'enterprise': None  # Contact us
+        }
     
+    def get_razorpay_plan_id(self, plan_type: str) -> str:
+        """Get Razorpay plan ID for a given plan type"""
+        return self.razorpay_plans.get(plan_type)
+    
+    def create_razorpay_subscription(self, plan_id: str, user_id: str) -> Dict[str, Any]:
+        """Create Razorpay subscription using plan ID"""
+        try:
+            try:
+                import razorpay
+            except ImportError:
+                return {'success': False, 'error': 'Razorpay not installed. Run: pip install razorpay==1.3.0'}
+            
+            print(f"🔑 Creating Razorpay subscription with plan ID: {plan_id}")
+            
+            client = razorpay.Client(auth=(self.razorpay_key_id, self.razorpay_key_secret))
+            
+            # Create subscription using plan ID
+            subscription_data = {
+                'plan_id': plan_id,
+                'customer_notify': 1,
+                'quantity': 1,
+                'notes': {
+                    'user_id': user_id,
+                    'app': 'cloudface'
+                }
+            }
+            
+            print(f"💳 Creating subscription for plan: {plan_id}")
+            subscription = client.subscription.create(data=subscription_data)
+            
+            # Log subscription creation
+            self._log_payment_event('razorpay_subscription_created', {
+                'user_id': user_id,
+                'subscription_id': subscription['id'],
+                'plan_id': plan_id
+            })
+            
+            return {
+                'success': True,
+                'subscription_id': subscription['id'],
+                'plan_id': plan_id,
+                'key': self.razorpay_key_id
+            }
+            
+        except Exception as e:
+            print(f"❌ Razorpay subscription error: {e}")
+            return {'success': False, 'error': str(e)}
+
     def create_razorpay_order(self, amount_inr: int, plan_name: str, user_id: str) -> Dict[str, Any]:
         """Create Razorpay order for Indian customers"""
         try:

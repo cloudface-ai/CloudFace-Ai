@@ -435,6 +435,15 @@
             font-weight: 500;
         }
 
+        .plan-card.enterprise {
+            border-color: var(--primary-light);
+            background: linear-gradient(135deg, var(--surface), #f8f9ff);
+        }
+
+        .plan-card.enterprise .plan-header {
+            background: linear-gradient(135deg, #f8f9ff, var(--surface));
+        }
+
         .plan-header {
             padding: 2rem;
             text-align: center;
@@ -534,6 +543,19 @@
         .btn-secondary {
             background: var(--border);
             color: var(--text-primary);
+        }
+
+        .btn-enterprise {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            font-weight: 600;
+        }
+
+        .btn-enterprise:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-hover);
         }
 
         .btn-secondary:hover {
@@ -660,11 +682,13 @@
         <!-- Pricing Grid -->
         <div class="pricing-grid">
             {% for plan_id, plan in plans.items() %}
-            <div class="plan-card {% if plan.recommended %}recommended{% endif %} {% if current_plan == plan_id %}current{% endif %}">
+            <div class="plan-card {% if plan.recommended %}recommended{% endif %} {% if current_plan == plan_id %}current{% endif %} {% if plan_id == 'enterprise' %}enterprise{% endif %}">
                 <div class="plan-header">
                     <div class="plan-name">{{ plan.name }}</div>
                     <div class="plan-price">
-                        {% if plan.price == 0 %}
+                        {% if plan_id == 'enterprise' %}
+                            Contact Us
+                        {% elif plan.price == 0 %}
                             Free
                         {% else %}
                             {{ plan.currency_symbol }}{{ "{:,}".format(plan.price) }}
@@ -705,7 +729,7 @@
                             ✅ Current Plan
                         </button>
                     {% elif plan_id == 'enterprise' %}
-                        <button class="btn" onclick="window.location.href='/contact'">
+                        <button class="btn btn-enterprise" onclick="window.location.href='/contact'">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                                 <polyline points="22,6 12,13 2,6"></polyline>
