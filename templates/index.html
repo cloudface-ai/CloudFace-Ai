@@ -89,6 +89,42 @@
                 'value': photoCount
             });
         }
+        
+        // Copy bot email to clipboard
+        function copyBotEmail() {
+            const email = 'cloudface-ai-bot@mevscrowd.iam.gserviceaccount.com';
+            navigator.clipboard.writeText(email).then(function() {
+                // Show success feedback
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '✅ Copied!';
+                button.style.background = '#28a745';
+                
+                setTimeout(function() {
+                    button.innerHTML = originalText;
+                    button.style.background = '#007bff';
+                }, 2000);
+            }).catch(function(err) {
+                console.error('Could not copy text: ', err);
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = email;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                const button = event.target;
+                const originalText = button.innerHTML;
+                button.innerHTML = '✅ Copied!';
+                button.style.background = '#28a745';
+                
+                setTimeout(function() {
+                    button.innerHTML = originalText;
+                    button.style.background = '#007bff';
+                }, 2000);
+            });
+        }
     </script>
     
     <!-- Service Worker Registration -->
@@ -411,22 +447,40 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
         }
 
         /* Responsive Design */
+        /* Mobile-First Responsive Design */
         @media (max-width: 768px) {
             .main-content {
                 grid-template-columns: 1fr;
                 gap: 1rem;
+                margin-bottom: 1rem;
             }
 
             .header-title h1 {
-                font-size: 2rem;
+                font-size: 1.8rem;
+                line-height: 1.2;
+                margin-bottom: 0.5rem;
+            }
+
+            .header-title p {
+                font-size: 1rem;
+                line-height: 1.4;
             }
 
             .container {
-                padding: 1rem;
+                padding: 0.75rem;
+                max-width: 100%;
             }
 
             .section {
-                padding: 1.5rem;
+                padding: 1.25rem;
+                margin-bottom: 1rem;
+                border-radius: 12px;
+            }
+
+            .section h2 {
+                font-size: 1.25rem;
+                margin-bottom: 1rem;
+                line-height: 1.3;
             }
 
             .nav-toggle {
@@ -445,6 +499,7 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                 border-radius: 0 0 var(--radius) var(--radius);
                 flex-direction: column;
                 padding: 1rem 0;
+                z-index: 1000;
             }
 
             .nav-menu.active {
@@ -455,34 +510,220 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                 display: block;
                 padding: 16px 20px;
                 border-bottom: 1px solid var(--border);
-            }
-
-            .nav-toggle {
-                display: flex;
+                font-size: 0.95rem;
             }
 
             .footer-bottom-content {
                 flex-direction: column;
                 text-align: center;
-            }
-
-            .container {
-                padding: 1rem;
+                gap: 0.5rem;
             }
 
             .card {
-                padding: 1.5rem;
+                padding: 1.25rem;
+                margin-bottom: 1rem;
+            }
+
+            /* Mobile-specific improvements */
+            .btn {
+                width: 100%;
+                padding: 0.875rem 1rem;
+                font-size: 0.95rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .btn:last-child {
+                margin-bottom: 0;
+            }
+
+            /* Input fields mobile optimization */
+            input[type="text"], input[type="url"], input[type="file"] {
+                width: 100%;
+                padding: 0.875rem;
+                font-size: 1rem;
+                border-radius: 8px;
+                margin-bottom: 0.75rem;
+            }
+
+            /* File upload area mobile optimization */
+            .file-upload-area {
+                padding: 2rem 1rem;
+                text-align: center;
+                border: 2px dashed #ddd;
+                border-radius: 12px;
+                margin-bottom: 1rem;
+            }
+
+            /* Help guide mobile optimization */
+            .help-guide details {
+                margin-bottom: 1rem;
+            }
+
+            .help-guide summary {
+                font-size: 1rem;
+                padding: 0.75rem;
+                background: #f8f9fa;
+                border-radius: 8px;
+                cursor: pointer;
+            }
+
+            /* Bot email copy section mobile optimization */
+            .help-guide .bot-email-container {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+
+            .help-guide .bot-email-container code {
+                font-size: 0.8rem;
+                word-break: break-all;
+                padding: 0.5rem;
+                background: #f8f9fa;
+                border-radius: 6px;
+                display: block;
+                margin-bottom: 0.5rem;
+            }
+
+            .help-guide .bot-email-container button {
+                width: 100%;
+                padding: 0.75rem;
+                font-size: 0.9rem;
+            }
+
+            /* Results grid mobile optimization */
+            .results-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+                gap: 0.75rem;
+            }
+
+            .result-item {
+                padding: 0.5rem;
+                border-radius: 8px;
+            }
+
+            .result-item img {
+                width: 100%;
+                height: 120px;
+                object-fit: cover;
+                border-radius: 6px;
+            }
+
+            /* Progress bar mobile optimization */
+            .progress-container {
+                padding: 1rem;
+                margin: 1rem 0;
+            }
+
+            .progress-bar {
+                height: 8px;
+                border-radius: 4px;
+            }
+
+            /* Footer mobile optimization */
+            .footer {
+                padding: 2rem 0 1rem 0;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+                text-align: center;
+            }
+
+            .footer-section h3 {
+                font-size: 1.1rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .footer-section p, .footer-section a {
+                font-size: 0.9rem;
+                line-height: 1.5;
             }
         }
 
         @media (max-width: 480px) {
             .header-title h1 {
-                font-size: 1.75rem;
+                font-size: 1.6rem;
+                line-height: 1.1;
+            }
+
+            .header-title p {
+                font-size: 0.9rem;
+            }
+
+            .container {
+                padding: 0.5rem;
+            }
+
+            .section {
+                padding: 1rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .section h2 {
+                font-size: 1.1rem;
+                margin-bottom: 0.75rem;
             }
 
             .btn {
-                padding: 0.75rem 1rem;
+                padding: 0.75rem 0.875rem;
                 font-size: 0.9rem;
+                min-height: 44px; /* iOS touch target minimum */
+            }
+
+            .card {
+                padding: 1rem;
+            }
+
+            /* Extra small mobile optimizations */
+            .help-guide summary {
+                font-size: 0.9rem;
+                padding: 0.625rem;
+            }
+
+            .help-guide .bot-email-container code {
+                font-size: 0.75rem;
+                padding: 0.375rem;
+            }
+
+            .results-grid {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                gap: 0.5rem;
+            }
+
+            .result-item img {
+                height: 100px;
+            }
+
+            .footer {
+                padding: 1.5rem 0 1rem 0;
+            }
+
+            .footer-section h3 {
+                font-size: 1rem;
+            }
+
+            .footer-section p, .footer-section a {
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Extra small devices (320px and up) */
+        @media (max-width: 360px) {
+            .header-title h1 {
+                font-size: 1.4rem;
+            }
+
+            .section {
+                padding: 0.875rem;
+            }
+
+            .btn {
+                padding: 0.625rem 0.75rem;
+                font-size: 0.85rem;
+            }
+
+            .container {
+                padding: 0.375rem;
             }
         }
 
@@ -788,14 +1029,42 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                     <div class="help-guide">
                         <details>
                             <summary>📖 How to process your Google Drive folder</summary>
-                            <ol>
-                                <li><strong>Share your folder with our bot:</strong> Add <code style="background: #f5f5f5; padding: 2px 6px; border-radius: 3px; font-family: monospace;">cloudface-ai-bot@mevscrowd.iam.gserviceaccount.com</code> as a viewer</li>
-                                <li><strong>Get the folder link:</strong> Right-click your folder and select "Get link"</li>
-                                <li><strong>Paste the link above</strong> and click "Process Photos"</li>
-                            </ol>
-                            <p style="margin-top: 1rem; padding: 0.8rem; background: #e8f5e8; border-radius: 6px; border-left: 4px solid #4caf50;">
-                                <strong>💡 Why share with bot?</strong> This avoids Google's verification process and works instantly!
-                            </p>
+                            <div style="margin-top: 1rem; padding: 1.5rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; border: 1px solid #dee2e6;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                                    <span style="font-size: 1.2rem;">🤖</span>
+                                    <h3 style="margin: 0; color: #495057; font-size: 1.1rem;">Step 1: Share with our bot</h3>
+                                </div>
+                                
+                                <div style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #e9ecef; margin-bottom: 1rem;">
+                                    <p style="margin: 0 0 0.5rem 0; color: #6c757d; font-size: 0.9rem;">Add this email as a viewer to your Google Drive folder:</p>
+                                    <div class="bot-email-container" style="display: flex; align-items: center; gap: 0.5rem; background: #f8f9fa; padding: 0.75rem; border-radius: 6px; border: 1px solid #dee2e6;">
+                                        <code style="background: none; padding: 0; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 0.9rem; color: #495057; flex: 1; word-break: break-all;">cloudface-ai-bot@mevscrowd.iam.gserviceaccount.com</code>
+                                        <button onclick="copyBotEmail()" style="background: #007bff; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; transition: background 0.2s;" onmouseover="this.style.background='#0056b3'" onmouseout="this.style.background='#007bff'">
+                                            📋 Copy
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                                    <span style="font-size: 1.2rem;">🔗</span>
+                                    <h3 style="margin: 0; color: #495057; font-size: 1.1rem;">Step 2: Get your folder link</h3>
+                                </div>
+                                <p style="margin: 0 0 1rem 0; color: #6c757d;">Right-click your Google Drive folder and select "Get link"</p>
+
+                                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                                    <span style="font-size: 1.2rem;">🚀</span>
+                                    <h3 style="margin: 0; color: #495057; font-size: 1.1rem;">Step 3: Process your photos</h3>
+                                </div>
+                                <p style="margin: 0 0 1rem 0; color: #6c757d;">Paste the link above and click "Process Photos"</p>
+
+                                <div style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%); padding: 1rem; border-radius: 8px; border-left: 4px solid #28a745; margin-top: 1rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                        <span style="font-size: 1.1rem;">💡</span>
+                                        <strong style="color: #155724; font-size: 0.95rem;">Why share with bot?</strong>
+                                    </div>
+                                    <p style="margin: 0; color: #155724; font-size: 0.9rem;">This avoids Google's verification process and works instantly! No OAuth popups or verification screens.</p>
+                                </div>
+                            </div>
                         </details>
                     </div>
                     
