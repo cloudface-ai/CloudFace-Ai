@@ -779,22 +779,23 @@
         }
 
         function copyToClipboard() {
-            // Get the actual shareable link (not the HTML content)
+            // Try to get the link from the code element first, then fallback to global variable
             const linkElement = document.getElementById('generatedLink');
             let link;
             
-            // If it's HTML content (pre-process mode), extract the actual link
-            if (linkElement.innerHTML.includes('Step 2:')) {
-                const linkDiv = linkElement.querySelector('div:last-child');
-                link = linkDiv ? linkDiv.textContent.trim() : linkElement.textContent;
+            // Check if there's a code element with the actual URL
+            const codeElement = linkElement.querySelector('code');
+            if (codeElement) {
+                link = codeElement.textContent;
             } else {
-                link = linkElement.textContent;
+                // Fallback to global variable or text content
+                link = generatedShareLink || linkElement.textContent;
             }
             
             navigator.clipboard.writeText(link).then(() => {
                 // Show success message
                 const successMsg = document.getElementById('successMessage');
-                successMsg.textContent = '✅ Short link copied to clipboard!';
+                successMsg.textContent = '✅ Link copied to clipboard!';
                 successMsg.classList.add('show');
                 
                 // Hide after 3 seconds
