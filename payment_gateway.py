@@ -38,14 +38,16 @@ class PaymentGateway:
             'free': None,  # No payment needed
             'standard': os.getenv('RAZORPAY_PLAN_STANDARD'),
             'pro': os.getenv('RAZORPAY_PLAN_PRO'),
-            'pro_plus': os.getenv('RAZORPAY_PLAN_BUSINESS'),
-            'everything': os.getenv('RAZORPAY_PLAN_BUSINESS_PLUS'),
+            'pro_plus': os.getenv('RAZORPAY_PLAN_BUSINESS'),  # Business plan
+            'everything': os.getenv('RAZORPAY_PLAN_BUSINESS_PLUS'),  # Business Plus plan
             'enterprise': None  # Contact us
         }
     
     def get_razorpay_plan_id(self, plan_type: str) -> str:
         """Get Razorpay plan ID for a given plan type"""
-        return self.razorpay_plans.get(plan_type)
+        plan_id = self.razorpay_plans.get(plan_type)
+        print(f"🔍 Plan mapping: {plan_type} -> {plan_id}")
+        return plan_id
     
     def create_razorpay_subscription(self, plan_id: str, user_id: str) -> Dict[str, Any]:
         """Create Razorpay subscription using plan ID"""
