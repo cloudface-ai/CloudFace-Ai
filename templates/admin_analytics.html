@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudFace AI Analytics - Premium Dashboard</title>
+    <link rel="stylesheet" href="/static/mobile-first.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1a73e8;
+            --primary-light: #4285f4;
+            --primary-dark: #0d47a1;
+            --accent: #ea4335;
+            --success: #34a853;
+            --warning: #fbbc04;
+            --bg: #fafafa;
+            --surface: #fff;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --text-tertiary: #9aa0a6;
+            --border: #dadce0;
+            --shadow: 0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.24);
+            --shadow-hover: 0 14px 28px rgba(0,0,0,.25), 0 10px 10px rgba(0,0,0,.22);
+            --radius: 16px;
+            --radius-sm: 8px;
+        }
+
+        body {
+            background: var(--bg);
+            min-height: 100vh;
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-primary);
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .analytics-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .dashboard-header {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .dashboard-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-title {
+            font-size: 2.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--success);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .time-filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .time-btn {
+            padding: 12px 24px;
+            border: 2px solid var(--border);
+            background: var(--surface);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .time-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .time-btn:hover:not(.active) {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .stat-icon.users { background: var(--primary); }
+        .stat-icon.sessions { background: var(--primary-light); }
+        .stat-icon.views { background: var(--accent); }
+        .stat-icon.photos { background: var(--success); }
+        .stat-icon.links { background: var(--warning); }
+        .stat-icon.shares { background: var(--primary); }
+        .stat-icon.downloads { background: var(--primary-light); }
+        .stat-icon.time { background: var(--accent); }
+
+        .stat-value {
+            font-size: 2.8rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .stat-change {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .stat-change.positive {
+            color: #10b981;
+        }
+
+        .stat-change.negative {
+            color: #ef4444;
+        }
+
+        .chart-container {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .chart-title {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .chart-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chart-btn {
+            padding: 8px 16px;
+            border: 1px solid #e5e7eb;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        .chart-btn:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        .chart-canvas {
+            position: relative;
+            height: 300px;
+        }
+
+        .data-table-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .table-header {
+            background: var(--primary);
+            color: white;
+            padding: 25px 30px;
+        }
+
+        .table-title {
+            font-size: 1.3rem;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .table-content {
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            background: var(--bg);
+            padding: 20px;
+            text-align: left;
+            font-weight: 500;
+            color: var(--text-primary);
+            border-bottom: 2px solid var(--border);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table td {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        .table tr:hover {
+            background: var(--bg);
+        }
+
+        .country-flag {
+            width: 24px;
+            height: 18px;
+            margin-right: 10px;
+            border-radius: 3px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: var(--text-tertiary);
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--text-primary);
+        }
+
+        .refresh-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: var(--radius-sm);
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .refresh-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .metric-trend {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+
+        .trend-up {
+            color: #10b981;
+        }
+
+        .trend-down {
+            color: #ef4444;
+        }
+
+        .trend-neutral {
+            color: #6b7280;
+        }
+
+        @media (max-width: 768px) {
+            .analytics-container {
+                padding: 10px;
+            }
+
+            .dashboard-header {
+                padding: 20px;
+            }
+
+            .dashboard-title {
+                font-size: 2rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .stat-card {
+                padding: 20px;
+            }
+
+            .stat-value {
+                font-size: 2.2rem;
+            }
+
+            .chart-container {
+                padding: 20px;
+            }
+
+            .table th,
+            .table td {
+                padding: 15px 10px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="analytics-container">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div class="header-top">
+                <h1 class="dashboard-title">
+                    <i class="fas fa-chart-line"></i>
+                    CloudFace AI Analytics
+                </h1>
+                <div class="live-indicator">
+                    <div class="live-dot"></div>
+                    <span>LIVE</span>
+                </div>
+            </div>
+            
+            <div class="time-filters">
+                <button class="time-btn active" onclick="loadAnalytics(1)">
+                    <i class="fas fa-clock"></i> Last 24 Hours
+                </button>
+                <button class="time-btn" onclick="loadAnalytics(7)">
+                    <i class="fas fa-calendar-week"></i> Last 7 Days
+                </button>
+                <button class="time-btn" onclick="loadAnalytics(30)">
+                    <i class="fas fa-calendar-alt"></i> Last 30 Days
+                </button>
+                <button class="time-btn" onclick="loadAnalytics(90)">
+                    <i class="fas fa-calendar"></i> Last 90 Days
+                </button>
+                <button class="refresh-btn" onclick="refreshData()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="chart-container" style="display: none;">
+            <div class="empty-state">
+                <div class="loading-spinner"></div>
+                <h3>Loading Analytics Data...</h3>
+                <p>Please wait while we fetch the latest insights</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div id="analytics-content">
+            <!-- Key Metrics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon users">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="active-users">-</div>
+                    <div class="stat-label">Active Users</div>
+                    <div class="metric-trend trend-up" id="users-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+12% from yesterday</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon sessions">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="total-sessions">-</div>
+                    <div class="stat-label">Total Sessions</div>
+                    <div class="metric-trend trend-up" id="sessions-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+8% from yesterday</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon views">
+                            <i class="fas fa-eye"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="page-views">-</div>
+                    <div class="stat-label">Page Views</div>
+                    <div class="metric-trend trend-up" id="views-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+15% from yesterday</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon photos">
+                            <i class="fas fa-images"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="photos-processed">-</div>
+                    <div class="stat-label">Photos Processed</div>
+                    <div class="metric-trend trend-up" id="photos-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+23% from yesterday</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon links">
+                            <i class="fas fa-link"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="links-created">-</div>
+                    <div class="stat-label">Links Created</div>
+                    <div class="metric-trend trend-up" id="links-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+18% from yesterday</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon shares">
+                            <i class="fas fa-share-alt"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="total-shares">-</div>
+                    <div class="stat-label">Total Shares</div>
+                    <div class="metric-trend trend-up" id="shares-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+31% from yesterday</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon downloads">
+                            <i class="fas fa-download"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="photos-downloaded">-</div>
+                    <div class="stat-label">Photos Downloaded</div>
+                    <div class="metric-trend trend-up" id="downloads-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+7% from yesterday</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon time">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                    <div class="stat-value" id="avg-session-time">-</div>
+                    <div class="stat-label">Avg Session Time</div>
+                    <div class="metric-trend trend-up" id="time-trend">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>+5% from yesterday</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
+                <!-- Geographic Distribution -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">
+                            <i class="fas fa-globe-americas"></i>
+                            Geographic Distribution
+                        </h3>
+                        <div class="chart-actions">
+                            <button class="chart-btn">Export</button>
+                        </div>
+                    </div>
+                    <div class="chart-canvas">
+                        <canvas id="geographicChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Traffic Sources -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3 class="chart-title">
+                            <i class="fas fa-traffic-light"></i>
+                            Traffic Sources
+                        </h3>
+                        <div class="chart-actions">
+                            <button class="chart-btn">Export</button>
+                        </div>
+                    </div>
+                    <div class="chart-canvas">
+                        <canvas id="trafficChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Activity Timeline -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h3 class="chart-title">
+                        <i class="fas fa-chart-area"></i>
+                        User Activity Timeline
+                    </h3>
+                    <div class="chart-actions">
+                        <button class="chart-btn">Hourly</button>
+                        <button class="chart-btn">Daily</button>
+                        <button class="chart-btn">Export</button>
+                    </div>
+                </div>
+                <div class="chart-canvas">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Data Tables -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                <!-- Popular Pages -->
+                <div class="data-table-container">
+                    <div class="table-header">
+                        <h3 class="table-title">
+                            <i class="fas fa-fire"></i>
+                            Most Popular Pages
+                        </h3>
+                    </div>
+                    <div class="table-content">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Page</th>
+                                    <th>Views</th>
+                                    <th>Users</th>
+                                    <th>Avg Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="popular-pages-table">
+                                <tr>
+                                    <td colspan="4" class="empty-state">
+                                        <div class="loading-spinner"></div>
+                                        Loading popular pages...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- User Activity -->
+                <div class="data-table-container">
+                    <div class="table-header">
+                        <h3 class="table-title">
+                            <i class="fas fa-user-chart"></i>
+                            Top Users
+                        </h3>
+                    </div>
+                    <div class="table-content">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Sessions</th>
+                                    <th>Photos</th>
+                                    <th>Shares</th>
+                                    <th>Last Active</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-activity-table">
+                                <tr>
+                                    <td colspan="5" class="empty-state">
+                                        <div class="loading-spinner"></div>
+                                        Loading user activity...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPeriod = 1;
+        let charts = {};
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAnalytics(1);
+            initializeCharts();
+        });
+
+        // Load analytics data
+        async function loadAnalytics(days) {
+            currentPeriod = days;
+            
+            // Update active button
+            document.querySelectorAll('.time-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            showLoading(true);
+            
+            try {
+                const response = await fetch(`/api/analytics/overall?days=${days}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayAnalytics(data.data);
+                    updateCharts(data.data);
+                } else {
+                    showError('Failed to load analytics data');
+                }
+            } catch (error) {
+                console.error('Analytics error:', error);
+                showError('Failed to load analytics data');
+            }
+            
+            showLoading(false);
+        }
+
+        // Display analytics data
+        function displayAnalytics(data) {
+            // Update stat cards directly
+            document.getElementById('active-users').textContent = data.unique_users || 0;
+            document.getElementById('total-sessions').textContent = data.total_sessions || 0;
+            document.getElementById('page-views').textContent = data.total_page_views || 0;
+            document.getElementById('photos-processed').textContent = data.photos_processed || 0;
+            document.getElementById('links-created').textContent = data.links_created || 0;
+            document.getElementById('total-shares').textContent = data.total_shares || 0;
+            document.getElementById('photos-downloaded').textContent = data.photos_downloaded || 0;
+            
+            // Format average session time
+            const avgTime = data.avg_session_duration || 0;
+            const minutes = Math.floor(avgTime / 60);
+            const seconds = Math.floor(avgTime % 60);
+            document.getElementById('avg-session-time').textContent = `${minutes}m ${seconds}s`;
+            
+            // Display popular pages
+            displayPopularPages(data.popular_pages || []);
+            
+            // Load user activity
+            loadUserActivity();
+        }
+
+
+        // Initialize charts
+        function initializeCharts() {
+            // Geographic Chart
+            const geoCtx = document.getElementById('geographicChart').getContext('2d');
+            charts.geographic = new Chart(geoCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#667eea', '#764ba2', '#f093fb', '#f5576c',
+                            '#4facfe', '#00f2fe', '#43e97b', '#38f9d7',
+                            '#fa709a', '#fee140'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Traffic Chart
+            const trafficCtx = document.getElementById('trafficChart').getContext('2d');
+            charts.traffic = new Chart(trafficCtx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Sessions',
+                        data: [],
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Timeline Chart
+            const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+            charts.timeline = new Chart(timelineCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Active Users',
+                        data: [],
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update charts with data
+        function updateCharts(data) {
+            // Update Geographic Chart
+            const countries = Object.entries(data.country_distribution || {});
+            charts.geographic.data.labels = countries.map(([country]) => country);
+            charts.geographic.data.datasets[0].data = countries.map(([, count]) => count);
+            charts.geographic.update();
+
+            // Update Traffic Chart
+            const sources = Object.entries(data.traffic_sources || {});
+            charts.traffic.data.labels = sources.map(([source]) => source);
+            charts.traffic.data.datasets[0].data = sources.map(([, count]) => count);
+            charts.traffic.update();
+
+            // Update Timeline Chart (mock data for now)
+            const hours = Array.from({length: 24}, (_, i) => `${i}:00`);
+            const timelineData = Array.from({length: 24}, () => Math.floor(Math.random() * 50) + 10);
+            charts.timeline.data.labels = hours;
+            charts.timeline.data.datasets[0].data = timelineData;
+            charts.timeline.update();
+        }
+
+        // Display popular pages
+        function displayPopularPages(pages) {
+            const tbody = document.getElementById('popular-pages-table');
+            
+            if (pages.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state"><i class="fas fa-inbox"></i><h3>No data available</h3></td></tr>';
+                return;
+            }
+            
+            let html = '';
+            pages.forEach((page, index) => {
+                const [url, stats] = page;
+                const avgTime = stats.time_spent ? Math.floor(stats.time_spent / stats.views) : 0;
+                const minutes = Math.floor(avgTime / 60);
+                const seconds = Math.floor(avgTime % 60);
+                
+                html += `
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center;">
+                                <span style="background: #667eea; color: white; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; margin-right: 12px;">${index + 1}</span>
+                                ${url}
+                            </div>
+                        </td>
+                        <td><strong>${stats.views.toLocaleString()}</strong></td>
+                        <td>${stats.unique_users}</td>
+                        <td>${minutes}m ${seconds}s</td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        // Load user activity
+        async function loadUserActivity() {
+            try {
+                const response = await fetch(`/api/analytics/users?days=${currentPeriod}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayUserActivity(data.data || []);
+                }
+            } catch (error) {
+                console.error('User activity error:', error);
+            }
+        }
+
+        // Display user activity
+        function displayUserActivity(users) {
+            const tbody = document.getElementById('user-activity-table');
+            
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><i class="fas fa-inbox"></i><h3>No user data available</h3></td></tr>';
+                return;
+            }
+            
+            let html = '';
+            users.slice(0, 10).forEach((user, index) => {
+                const lastActivity = new Date(user.last_activity).toLocaleDateString();
+                
+                html += `
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center;">
+                                <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; margin-right: 12px;">${(index + 1)}</div>
+                                ${user.user_id.substring(0, 8)}...
+                            </div>
+                        </td>
+                        <td><strong>${user.total_sessions}</strong></td>
+                        <td>${user.photos_processed}</td>
+                        <td>${user.total_shares}</td>
+                        <td>${lastActivity}</td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+        }
+
+        // Show/hide loading
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('analytics-content').style.display = show ? 'none' : 'block';
+        }
+
+        // Show error message
+        function showError(message) {
+            alert(message);
+        }
+
+        // Refresh data
+        function refreshData() {
+            loadAnalytics(currentPeriod);
+        }
+
+        // Auto-refresh every 5 minutes
+        setInterval(refreshData, 300000);
+    </script>
+</body>
+</html>

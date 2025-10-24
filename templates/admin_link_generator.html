@@ -710,12 +710,29 @@
             });
         }
 
+        // Analytics tracking function
+        function trackShare(shareType, shareData) {
+            fetch('/api/analytics/track-share', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    share_type: shareType,
+                    share_data: shareData
+                })
+            }).catch(err => console.log('Analytics tracking failed:', err));
+        }
+
         // NEW: Share via WhatsApp
         function shareViaWhatsApp() {
             if (!generatedShareLink) {
                 alert('Please generate a link first');
                 return;
             }
+            
+            // Track share analytics
+            trackShare('whatsapp', { link: generatedShareLink });
             
             const eventName = document.getElementById('eventName').value.trim() || 'Event Photos';
             const companyName = document.getElementById('companyName').value.trim() || 'CloudFace AI';
@@ -735,6 +752,9 @@
                 alert('Please generate a link first');
                 return;
             }
+            
+            // Track share analytics
+            trackShare('email', { link: generatedShareLink });
             
             const eventName = document.getElementById('eventName').value.trim() || 'Event Photos';
             const companyName = document.getElementById('companyName').value.trim() || 'CloudFace AI';
@@ -759,6 +779,9 @@
                 alert('Please generate a QR code first');
                 return;
             }
+            
+            // Track share analytics
+            trackShare('qr_download', { link: generatedShareLink });
             
             const eventName = document.getElementById('eventName').value.trim() || 'Event';
             const companyName = document.getElementById('companyName').value.trim() || 'CloudFace_AI';
@@ -791,6 +814,9 @@
                 // Fallback to global variable or text content
                 link = generatedShareLink || linkElement.textContent;
             }
+            
+            // Track share analytics
+            trackShare('copy_link', { link: link });
             
             navigator.clipboard.writeText(link).then(() => {
                 // Show success message

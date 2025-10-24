@@ -40,6 +40,9 @@ from real_face_recognition_engine import get_real_engine
 # Import Firebase store for database integration
 from firebase_store import save_face_embedding, fetch_embeddings_for_user
 
+# Import analytics tracker
+from analytics_tracker import analytics
+
 def record_user_feedback(user_id: str, photo_reference: str, is_correct: bool, 
                         selfie_path: str = None, similarity_score: float = None) -> bool:
     """
@@ -734,6 +737,20 @@ def landing():
 @app.route('/app')
 def index():
     """Show the main app interface"""
+    # Track page view
+    user_id = session.get('user_id', 'anonymous')
+    ip_address = request.remote_addr
+    user_agent = request.headers.get('User-Agent', '')
+    referrer = request.headers.get('Referer', '')
+    
+    # Start or update session
+    session_id = session.get('analytics_session_id')
+    if not session_id:
+        session_id = analytics.start_session(user_id, ip_address, user_agent, referrer, '/app')
+        session['analytics_session_id'] = session_id
+    else:
+        analytics.track_page_view(session_id, user_id, '/app', 'CloudFace AI - Homepage', referrer)
+    
     return render_template('index.html')
 
 @app.route('/contact')
@@ -1667,6 +1684,21 @@ def process_drive_shared():
         
         # Convert result format to match frontend expectations
         if result.get('success'):
+            # Track photo processing analytics
+            session_id = session.get('analytics_session_id')
+            if session_id:
+                analytics.track_action(
+                    session_id, 
+                    user_id, 
+                    'photo_processed', 
+                    {
+                        'processed_count': result.get('processed_count', 0),
+                        'total_files': result.get('total_files', 0),
+                        'folder_url': drive_url
+                    },
+                    '/app'
+                )
+            
             # If processing is complete, return success with processed count
             return jsonify({
                 'success': True,
@@ -1942,6 +1974,21 @@ def search():
                 os.remove(normalized_path)
             except:
                 pass
+            
+            # Track search analytics
+            session_id = session.get('analytics_session_id')
+            if session_id:
+                analytics.track_action(
+                    session_id, 
+                    session.get('user_id', 'anonymous'), 
+                    'search_performed', 
+                    {
+                        'matches_found': len(matches),
+                        'threshold_used': threshold,
+                        'faces_detected': 1 if matches else 0
+                    },
+                    '/app'
+                )
             
             # Return results directly (no double processing)
             return jsonify({
@@ -2757,6 +2804,20 @@ def auto_process():
 @app.route('/admin/link-generator')
 def admin_link_generator():
     """Admin page to generate shareable auto-process links"""
+    # Track page view
+    user_id = session.get('user_id', 'anonymous')
+    ip_address = request.remote_addr
+    user_agent = request.headers.get('User-Agent', '')
+    referrer = request.headers.get('Referer', '')
+    
+    # Start or update session
+    session_id = session.get('analytics_session_id')
+    if not session_id:
+        session_id = analytics.start_session(user_id, ip_address, user_agent, referrer, '/admin/link-generator')
+        session['analytics_session_id'] = session_id
+    else:
+        analytics.track_page_view(session_id, user_id, '/admin/link-generator', 'Admin Link Generator', referrer)
+    
     return render_template('admin_link_generator.html')
 
 @app.route('/api/create-share-session', methods=['POST'])
@@ -2774,6 +2835,21 @@ def create_share_session():
         session_id = manager.create_session(admin_user_id, folder_id, metadata)
         
         if session_id:
+            # Track link creation analytics
+            analytics_session_id = session.get('analytics_session_id')
+            if analytics_session_id:
+                analytics.track_action(
+                    analytics_session_id, 
+                    admin_user_id, 
+                    'link_created', 
+                    {
+                        'session_id': session_id,
+                        'folder_id': folder_id,
+                        'metadata': metadata
+                    },
+                    '/admin_link_generator'
+                )
+            
             return jsonify({'success': True, 'session_id': session_id})
         else:
             return jsonify({'success': False, 'error': 'Failed to create session'})
@@ -2857,6 +2933,88 @@ def upload_logo():
         
         return jsonify({'success': True, 'filename': filename})
         
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+# Analytics API Endpoints
+@app.route('/api/analytics/overall')
+def get_overall_analytics():
+    """Get overall analytics data"""
+    try:
+        days = int(request.args.get('days', 30))
+        data = analytics.get_overall_analytics(days)
+        return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/analytics/user/<user_id>')
+def get_user_analytics(user_id):
+    """Get analytics for a specific user"""
+    try:
+        days = int(request.args.get('days', 30))
+        data = analytics.get_user_analytics(user_id, days)
+        return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/analytics/users')
+def get_all_users_analytics():
+    """Get analytics for all users (admin view)"""
+    try:
+        days = int(request.args.get('days', 30))
+        
+        # Get all unique users from sessions
+        sessions = analytics._load_data(analytics.sessions_file)
+        cutoff_date = datetime.now() - timedelta(days=days)
+        
+        recent_sessions = [s for s in sessions if 
+                          datetime.fromisoformat(s['start_time']) >= cutoff_date]
+        
+        unique_users = list(set(s['user_id'] for s in recent_sessions))
+        
+        # Get analytics for each user
+        users_data = []
+        for user_id in unique_users[:50]:  # Limit to 50 users for performance
+            user_data = analytics.get_user_analytics(user_id, days)
+            users_data.append(user_data)
+        
+        return jsonify({'success': True, 'data': users_data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/analytics/realtime')
+def get_realtime_analytics():
+    """Get real-time analytics data"""
+    try:
+        data = analytics.get_realtime_stats()
+        return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/admin/analytics')
+def admin_analytics():
+    """Show analytics dashboard"""
+    return render_template('admin_analytics.html')
+
+@app.route('/api/analytics/track-share', methods=['POST'])
+def track_share():
+    """Track share events"""
+    try:
+        data = request.get_json()
+        share_type = data.get('share_type')
+        share_data = data.get('share_data', {})
+        
+        session_id = session.get('analytics_session_id')
+        if session_id:
+            analytics.track_share(
+                session_id,
+                session.get('user_id', 'anonymous'),
+                share_type,
+                share_data,
+                recipient_count=1
+            )
+        
+        return jsonify({'success': True})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
