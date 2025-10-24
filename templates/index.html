@@ -93,16 +93,20 @@
         // Copy bot email to clipboard
         function copyBotEmail() {
             const email = 'cloudface-ai-bot@mevscrowd.iam.gserviceaccount.com';
+            const button = event.target;
+            const originalText = button.innerHTML;
+            const originalStyle = button.style.cssText;
+            
             navigator.clipboard.writeText(email).then(function() {
                 // Show success feedback
-                const button = event.target;
-                const originalText = button.innerHTML;
                 button.innerHTML = '✅ Copied!';
                 button.style.background = '#28a745';
+                button.style.transform = 'scale(1.05)';
+                button.style.boxShadow = '0 4px 12px rgba(40, 167, 69, 0.3)';
                 
                 setTimeout(function() {
                     button.innerHTML = originalText;
-                    button.style.background = '#007bff';
+                    button.style.cssText = originalStyle;
                 }, 2000);
             }).catch(function(err) {
                 console.error('Could not copy text: ', err);
@@ -114,14 +118,15 @@
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
                 
-                const button = event.target;
-                const originalText = button.innerHTML;
+                // Show success feedback
                 button.innerHTML = '✅ Copied!';
                 button.style.background = '#28a745';
+                button.style.transform = 'scale(1.05)';
+                button.style.boxShadow = '0 4px 12px rgba(40, 167, 69, 0.3)';
                 
                 setTimeout(function() {
                     button.innerHTML = originalText;
-                    button.style.background = '#007bff';
+                    button.style.cssText = originalStyle;
                 }, 2000);
             });
         }
@@ -571,22 +576,33 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
             .help-guide .bot-email-container {
                 flex-direction: column;
                 gap: 0.75rem;
+                padding: 0.875rem;
+            }
+
+            .help-guide .bot-email-container > div {
+                background: white !important;
+                padding: 0.625rem !important;
+                border-radius: 6px !important;
             }
 
             .help-guide .bot-email-container code {
                 font-size: 0.8rem;
                 word-break: break-all;
-                padding: 0.5rem;
-                background: #f8f9fa;
-                border-radius: 6px;
+                padding: 0 !important;
+                background: none !important;
+                border-radius: 0 !important;
                 display: block;
-                margin-bottom: 0.5rem;
+                margin-bottom: 0;
+                line-height: 1.3;
+                font-weight: 500;
             }
 
             .help-guide .bot-email-container button {
                 width: 100%;
-                padding: 0.75rem;
-                font-size: 0.9rem;
+                padding: 0.75rem 1rem;
+                font-size: 0.85rem;
+                font-weight: 500;
+                border-radius: 6px;
             }
 
             /* Results grid mobile optimization */
@@ -1037,9 +1053,11 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                                 
                                 <div style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #e9ecef; margin-bottom: 1rem;">
                                     <p style="margin: 0 0 0.5rem 0; color: #6c757d; font-size: 0.9rem;">Add this email as a viewer to your Google Drive folder:</p>
-                                    <div class="bot-email-container" style="display: flex; align-items: center; gap: 0.5rem; background: #f8f9fa; padding: 0.75rem; border-radius: 6px; border: 1px solid #dee2e6;">
-                                        <code style="background: none; padding: 0; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 0.9rem; color: #495057; flex: 1; word-break: break-all;">cloudface-ai-bot@mevscrowd.iam.gserviceaccount.com</code>
-                                        <button onclick="copyBotEmail()" style="background: #007bff; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; transition: background 0.2s;" onmouseover="this.style.background='#0056b3'" onmouseout="this.style.background='#007bff'">
+                                    <div class="bot-email-container" style="display: flex; align-items: center; gap: 0.75rem; background: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid #dee2e6; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                        <div style="flex: 1; background: white; padding: 0.75rem; border-radius: 6px; border: 1px solid #e9ecef;">
+                                            <code style="background: none; padding: 0; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace; font-size: 0.9rem; color: #2d3748; word-break: break-all; line-height: 1.4; display: block; font-weight: 500;">cloudface-ai-bot@mevscrowd.iam.gserviceaccount.com</code>
+                                        </div>
+                                        <button onclick="copyBotEmail()" style="background: #007bff; color: white; border: none; padding: 0.75rem 1.25rem; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 500; transition: all 0.2s ease; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,123,255,0.2);" onmouseover="this.style.background='#0056b3'; this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(0,123,255,0.3)'" onmouseout="this.style.background='#007bff'; this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(0,123,255,0.2)'">
                                             📋 Copy
                                         </button>
                                     </div>
@@ -2252,6 +2270,24 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
             document.getElementById('processLoading').style.display = 'block';
             const statusMessage = 'Processing with bot (no sign-in required)...';
             showStatus('processStatus', statusMessage, 'info');
+            
+            // Show progress bar immediately when processing starts
+            showProgressBar();
+            
+            // Simulate progress animation while processing
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 15; // Random progress increments
+                if (progress > 90) progress = 90; // Don't go to 100% until completion
+                
+                const mainProgressBar = document.getElementById('mainProgressBar');
+                // Hide the main percentage - we show detailed progress below
+                // if (mainPercentage) mainPercentage.textContent = Math.round(progress) + '%';
+                if (mainProgressBar) mainProgressBar.style.width = progress + '%';
+            }, 200);
+            
+            // Store interval ID for cleanup
+            window.progressInterval = progressInterval;
 
             // Send request to backend
             fetch(endpoint, {
@@ -2269,37 +2305,60 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
             .then(response => response.json())
             .then(data => {
                 document.getElementById('processLoading').style.display = 'none';
+                
+                // Clear progress animation interval
+                if (window.progressInterval) {
+                    clearInterval(window.progressInterval);
+                    window.progressInterval = null;
+                }
+                
                 if (data.success) {
                     if (data.status === 'processing') {
                         showStatus('processStatus', `🔄 ${data.message}`, 'info');
-                        // Show the beautiful progress bar
-                        showProgressBar();
+                        // Progress bar already shown, keep it visible
                     } else if (data.status === 'completed') {
-                        // Bot method completed immediately - show progress bar briefly then success
-                        showStatus('processStatus', `🔄 ${data.message}`, 'info');
-                        showProgressBar();
+                        // Bot method completed - show success with progress bar
+                        const message = data.message || `✅ Processed ${data.processed_count} photos successfully!`;
+                        showStatus('processStatus', `✅ ${message}`, 'success');
                         
-                        // Simulate progress completion
+                        // Show completion in progress bar
+                        const mainProgressBar = document.getElementById('mainProgressBar');
+                        if (mainProgressBar) mainProgressBar.style.width = '100%';
+                        // Hide main percentage - detailed progress shows below
+                        
+                        // Show next steps with share button
                         setTimeout(() => {
-                            const message = data.message || `✅ Processed ${data.processed_count} photos successfully!`;
-                            showStatus('processStatus', `✅ ${message}`, 'success');
-                            
-                            // Show next steps with share button
                             const nextSteps = document.getElementById('nextSteps');
                             if (nextSteps) nextSteps.style.display = 'block';
-                        }, 1000);
+                        }, 500);
                     } else {
                         const message = data.message || `✅ Processed ${data.processed_count} photos successfully!`;
                         showStatus('processStatus', `✅ ${message}`, 'success');
-                        // Keep progress bar open to show Share button
+                        
+                        // Show completion in progress bar
+                        const mainProgressBar = document.getElementById('mainProgressBar');
+                        if (mainProgressBar) mainProgressBar.style.width = '100%';
+                        // Hide main percentage - detailed progress shows below
+                        
+                        setTimeout(() => {
+                            const nextSteps = document.getElementById('nextSteps');
+                            if (nextSteps) nextSteps.style.display = 'block';
+                        }, 500);
                     }
                 } else {
                     showStatus('processStatus', `❌ Error: ${data.error}`, 'error');
-                    // hideProgressBar(); // Keep open even on error for debugging
+                    // Keep progress bar open even on error for debugging
                 }
             })
             .catch(error => {
                 document.getElementById('processLoading').style.display = 'none';
+                
+                // Clear progress animation interval on error
+                if (window.progressInterval) {
+                    clearInterval(window.progressInterval);
+                    window.progressInterval = null;
+                }
+                
                 showStatus('processStatus', `❌ Error: ${error.message}`, 'error');
             });
         }
@@ -3342,7 +3401,7 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
 
     .progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(90deg, #1a73e8 0%, #4285f4 100%);
         border-radius: 4px;
         transition: width 0.3s ease;
         width: 0%;
@@ -3351,7 +3410,8 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
     .progress-percentage {
         font-size: 14px;
         font-weight: 600;
-        color: #667eea;
+        color: #1a73e8;
+        display: none; /* Hide main percentage - detailed progress shows below */
     }
 
     .current-operation {
@@ -3468,7 +3528,7 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
 
     .local-progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(90deg, #1a73e8 0%, #4285f4 100%);
         border-radius: 4px;
         transition: width 0.3s ease;
         width: 0%;
@@ -3615,7 +3675,7 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
 
     .progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(90deg, #1a73e8 0%, #4285f4 100%);
         border-radius: 4px;
         transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         width: 0%;
@@ -3681,7 +3741,7 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
 
     .step-progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(90deg, #1a73e8 0%, #4285f4 100%);
         border-radius: 3px;
         transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         width: 0%;
