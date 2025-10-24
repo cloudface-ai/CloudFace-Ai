@@ -36,43 +36,43 @@ class PricingManager:
             },
             PlanType.STANDARD: {
                 'name': 'Personal',
-                'images': 20000,
-                'videos': 20,
-                'price_inr': 3999,
-                'price_usd': 49,
+                'images': 10000,
+                'videos': 10,
+                'price_inr': 2999,
+                'price_usd': 37,
                 'features': ['Advanced face recognition', 'Video processing', 'Priority support', 'Smart caching']
             },
             PlanType.PRO: {
                 'name': 'Professional',
-                'images': 50000,
-                'videos': 50,
-                'price_inr': 6999,
-                'price_usd': 85,
+                'images': 20000,
+                'videos': 20,
+                'price_inr': 4999,
+                'price_usd': 61,
                 'features': ['Professional accuracy', 'Bulk processing', 'API access', 'Custom thresholds']
             },
             PlanType.PRO_PLUS: {
                 'name': 'Business',
-                'images': 100000,
-                'videos': 100,
-                'price_inr': 11999,
-                'price_usd': 145,
+                'images': 50000,
+                'videos': 50,
+                'price_inr': 8999,
+                'price_usd': 109,
                 'features': ['Enterprise features', 'Unlimited folders', 'Advanced analytics', 'White-label option']
             },
             PlanType.EVERYTHING: {
                 'name': 'Business Plus',
-                'images': 250000,
-                'videos': 250,
-                'price_inr': 15999,
-                'price_usd': 195,
+                'images': 150000,
+                'videos': 150,
+                'price_inr': 12999,
+                'price_usd': 158,
                 'features': ['All features', 'Maximum limits', 'Priority support', 'Custom integrations', 'Advanced analytics']
             },
             PlanType.ENTERPRISE: {
                 'name': 'Enterprise',
-                'images': 550000,
-                'videos': 500,
-                'price_inr': 24999,
-                'price_usd': 300,
-                'features': ['Government-grade', 'Unlimited processing', 'Dedicated support', 'Custom deployment']
+                'images': 0,  # Custom plans
+                'videos': 0,  # Custom plans
+                'price_inr': 0,  # Contact us
+                'price_usd': 0,  # Contact us
+                'features': ['Custom plans available', 'Unlimited processing', 'Dedicated support', 'Custom deployment', 'Contact us for pricing']
             }
         }
     

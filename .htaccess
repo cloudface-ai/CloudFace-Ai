@@ -1,4 +1,7 @@
-# Enable GZIP Compression
+# CloudFace AI - SEO Optimized .htaccess
+# Optimized for Google ranking and performance
+
+# Enable compression
 <IfModule mod_deflate.c>
     AddOutputFilterByType DEFLATE text/plain
     AddOutputFilterByType DEFLATE text/html
@@ -9,12 +12,12 @@
     AddOutputFilterByType DEFLATE application/rss+xml
     AddOutputFilterByType DEFLATE application/javascript
     AddOutputFilterByType DEFLATE application/x-javascript
-    AddOutputFilterByType DEFLATE application/json
+    AddOutputFilterByType DEFLATE image/svg+xml
 </IfModule>
 
-# Browser Caching
+# Enable browser caching
 <IfModule mod_expires.c>
-    ExpiresActive on
+    ExpiresActive On
     ExpiresByType text/css "access plus 1 year"
     ExpiresByType application/javascript "access plus 1 year"
     ExpiresByType image/png "access plus 1 year"
@@ -23,71 +26,84 @@
     ExpiresByType image/gif "access plus 1 year"
     ExpiresByType image/svg+xml "access plus 1 year"
     ExpiresByType image/webp "access plus 1 year"
+    ExpiresByType application/pdf "access plus 1 month"
     ExpiresByType text/html "access plus 1 hour"
     ExpiresByType application/xml "access plus 1 hour"
-    ExpiresByType application/json "access plus 1 hour"
+    ExpiresByType text/xml "access plus 1 hour"
 </IfModule>
 
-# Security Headers
+# Security headers for SEO
 <IfModule mod_headers.c>
     Header always set X-Content-Type-Options nosniff
     Header always set X-Frame-Options DENY
     Header always set X-XSS-Protection "1; mode=block"
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
-    
-    # HSTS (HTTP Strict Transport Security)
-    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
 </IfModule>
 
-# URL Rewriting for Clean URLs
-RewriteEngine On
+# Force HTTPS (if available)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
 
-# Remove trailing slashes
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^(.*)/$ /$1 [L,R=301]
-
-# Force HTTPS
-RewriteCond %{HTTPS} off
-RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-
-# Remove www (optional - uncomment if you want to redirect www to non-www)
-# RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
-# RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+# Remove trailing slashes for SEO
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)/$ /$1 [R=301,L]
+</IfModule>
 
 # Custom error pages
 ErrorDocument 404 /404.html
 ErrorDocument 500 /500.html
 
-# Prevent access to sensitive files
-<FilesMatch "\.(htaccess|htpasswd|ini|log|sh|inc|bak)$">
-    Order Allow,Deny
+# Block access to sensitive files
+<Files "*.log">
+    Order allow,deny
     Deny from all
-</FilesMatch>
+</Files>
 
-# Prevent access to hidden files
-<FilesMatch "^\.">
-    Order Allow,Deny
+<Files "*.env">
+    Order allow,deny
     Deny from all
-</FilesMatch>
+</Files>
 
-# Enable Keep-Alive
-<IfModule mod_headers.c>
-    Header set Connection keep-alive
+<Files "*.json">
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Allow access to important SEO files
+<Files "robots.txt">
+    Order allow,deny
+    Allow from all
+</Files>
+
+<Files "sitemap*.xml">
+    Order allow,deny
+    Allow from all
+</Files>
+
+<Files "manifest.json">
+    Order allow,deny
+    Allow from all
+</Files>
+
+# MIME types for better SEO
+<IfModule mod_mime.c>
+    AddType application/json .json
+    AddType application/ld+json .jsonld
+    AddType text/xml .xml
+    AddType image/svg+xml .svg
+    AddType application/manifest+json .webmanifest
 </IfModule>
 
-# Disable server signature
-ServerSignature Off
-
-# Prevent directory browsing
-Options -Indexes
-
-# Set default character set
-AddDefaultCharset UTF-8
-
-# Enable CORS for assets
-<IfModule mod_headers.c>
-    <FilesMatch "\.(css|js|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|eot)$">
-        Header set Access-Control-Allow-Origin "*"
-    </FilesMatch>
+# Prevent hotlinking
+<IfModule mod_rewrite.c>
+    RewriteEngine on
+    RewriteCond %{HTTP_REFERER} !^$
+    RewriteCond %{HTTP_REFERER} !^http(s)?://(www\.)?cloudface-ai\.com [NC]
+    RewriteRule \.(jpg|jpeg|png|gif|svg)$ - [NC,F,L]
 </IfModule>

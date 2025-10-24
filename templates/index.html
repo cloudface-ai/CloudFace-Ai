@@ -1,4 +1,4 @@
-?<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -13,23 +13,21 @@
     <meta name="author" content="CloudFace AI">
     <meta name="robots" content="index, follow">
     <meta name="language" content="English">
-    <meta name="revisit-after" content="7 days">
     
-    <!-- Open Graph / Facebook -->
+    <!-- Open Graph Meta Tags for Social Sharing -->
+    <meta property="og:title" content="CloudFace AI - AI-Powered Face Recognition & Photo Organization">
+    <meta property="og:description" content="Find anyone in your photos instantly with AI-powered face recognition. Organize photos across Google Drive with privacy-first technology. Upload a selfie and discover every photo.">
+    <meta property="og:image" content="{{ url_for('static', filename='Cloudface-ai-logo.png') }}">
+    <meta property="og:url" content="{{ request.url }}">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://cloudface-ai.com/">
-    <meta property="og:title" content="CloudFace AI - AI-Powered Face Recognition & Photo Organization App">
-    <meta property="og:description" content="Find anyone in your photos instantly with AI-powered face recognition. Organize photos across Google Drive with privacy-first technology.">
-    <meta property="og:image" content="https://cloudface-ai.com/assets/og-image.jpg">
     <meta property="og:site_name" content="CloudFace AI">
-    <meta property="og:locale" content="en_US">
     
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://cloudface-ai.com/">
-    <meta property="twitter:title" content="CloudFace AI - AI-Powered Face Recognition & Photo Organization App">
-    <meta property="twitter:description" content="Find anyone in your photos instantly with AI-powered face recognition. Organize photos across Google Drive with privacy-first technology.">
-    <meta property="twitter:image" content="https://cloudface-ai.com/assets/twitter-image.jpg">
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="CloudFace AI - AI-Powered Face Recognition & Photo Organization">
+    <meta name="twitter:description" content="Find anyone in your photos instantly with AI-powered face recognition. Organize photos across Google Drive with privacy-first technology. Upload a selfie and discover every photo.">
+    <meta name="twitter:image" content="{{ url_for('static', filename='Cloudface-ai-logo.png') }}">
+    <meta name="revisit-after" content="7 days">
     
     <!-- Additional SEO Meta Tags -->
     <!-- <meta name="theme-color" content="#1a73e8"> --> <!-- Firefox incompatible, commented out -->
@@ -57,6 +55,72 @@
     
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json">
+
+    <!-- Enhanced JSON-LD Schema for SEO -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "CloudFace AI",
+        "description": "AI-powered face recognition and photo organization app with 99.83% accuracy. Find anyone in your photos instantly with complete privacy protection.",
+        "url": "https://cloudface-ai.com",
+        "applicationCategory": "PhotographyApplication",
+        "operatingSystem": "Web, iOS, Android",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD",
+            "availability": "https://schema.org/InStock"
+        },
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "ratingCount": "1250",
+            "bestRating": "5",
+            "worstRating": "1"
+        },
+        "author": {
+            "@type": "Organization",
+            "name": "CloudFace AI",
+            "url": "https://cloudface-ai.com",
+            "logo": "https://cloudface-ai.com/static/Cloudface-ai-logo.png",
+            "sameAs": [
+                "https://twitter.com/whoisvinodkumar",
+                "https://instagram.com/whoisvinodkumar",
+                "https://youtube.com/@whoisvinodkumar",
+                "https://linkedin.com/in/whoisvinodkumar"
+            ]
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "CloudFace AI",
+            "url": "https://cloudface-ai.com",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://cloudface-ai.com/static/Cloudface-ai-logo.png"
+            }
+        },
+        "featureList": [
+            "99.83% accurate face recognition",
+            "Privacy-first local processing",
+            "Google Drive integration",
+            "Zero data storage",
+            "GDPR compliant",
+            "Instant photo organization",
+            "Dark photo recognition",
+            "Blurry photo processing"
+        ],
+        "screenshot": "https://cloudface-ai.com/assets/app-screenshot.jpg",
+        "softwareVersion": "2.0",
+        "datePublished": "2024-01-01",
+        "dateModified": "2025-10-24",
+        "keywords": "face recognition, AI photo organization, Google Drive photos, photo search, facial recognition software, photo management, AI photo finder, cloud photo organization, privacy-first AI, GDPR compliant face recognition",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https://cloudface-ai.com/"
+        }
+    }
+    </script>
 
     <!-- Google Analytics 4 -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-Y08XH5V9JT"></script>
@@ -579,6 +643,32 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                 padding: 0.875rem;
             }
 
+            /* Search Precision mobile optimization */
+            .threshold-options {
+                flex-direction: column;
+                gap: 0.5rem;
+                margin-top: 0.75rem;
+            }
+
+            .threshold-option {
+                padding: 1rem 0.75rem;
+                min-height: 56px; /* Better touch target for mobile */
+                font-size: 1rem;
+                font-weight: 500;
+                border-radius: 12px;
+                justify-content: center;
+            }
+
+            .threshold-option input[type="radio"] {
+                margin-right: 0.75rem;
+                transform: scale(1.2); /* Larger radio buttons */
+            }
+
+            .threshold-option .threshold-label {
+                font-size: 1rem;
+                font-weight: 500;
+            }
+
             .help-guide .bot-email-container > div {
                 background: white !important;
                 padding: 0.625rem !important;
@@ -720,6 +810,18 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
 
             .footer-section p, .footer-section a {
                 font-size: 0.85rem;
+            }
+
+            /* Search Precision for very small screens */
+            .threshold-option {
+                padding: 0.875rem 0.5rem;
+                min-height: 52px;
+                font-size: 0.95rem;
+            }
+
+            .threshold-option input[type="radio"] {
+                transform: scale(1.1);
+                margin-right: 0.5rem;
             }
         }
 

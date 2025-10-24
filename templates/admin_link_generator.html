@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Link Generator - CloudFace AI Admin</title>
+    <title>Share Photos with Guests - CloudFace AI Admin</title>
     
     <style>
         * {
@@ -285,8 +285,8 @@
 </head>
 <body>
     <div class="container">
-        <h1>🔗 Auto-Process Link Generator</h1>
-        <p class="subtitle">Create shareable links for easy photo processing</p>
+        <h1>📸 Share Photos with Guests</h1>
+        <p class="subtitle">Create shareable links for easy photo access</p>
 
         <div class="form-group">
             <label for="companyName">Company Name</label>
@@ -361,12 +361,14 @@
 
     <!-- QR Code Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js" onload="console.log('✅ QRCode library loaded')" onerror="console.error('❌ QRCode library failed to load')"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" onload="console.log('✅ html2canvas library loaded')" onerror="console.error('❌ html2canvas library failed to load')"></script>
 
     <script>
         // Global variables
         let qrCodeReady = false;
         let currentQRDataURL = null;  // Store QR code for download
         let generatedShareLink = '';  // Store generated link
+        let generatedFullLink = '';   // Store full link for reference
         
         // Auto-fill Drive URL from URL parameters (when coming from main app)
         window.addEventListener('load', function() {
@@ -419,15 +421,51 @@
                         const margin = 4;
                         const qrSvg = qr.createSvgTag(cellSize, margin);
                         
-                        qrContainer.innerHTML = qrSvg;
+                        // Get event details for branding
+                        const eventName = document.getElementById('eventName').value.trim() || 'Photo Access';
+                        const companyName = document.getElementById('companyName').value.trim() || 'CloudFace AI';
+                        const eventDate = document.getElementById('eventDate').value.trim();
                         
-                        // Store QR as data URL for download
-                        const svg = qrContainer.querySelector('svg');
-                        if (svg) {
-                            svg.setAttribute('width', '300');
-                            svg.setAttribute('height', '300');
-                            const svgData = new XMLSerializer().serializeToString(svg);
-                            currentQRDataURL = 'data:image/svg+xml;base64,' + btoa(svgData);
+                        // Create enhanced QR code with branding
+                        const enhancedQR = createBrandedQRCode(qrSvg, eventName, companyName, eventDate);
+                        qrContainer.innerHTML = enhancedQR;
+                        
+                        // Store branded QR as data URL for download
+                        const brandedContainer = qrContainer.querySelector('div');
+                        if (brandedContainer) {
+                            // Create a canvas to convert the branded QR to image
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            
+                            // Set canvas size for high quality
+                            canvas.width = 600;
+                            canvas.height = 800;
+                            
+                            // Create an image from the branded container
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = brandedContainer.outerHTML;
+                            tempDiv.style.position = 'absolute';
+                            tempDiv.style.left = '-9999px';
+                            tempDiv.style.width = '600px';
+                            tempDiv.style.height = '800px';
+                            document.body.appendChild(tempDiv);
+                            
+                            // Use html2canvas if available, otherwise fallback to SVG
+                            if (typeof html2canvas !== 'undefined') {
+                                html2canvas(tempDiv, {
+                                    width: 600,
+                                    height: 800,
+                                    backgroundColor: '#ffffff'
+                                }).then(canvas => {
+                                    currentQRDataURL = canvas.toDataURL('image/png');
+                                    document.body.removeChild(tempDiv);
+                                });
+                            } else {
+                                // Fallback: convert to SVG
+                                const svgData = new XMLSerializer().serializeToString(brandedContainer);
+                                currentQRDataURL = 'data:image/svg+xml;base64,' + btoa(svgData);
+                                document.body.removeChild(tempDiv);
+                            }
                         }
                         
                         console.log('✅ QR code generated successfully');
@@ -453,6 +491,35 @@
             tryGenerate();
         }
         
+        function createBrandedQRCode(qrSvg, eventName, companyName, eventDate) {
+            const logoData = logoFilename ? `/static/logos/${logoFilename}` : '/static/Cloudface-ai-logo.png';
+            
+            return `
+                <div style="text-align: center; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <!-- Company Logo -->
+                    <div style="margin-bottom: 15px;">
+                        <img src="${logoData}" alt="${companyName}" style="height: 50px; max-width: 200px; object-fit: contain; border-radius: 4px;">
+                    </div>
+                    
+                    <!-- Event Title -->
+                    <h3 style="margin: 0 0 8px 0; color: #1a73e8; font-size: 20px; font-weight: 600; text-align: center;">${eventName}</h3>
+                    
+                    <!-- Event Date -->
+                    ${eventDate ? `<p style="margin: 0 0 15px 0; color: #5f6368; font-size: 14px; font-weight: 500;">${eventDate}</p>` : ''}
+                    
+                    <!-- QR Code -->
+                    <div style="display: inline-block; padding: 20px; background: #f8f9fa; border-radius: 12px; margin-bottom: 15px; border: 2px solid #e8f0fe;">
+                        ${qrSvg}
+                    </div>
+                    
+                    <!-- Instructions -->
+                    <p style="margin: 0; color: #5f6368; font-size: 13px; line-height: 1.4; font-weight: 500;">
+                        📱 Scan to access your photos<br>
+                        <strong style="color: #1a73e8; font-size: 12px;">Powered by CloudFace AI</strong>
+                    </p>
+                </div>
+            `;
+        }
 
         // Global variable to store logo filename
         let logoFilename = null;
@@ -582,6 +649,9 @@
                     const baseUrl = window.location.origin;
                     const shareableLink = `${baseUrl}/auto-process?session=${data.session_id}`;
                     
+                    // Create short link
+                    createShortLink(shareableLink, eventName);
+                    
                     document.getElementById('generatedLink').textContent = shareableLink;
                     document.getElementById('output').classList.add('show');
                     generatedShareLink = shareableLink;
@@ -596,6 +666,47 @@
                 btn.disabled = false;
                 btn.textContent = originalText;
                 alert('Error creating share session: ' + error.message);
+            });
+        }
+
+        // Create short link function
+        function createShortLink(fullUrl, eventName) {
+            fetch('/api/create-short-link', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    url: fullUrl,
+                    event_name: eventName,
+                    expires_days: 30
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    // Show only short link (hide the longer one)
+                    const linkContainer = document.getElementById('generatedLink');
+                    linkContainer.innerHTML = `
+                        <div>
+                            <strong>📱 Shareable Link (WhatsApp-friendly):</strong><br>
+                            <code style="word-break: break-all; background: #e8f5e8; padding: 0.5rem; border-radius: 4px; display: block; margin-top: 0.5rem; color: #2e7d32; font-weight: bold;">${data.short_url}</code>
+                        </div>
+                    `;
+                    
+                    // Update global variables for sharing
+                    generatedShareLink = data.short_url; // Use short link for sharing
+                    generatedFullLink = fullUrl; // Keep full link for reference (hidden)
+                    
+                    console.log('✅ Short link created:', data.short_url);
+                } else {
+                    console.error('Failed to create short link:', data.error);
+                    // Fallback to full link
+                    document.getElementById('generatedLink').textContent = fullUrl;
+                }
+            })
+            .catch(error => {
+                console.error('Error creating short link:', error);
+                // Fallback to full link
+                document.getElementById('generatedLink').textContent = fullUrl;
             });
         }
 
@@ -650,7 +761,8 @@
             }
             
             const eventName = document.getElementById('eventName').value.trim() || 'Event';
-            const filename = `CloudFace_QR_${eventName.replace(/\s+/g, '_')}.svg`;
+            const companyName = document.getElementById('companyName').value.trim() || 'CloudFace_AI';
+            const filename = `${companyName}_${eventName.replace(/\s+/g, '_')}_QR.png`;
             
             const downloadLink = document.createElement('a');
             downloadLink.href = currentQRDataURL;
@@ -661,7 +773,7 @@
             
             // Show success message
             const successMsg = document.getElementById('successMessage');
-            successMsg.textContent = '✅ QR Code downloaded!';
+            successMsg.textContent = '✅ Branded QR Code downloaded!';
             successMsg.classList.add('show');
             setTimeout(() => successMsg.classList.remove('show'), 3000);
         }
@@ -682,6 +794,7 @@
             navigator.clipboard.writeText(link).then(() => {
                 // Show success message
                 const successMsg = document.getElementById('successMessage');
+                successMsg.textContent = '✅ Short link copied to clipboard!';
                 successMsg.classList.add('show');
                 
                 // Hide after 3 seconds

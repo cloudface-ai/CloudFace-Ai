@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    
+    <!-- Main Sitemap -->
+    <sitemap>
+        <loc>https://cloudface-ai.com/sitemap.xml</loc>
+        <lastmod>2025-10-24</lastmod>
+    </sitemap>
+    
+    <!-- Blog Posts Sitemap -->
+    <sitemap>
+        <loc>https://cloudface-ai.com/blog-sitemap.xml</loc>
+        <lastmod>2025-10-24</lastmod>
+    </sitemap>
+    
+    <!-- Images Sitemap -->
+    <sitemap>
+        <loc>https://cloudface-ai.com/image-sitemap.xml</loc>
+        <lastmod>2025-10-24</lastmod>
+    </sitemap>
+    
+</sitemapindex>

@@ -676,9 +676,13 @@
                 </div>
                 
                 <div class="plan-limits">
-                    <strong>{{ "{:,}".format(plan.images) }}</strong> images
-                    {% if plan.videos > 0 %}
-                    + <strong>{{ plan.videos }}</strong> videos
+                    {% if plan_id == 'enterprise' %}
+                        <strong>Custom</strong> plans available
+                    {% else %}
+                        <strong>{{ "{:,}".format(plan.images) }}</strong> images
+                        {% if plan.videos > 0 %}
+                        + <strong>{{ plan.videos }}</strong> videos
+                        {% endif %}
                     {% endif %}
                 </div>
                 
@@ -699,6 +703,14 @@
                     {% if current_plan == plan_id %}
                         <button class="btn btn-secondary" disabled>
                             ✅ Current Plan
+                        </button>
+                    {% elif plan_id == 'enterprise' %}
+                        <button class="btn" onclick="window.location.href='/contact'">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                                <polyline points="22,6 12,13 2,6"></polyline>
+                            </svg>
+                            Contact Us
                         </button>
                     {% elif plan.price == 0 %}
                         <button class="btn btn-secondary" disabled>

@@ -31,6 +31,12 @@ Allow: /blog/privacy-destruction-major-apps-facebook-instagram
 Allow: /blog/india-privacy-laws-international-human-rights
 Allow: /blog/privacy-experts-expose-big-tech-surveillance
 
+# NEW HIGH-PRIORITY BLOG POSTS - 2025 TRENDING TOPICS
+Allow: /blog/ai-powered-photo-management-corporate-events-2025
+Allow: /blog/privacy-first-face-recognition-trends-2025
+Allow: /blog/hybrid-events-photo-organization-ai-2025
+Allow: /blog/step-by-step-photo-processing-guide
+
 # Disallow admin and private areas
 Disallow: /admin/
 Disallow: /private/
@@ -53,8 +59,10 @@ Allow: /sw.js
 
 # Note: Crawl-delay is not supported by Google
 
-# Sitemap location
+# Sitemap locations
+Sitemap: https://cloudface-ai.com/sitemap-index.xml
 Sitemap: https://cloudface-ai.com/sitemap.xml
+Sitemap: https://cloudface-ai.com/blog-sitemap.xml
 
 # Additional search engine bots
 User-agent: Googlebot

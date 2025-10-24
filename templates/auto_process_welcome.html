@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ event_name or 'Find Your Photos' }} - CloudFace AI</title>
     
+    <!-- Open Graph Meta Tags for Social Sharing -->
+    <meta property="og:title" content="{{ event_name or 'Find Your Photos' }} - CloudFace AI">
+    <meta property="og:description" content="Access your photos instantly with AI-powered face recognition. Find yourself in any photo collection quickly and easily.">
+    <meta property="og:image" content="{{ url_for('static', filename='Cloudface-ai-logo.png') }}">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="CloudFace AI">
+    
+    <!-- Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ event_name or 'Find Your Photos' }} - CloudFace AI">
+    <meta name="twitter:description" content="Access your photos instantly with AI-powered face recognition. Find yourself in any photo collection quickly and easily.">
+    <meta name="twitter:image" content="{{ url_for('static', filename='Cloudface-ai-logo.png') }}">
+    
+    <!-- Additional Meta Tags -->
+    <meta name="description" content="Access your photos instantly with AI-powered face recognition. Find yourself in any photo collection quickly and easily.">
+    <meta name="keywords" content="face recognition, photo search, AI, photos, CloudFace AI">
+    <meta name="author" content="CloudFace AI">
+    
     <style>
         * {
             margin: 0;

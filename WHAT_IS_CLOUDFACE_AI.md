@@ -56,45 +56,44 @@ CloudFace AI is a comprehensive face recognition and photo management platform d
 - Basic face recognition
 - Community support
 
-### 👤 **Personal Plan** - ₹3,999/year ($49)
-- 20,000 images
-- 20 videos
+### 👤 **Personal Plan** - ₹2,999/year ($37)
+- 10,000 images
+- 10 videos
 - Advanced face recognition
 - Priority support
 - Smart caching
 
-### 💼 **Professional Plan** - ₹6,999/year ($85)
-- 50,000 images
-- 50 videos
+### 💼 **Professional Plan** - ₹4,999/year ($61)
+- 20,000 images
+- 20 videos
 - Professional accuracy
 - Bulk processing
 - API access
 - Custom thresholds
 
-### 🏢 **Business Plan** - ₹11,999/year ($145)
-- 100,000 images
-- 100 videos
+### 🏢 **Business Plan** - ₹8,999/year ($109)
+- 50,000 images
+- 50 videos
 - Enterprise features
 - Unlimited folders
 - Advanced analytics
 - White-label option
 
-### 🚀 **Business Plus Plan** - ₹15,999/year ($195)
-- 250,000 images
-- 250 videos
+### 🚀 **Business Plus Plan** - ₹12,999/year ($158)
+- 150,000 images
+- 150 videos
 - All features
 - Maximum limits
 - Priority support
 - Custom integrations
 - Advanced analytics
 
-### 🏛️ **Enterprise Plan** - ₹24,999/year ($300)
-- 550,000 images
-- 500 videos
-- Government-grade security
+### 🏛️ **Enterprise Plan** - Contact Us
+- Custom plans available
 - Unlimited processing
 - Dedicated support
 - Custom deployment
+- Government-grade security
 
 ## Completed Features ✅
 

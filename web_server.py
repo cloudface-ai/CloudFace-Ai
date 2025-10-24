@@ -4,13 +4,16 @@ Facetak Web Server
 Connects HTML frontend to existing Python backend with OAuth integration
 """
 
-from flask import Flask, render_template, request, jsonify, send_from_directory, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, send_from_directory, send_file, session, redirect, url_for
 from service_account_drive import get_service_account_access_token
 import os
 import tempfile
 import uuid
 import time
 import requests
+import hashlib
+import json
+from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from urllib.parse import urlencode, parse_qs, urlparse
 
@@ -460,6 +463,75 @@ else:
 UPLOAD_FOLDER = 'storage/temp/selfies'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'heic'}
 
+# URL Shortener Configuration
+SHORT_LINKS_FILE = 'storage/short_links.json'
+
+def load_short_links():
+    """Load short links from file"""
+    try:
+        if os.path.exists(SHORT_LINKS_FILE):
+            with open(SHORT_LINKS_FILE, 'r') as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Error loading short links: {e}")
+    return {}
+
+def save_short_links(links):
+    """Save short links to file"""
+    try:
+        os.makedirs(os.path.dirname(SHORT_LINKS_FILE), exist_ok=True)
+        with open(SHORT_LINKS_FILE, 'w') as f:
+            json.dump(links, f, indent=2)
+    except Exception as e:
+        print(f"Error saving short links: {e}")
+
+def generate_short_code(url, event_name=None):
+    """Generate a short code for the URL"""
+    # Create hash from URL + timestamp for uniqueness
+    hash_input = f"{url}{time.time()}"
+    hash_obj = hashlib.md5(hash_input.encode())
+    short_code = hash_obj.hexdigest()[:8]  # 8 character code
+    
+    # If event name provided, try to create a readable code
+    if event_name:
+        # Clean event name and create readable code
+        clean_name = ''.join(c.lower() for c in event_name if c.isalnum())[:10]
+        if clean_name:
+            short_code = f"{clean_name}-{short_code[:4]}"
+    
+    return short_code
+
+def create_short_link(full_url, event_name=None, expires_days=30):
+    """Create a short link for the given URL"""
+    links = load_short_links()
+    
+    # Check if URL already has a short link
+    for code, data in links.items():
+        if data['full_url'] == full_url:
+            return f"https://cloudface-ai.com/s/{code}"
+    
+    # Generate new short code
+    short_code = generate_short_code(full_url, event_name)
+    
+    # Ensure uniqueness
+    counter = 1
+    original_code = short_code
+    while short_code in links:
+        short_code = f"{original_code}{counter}"
+        counter += 1
+    
+    # Store the mapping
+    links[short_code] = {
+        'full_url': full_url,
+        'event_name': event_name,
+        'created_at': datetime.now().isoformat(),
+        'expires_at': (datetime.now() + timedelta(days=expires_days)).isoformat(),
+        'click_count': 0
+    }
+    
+    save_short_links(links)
+    return f"https://cloudface-ai.com/s/{short_code}"
+
 # Google OAuth Configuration
 from dotenv import load_dotenv
 load_dotenv('.env', override=True)
@@ -764,6 +836,21 @@ def step_by_step_photo_processing_guide():
     """Show the step-by-step photo processing guide blog post"""
     return render_template('blog_posts/step_by_step_photo_processing_guide.html')
 
+@app.route('/blog/ai-powered-photo-management-corporate-events-2025')
+def ai_powered_photo_management_corporate_events_2025():
+    """Show the AI-powered photo management for corporate events blog post"""
+    return render_template('blog/ai-powered-photo-management-corporate-events-2025.html')
+
+@app.route('/blog/privacy-first-face-recognition-trends-2025')
+def privacy_first_face_recognition_trends_2025():
+    """Show the privacy-first face recognition trends blog post"""
+    return render_template('blog/privacy-first-face-recognition-trends-2025.html')
+
+@app.route('/blog/hybrid-events-photo-organization-ai-2025')
+def hybrid_events_photo_organization_ai_2025():
+    """Show the hybrid events photo organization with AI blog post"""
+    return render_template('blog/hybrid-events-photo-organization-ai-2025.html')
+
 @app.route('/privacy')
 def privacy():
     """Show the privacy policy page"""
@@ -778,6 +865,7 @@ def refund():
 def terms():
     """Show the terms and conditions page"""
     return render_template('terms.html')
+
 
 @app.route('/pricing')
 def pricing():
@@ -2548,15 +2636,72 @@ def sitemap_xml():
     """Serve sitemap.xml file"""
     return send_file('sitemap.xml', mimetype='application/xml')
 
+@app.route('/s/<short_code>')
+def redirect_short_link(short_code):
+    """Redirect short links to full URLs"""
+    try:
+        links = load_short_links()
+        
+        if short_code not in links:
+            return render_template('404.html'), 404
+        
+        link_data = links[short_code]
+        
+        # Check if link has expired
+        expires_at = datetime.fromisoformat(link_data['expires_at'])
+        if datetime.now() > expires_at:
+            return render_template('404.html'), 404
+        
+        # Increment click count
+        link_data['click_count'] += 1
+        save_short_links(links)
+        
+        # Redirect to full URL
+        return redirect(link_data['full_url'])
+        
+    except Exception as e:
+        print(f"Error redirecting short link: {e}")
+        return render_template('404.html'), 404
+
 @app.route('/robots.txt')
 def robots_txt():
     """Serve robots.txt file"""
     return send_from_directory('.', 'robots.txt', mimetype='text/plain')
 
+@app.route('/api/create-short-link', methods=['POST'])
+def create_short_link_api():
+    """API endpoint to create short links"""
+    try:
+        data = request.get_json()
+        full_url = data.get('url')
+        event_name = data.get('event_name', '')
+        expires_days = data.get('expires_days', 30)
+        
+        if not full_url:
+            return jsonify({'success': False, 'error': 'URL is required'}), 400
+        
+        short_url = create_short_link(full_url, event_name, expires_days)
+        
+        return jsonify({
+            'success': True,
+            'short_url': short_url,
+            'full_url': full_url,
+            'event_name': event_name
+        })
+        
+    except Exception as e:
+        print(f"Error creating short link: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/manifest.json')
 def manifest():
     """Serve manifest.json file"""
     return send_from_directory('.', 'manifest.json', mimetype='application/json')
+
+@app.route('/test-logo-qr')
+def test_logo_qr():
+    """Test page for logo upload and QR code generation"""
+    return send_from_directory('.', 'test_logo_qr.html', mimetype='text/html')
 
 @app.route('/auto-process')
 def auto_process():

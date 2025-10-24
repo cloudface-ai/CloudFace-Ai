@@ -1,107 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
-         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 
-    <!-- Homepage -->
-    <url>
-        <loc>https://cloudface-ai.com/</loc>
-        <lastmod>2025-10-24</lastmod>
-        <changefreq>daily</changefreq>
-        <priority>1.0</priority>
-    </url>
-
-    <!-- About Page -->
-    <url>
-        <loc>https://cloudface-ai.com/about</loc>
-        <lastmod>2025-10-10</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.8</priority>
-    </url>
-
-    <!-- Blog Page -->
-    <url>
-        <loc>https://cloudface-ai.com/blog</loc>
-        <lastmod>2025-10-24</lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.9</priority>
-    </url>
-
-    <!-- Contact Page -->
-    <url>
-        <loc>https://cloudface-ai.com/contact</loc>
-        <lastmod>2025-10-10</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
-    </url>
-
-    <!-- How It Works Page -->
-    <url>
-        <loc>https://cloudface-ai.com/how-it-works</loc>
-        <lastmod>2025-10-10</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.8</priority>
-    </url>
-
-    <!-- Pricing Page -->
-    <url>
-        <loc>https://cloudface-ai.com/pricing</loc>
-        <lastmod>2025-10-10</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
-    </url>
-
-    <!-- Privacy Policy Page -->
-    <url>
-        <loc>https://cloudface-ai.com/privacy</loc>
-        <lastmod>2025-10-10</lastmod>
-        <changefreq>yearly</changefreq>
-        <priority>0.5</priority>
-    </url>
-
-    <!-- Terms Page -->
-    <url>
-        <loc>https://cloudface-ai.com/terms</loc>
-        <lastmod>2025-10-10</lastmod>
-        <changefreq>yearly</changefreq>
-        <priority>0.5</priority>
-    </url>
-
-    <!-- Refund Policy Page -->
-    <url>
-        <loc>https://cloudface-ai.com/refund</loc>
-        <lastmod>2025-10-10</lastmod>
-        <changefreq>yearly</changefreq>
-        <priority>0.5</priority>
-    </url>
-
-    <!-- App Page -->
-    <url>
-        <loc>https://cloudface-ai.com/app</loc>
-        <lastmod>2025-10-10</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.9</priority>
-    </url>
-
-    <!-- Video App Page -->
-    <url>
-        <loc>https://cloudface-ai.com/video-app</loc>
-        <lastmod>2025-10-10</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
-    </url>
-
-    <!-- My Photos Page -->
-    <url>
-        <loc>https://cloudface-ai.com/my-photos</loc>
-        <lastmod>2025-10-10</lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.7</priority>
-    </url>
-
-
-    <!-- NEW BLOG POSTS - High Priority SEO Content -->
+    <!-- HIGH PRIORITY BLOG POSTS - 2025 TRENDING TOPICS -->
     
     <!-- AI-Powered Photo Management for Corporate Events 2025 -->
     <url>
@@ -109,6 +11,11 @@
         <lastmod>2025-10-24</lastmod>
         <changefreq>weekly</changefreq>
         <priority>1.0</priority>
+        <image:image>
+            <image:loc>https://cloudface-ai.com/assets/blog/ai-corporate-events-2025.jpg</image:loc>
+            <image:title>AI-Powered Photo Management for Corporate Events 2025</image:title>
+            <image:caption>Discover how AI photo management is revolutionizing corporate events in 2025</image:caption>
+        </image:image>
     </url>
 
     <!-- Privacy-First Face Recognition Trends 2025 -->
@@ -117,6 +24,11 @@
         <lastmod>2025-10-24</lastmod>
         <changefreq>weekly</changefreq>
         <priority>1.0</priority>
+        <image:image>
+            <image:loc>https://cloudface-ai.com/assets/blog/privacy-face-recognition-2025.jpg</image:loc>
+            <image:title>Privacy-First Face Recognition Trends 2025</image:title>
+            <image:caption>Discover the latest privacy-first face recognition trends in 2025</image:caption>
+        </image:image>
     </url>
 
     <!-- Hybrid Events Photo Organization with AI 2025 -->
@@ -125,6 +37,11 @@
         <lastmod>2025-10-24</lastmod>
         <changefreq>weekly</changefreq>
         <priority>1.0</priority>
+        <image:image>
+            <image:loc>https://cloudface-ai.com/assets/blog/hybrid-events-ai-2025.jpg</image:loc>
+            <image:title>Hybrid Events Photo Organization with AI 2025</image:title>
+            <image:caption>Discover how AI transforms hybrid event photo management in 2025</image:caption>
+        </image:image>
     </url>
 
     <!-- Best Face Search Apps 2025 -->
@@ -133,30 +50,63 @@
         <lastmod>2025-10-24</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
+        <image:image>
+            <image:loc>https://cloudface-ai.com/assets/blog/best-face-search-apps-2025.jpg</image:loc>
+            <image:title>Best Face Search Apps 2025: Complete Comparison Guide</image:title>
+            <image:caption>Comprehensive comparison of face search apps in 2025</image:caption>
+        </image:image>
     </url>
 
     <!-- CloudFace AI Privacy Secure -->
     <url>
         <loc>https://cloudface-ai.com/blog/cloudface-ai-privacy-secure</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-24</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
+        <image:image>
+            <image:loc>https://cloudface-ai.com/assets/blog/privacy-secure.jpg</image:loc>
+            <image:title>CloudFace AI: The Most Privacy-Secure Face Recognition App in 2025</image:title>
+            <image:caption>CloudFace AI is the #1 privacy-focused face recognition app</image:caption>
+        </image:image>
     </url>
 
     <!-- Google Drive Face Search Guide -->
     <url>
         <loc>https://cloudface-ai.com/blog/google-drive-face-search-guide</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-24</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
+        <image:image>
+            <image:loc>https://cloudface-ai.com/assets/blog/google-drive-guide.jpg</image:loc>
+            <image:title>How to Search Faces from Google Drive: Ultimate Guide 2025</image:title>
+            <image:caption>Yes, you can search faces from Google Drive!</image:caption>
+        </image:image>
     </url>
 
     <!-- Face Recognition Dark Blurry Photos -->
     <url>
         <loc>https://cloudface-ai.com/blog/face-recognition-dark-blurry-photos</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-24</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
+        <image:image>
+            <image:loc>https://cloudface-ai.com/assets/blog/dark-blurry-photos.jpg</image:loc>
+            <image:title>Face Recognition in Dark & Blurry Photos: Technical Analysis 2025</image:title>
+            <image:caption>Face recognition in challenging conditions represents the ultimate test of AI technology</image:caption>
+        </image:image>
+    </url>
+
+    <!-- Step-by-Step Photo Processing Guide -->
+    <url>
+        <loc>https://cloudface-ai.com/blog/step-by-step-photo-processing-guide</loc>
+        <lastmod>2025-10-24</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+        <image:image>
+            <image:loc>https://cloudface-ai.com/assets/blog/step-by-step-guide.jpg</image:loc>
+            <image:title>How to Process Photos with CloudFace AI: Complete Step-by-Step Guide 2025</image:title>
+            <image:caption>Learn how to process photos with CloudFace AI in 5 simple steps</image:caption>
+        </image:image>
     </url>
 
     <!-- EXISTING BLOG POSTS -->
@@ -164,7 +114,7 @@
     <!-- Fortune 500 Photo Software -->
     <url>
         <loc>https://cloudface-ai.com/blog/fortune-500-photo-software</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-24</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
@@ -172,7 +122,7 @@
     <!-- Coca Cola Photo Management -->
     <url>
         <loc>https://cloudface-ai.com/blog/coca-cola-photo-management</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-24</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
@@ -180,7 +130,7 @@
     <!-- Nike Photo Organization -->
     <url>
         <loc>https://cloudface-ai.com/blog/nike-photo-organization</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-24</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
@@ -188,7 +138,7 @@
     <!-- Red Bull Formula 1 Photography -->
     <url>
         <loc>https://cloudface-ai.com/blog/red-bull-formula1-photography</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-24</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
@@ -196,7 +146,7 @@
     <!-- Spotify Music Events -->
     <url>
         <loc>https://cloudface-ai.com/blog/spotify-music-events</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-24</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
@@ -204,7 +154,7 @@
     <!-- Professional Photographers -->
     <url>
         <loc>https://cloudface-ai.com/blog/professional-photographers-cloudface-ai</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-24</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
     </url>
@@ -212,7 +162,7 @@
     <!-- Government Transportation -->
     <url>
         <loc>https://cloudface-ai.com/blog/government-transportation-live-tracking</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-24</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
     </url>
@@ -220,7 +170,7 @@
     <!-- World's First Privacy -->
     <url>
         <loc>https://cloudface-ai.com/blog/worlds-first-privacy-face-recognition</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-24</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
@@ -228,7 +178,7 @@
     <!-- GDPR Compliance -->
     <url>
         <loc>https://cloudface-ai.com/blog/gdpr-face-recognition-privacy-compliance</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-24</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
     </url>
@@ -236,7 +186,7 @@
     <!-- Privacy Destruction Major Apps -->
     <url>
         <loc>https://cloudface-ai.com/blog/privacy-destruction-major-apps-facebook-instagram</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-24</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
@@ -244,7 +194,7 @@
     <!-- India Privacy Laws -->
     <url>
         <loc>https://cloudface-ai.com/blog/india-privacy-laws-international-human-rights</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-24</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
     </url>
@@ -252,7 +202,7 @@
     <!-- Privacy Experts Expose -->
     <url>
         <loc>https://cloudface-ai.com/blog/privacy-experts-expose-big-tech-surveillance</loc>
-        <lastmod>2025-10-10</lastmod>
+        <lastmod>2025-10-24</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>

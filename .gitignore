@@ -290,3 +290,4 @@ dmypy.json
 # Pyre
 .pyre/
 production.env
+models/*/face_embeddings.index
