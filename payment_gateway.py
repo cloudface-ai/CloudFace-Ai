@@ -64,6 +64,7 @@ class PaymentGateway:
                 'plan_id': plan_id,
                 'customer_notify': 1,
                 'quantity': 1,
+                'total_count': 12,  # 12 months subscription
                 'notes': {
                     'user_id': user_id,
                     'app': 'cloudface'
