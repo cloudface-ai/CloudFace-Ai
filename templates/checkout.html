@@ -500,26 +500,57 @@
             .then(data => {
                 console.log('Payment creation response:', data);
                 if (data.success) {
-                    // Open Razorpay checkout
-                    const options = {
-                        key: data.key,
-                        amount: data.amount * 100, // Convert to paise
-                        currency: 'INR',
-                        name: 'CloudFace AI',
-                        description: `${planData.name} Plan Subscription`,
-                        order_id: data.order_id,
-                        handler: function(response) {
-                            // Verify payment
-                            verifyPayment({
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature,
-                                plan_id: planData.id,
-                                currency: planData.currency,
-                                amount: planData.price,
-                                method: 'razorpay'
-                            });
-                        },
+                    // Check if this is a subscription or one-time payment
+                    if (data.subscription_id) {
+                        // This is a subscription - use subscription options
+                        const options = {
+                            key: data.key,
+                            subscription_id: data.subscription_id,
+                            name: 'CloudFace AI',
+                            description: `${planData.name} Plan Subscription`,
+                            handler: function(response) {
+                                // Verify subscription payment
+                                verifyPayment({
+                                    razorpay_subscription_id: response.razorpay_subscription_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature,
+                                    plan_id: planData.id,
+                                    currency: planData.currency,
+                                    amount: planData.price,
+                                    method: 'razorpay_subscription'
+                                });
+                            },
+                            prefill: {
+                                email: '{{ user_id }}',
+                                contact: ''
+                            },
+                            theme: {
+                                color: '#1a73e8'
+                            }
+                        };
+                        const razorpay = new Razorpay(options);
+                        razorpay.open();
+                    } else {
+                        // This is a one-time payment - use order options
+                        const options = {
+                            key: data.key,
+                            amount: data.amount * 100, // Convert to paise
+                            currency: 'INR',
+                            name: 'CloudFace AI',
+                            description: `${planData.name} Plan Subscription`,
+                            order_id: data.order_id,
+                            handler: function(response) {
+                                // Verify payment
+                                verifyPayment({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature,
+                                    plan_id: planData.id,
+                                    currency: planData.currency,
+                                    amount: planData.price,
+                                    method: 'razorpay'
+                                });
+                            },
                         prefill: {
                             email: '{{ user_id }}',
                             contact: ''
