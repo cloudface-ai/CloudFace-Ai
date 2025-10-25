@@ -651,7 +651,8 @@
                 
                 if (data.success) {
                     // Generate shareable link with session ID
-                    const baseUrl = window.location.origin;
+                    // Use production URL for live deployment, localhost for development
+                    const baseUrl = window.location.hostname === 'cloudface-ai.com' ? 'https://cloudface-ai.com' : window.location.origin;
                     const shareableLink = `${baseUrl}/auto-process?session=${data.session_id}`;
                     
                     // Create short link
