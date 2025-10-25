@@ -2069,6 +2069,15 @@ def serve_photo(filename):
         
         if os.path.exists(upload_file_path):
             print(f"   ✅ Found uploaded file: {upload_file_path}")
+            # Track download
+            try:
+                from analytics_tracker import analytics
+                analytics.track_action(photo_user_id, 'photo_downloaded', {
+                    'filename': filename,
+                    'source': 'upload'
+                })
+            except Exception as e:
+                print(f"⚠️ Failed to track download: {e}")
             # For nested paths like "1111/ABN10404.jpg", we need to serve from the base upload folder
             return send_from_directory(upload_folder, filename)
         
@@ -2080,6 +2089,16 @@ def serve_photo(filename):
             
             if os.path.exists(cache_file_path):
                 print(f"   ✅ Found cached file: {cache_file_path}")
+                # Track download
+                try:
+                    from analytics_tracker import analytics
+                    analytics.track_action(photo_user_id, 'photo_downloaded', {
+                        'filename': filename,
+                        'source': 'cache',
+                        'folder_id': photo_folder_id
+                    })
+                except Exception as e:
+                    print(f"⚠️ Failed to track download: {e}")
                 return send_from_directory(cache_folder, filename)
         
         # Fallback: Try to find the file in any cache folder for this user
@@ -2098,6 +2117,16 @@ def serve_photo(filename):
                         print(f"   📁 File exists: {os.path.exists(cache_file_path)}")
                         if os.path.exists(cache_file_path):
                             print(f"   ✅ Found cached file in fallback: {cache_file_path}")
+                            # Track download
+                            try:
+                                from analytics_tracker import analytics
+                                analytics.track_action(photo_user_id, 'photo_downloaded', {
+                                    'filename': filename,
+                                    'source': 'fallback_cache',
+                                    'folder_id': folder_name
+                                })
+                            except Exception as e:
+                                print(f"⚠️ Failed to track download: {e}")
                             return send_from_directory(cache_folder, filename)
                         else:
                             # List files in the cache folder to see what's available
@@ -2845,32 +2874,52 @@ def create_share_session():
         from shared_session_manager import get_session_manager
         
         data = request.get_json()
+        print(f"🔍 Create share session data: {data}")
+        
         admin_user_id = data.get('admin_user_id')
         folder_id = data.get('folder_id')
         metadata = data.get('metadata', {})
         
+        # If no admin_user_id provided, use a default or generate one
+        if not admin_user_id:
+            import time
+            admin_user_id = f"admin_{int(time.time())}"
+            print(f"🔍 Generated admin user ID: {admin_user_id}")
+        
+        print(f"🔍 Admin user ID: {admin_user_id}")
+        print(f"🔍 Folder ID: {folder_id}")
+        print(f"🔍 Metadata: {metadata}")
+        
         manager = get_session_manager()
+        print(f"🔍 Manager created: {manager}")
+        
         session_id = manager.create_session(admin_user_id, folder_id, metadata)
+        print(f"🔍 Session ID result: {session_id}")
         
         if session_id:
-            # Track link creation analytics
-            analytics_session_id = session.get('analytics_session_id')
-            if analytics_session_id:
-                analytics.track_action(
-                    analytics_session_id, 
-                    admin_user_id, 
-                    'link_created', 
-                    {
-                        'session_id': session_id,
-                        'folder_id': folder_id,
-                        'metadata': metadata
-                    },
-                    '/admin_link_generator'
-                )
+            print(f"✅ Session created successfully: {session_id}")
+            # Track link creation analytics (optional, don't require auth)
+            try:
+                analytics_session_id = session.get('analytics_session_id')
+                if analytics_session_id:
+                    analytics.track_action(
+                        analytics_session_id, 
+                        admin_user_id, 
+                        'link_created', 
+                        {
+                            'session_id': session_id,
+                            'folder_id': folder_id,
+                            'metadata': metadata
+                        },
+                        '/admin_link_generator'
+                    )
+            except Exception as e:
+                print(f"⚠️ Analytics tracking failed: {e}")
             
             return jsonify({'success': True, 'session_id': session_id})
         else:
-            return jsonify({'success': False, 'error': 'Failed to create session'})
+            print("❌ Session creation returned None - this is the problem!")
+            return jsonify({'success': False, 'error': 'Session creation returned None - check server logs'})
     except Exception as e:
         print(f"❌ Error creating share session: {e}")
         import traceback
@@ -3013,6 +3062,77 @@ def get_realtime_analytics():
 def admin_analytics():
     """Show analytics dashboard"""
     return render_template('admin_analytics.html')
+
+@app.route('/admin/dashboard')
+def admin_dashboard():
+    """Show the admin dashboard for sharing metrics"""
+    return render_template('admin_dashboard.html')
+
+@app.route('/api/admin/dashboard')
+def admin_dashboard_data():
+    """Get admin dashboard data"""
+    try:
+        from analytics_tracker import analytics
+        
+        # Get overall analytics
+        overall = analytics.get_overall_analytics()
+        
+        # Calculate sharing metrics
+        stats = {
+            'photos_shared': overall.get('total_photos_processed', 0),
+            'links_created': overall.get('total_links_created', 0),
+            'total_downloads': overall.get('total_downloads', 0),
+            'total_views': overall.get('total_page_views', 0),
+            'photos_this_week': overall.get('photos_this_week', 0),
+            'links_this_week': overall.get('links_this_week', 0),
+            'downloads_this_week': overall.get('downloads_this_week', 0),
+            'views_this_week': overall.get('views_this_week', 0)
+        }
+        
+        # Get real chart data
+        chart_data = analytics.get_chart_data(30)
+        charts = {
+            'activity_labels': chart_data['labels'],
+            'photos_data': chart_data['photos_data'],
+            'links_data': chart_data['links_data'],
+            'sources_labels': chart_data['sources_labels'],
+            'sources_data': chart_data['sources_data']
+        }
+        
+        # Get real recent activity
+        recent_activity = analytics.get_recent_activity(10)
+        
+        return jsonify({
+            'success': True,
+            'stats': stats,
+            'charts': charts,
+            'recent_activity': recent_activity
+        })
+        
+    except Exception as e:
+        print(f"Error getting admin dashboard data: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'stats': {
+                'photos_shared': 0,
+                'links_created': 0,
+                'total_downloads': 0,
+                'total_views': 0,
+                'photos_this_week': 0,
+                'links_this_week': 0,
+                'downloads_this_week': 0,
+                'views_this_week': 0
+            },
+            'charts': {
+                'activity_labels': [],
+                'photos_data': [],
+                'links_data': [],
+                'sources_labels': [],
+                'sources_data': []
+            },
+            'recent_activity': []
+        })
 
 @app.route('/api/analytics/track-share', methods=['POST'])
 def track_share():

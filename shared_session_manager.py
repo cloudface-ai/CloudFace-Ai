@@ -30,12 +30,16 @@ class SharedSessionManager:
             session_id: Unique session ID for sharing
         """
         try:
+            print(f"🔍 Creating session - Admin: {admin_user_id}, Folder: {folder_id}")
+            print(f"🔍 Firebase DB status: {self.db is not None}")
+            
             if self.db is None:
                 print("⚠️  No Firebase client; using local file storage for sessions")
                 return self._create_local_session(admin_user_id, folder_id, metadata)
             
             # Generate unique session ID
             session_id = str(uuid.uuid4())[:12]  # Short ID like: a1b2c3d4e5f6
+            print(f"🔍 Generated session ID: {session_id}")
             
             # Create session document
             session_data = {
@@ -48,10 +52,18 @@ class SharedSessionManager:
                 'access_count': 0,
                 'status': 'active'
             }
+            print(f"🔍 Session data prepared: {session_data}")
             
             # Save to Firestore
-            doc_ref = self.db.collection(SESSIONS_COLLECTION).document(session_id)
-            doc_ref.set(session_data)
+            print(f"🔍 Saving to Firebase collection: {SESSIONS_COLLECTION}")
+            try:
+                doc_ref = self.db.collection(SESSIONS_COLLECTION).document(session_id)
+                doc_ref.set(session_data)
+                print(f"🔍 Document saved to Firebase")
+            except Exception as firebase_error:
+                print(f"❌ Firebase save failed: {firebase_error}")
+                print("🔄 Falling back to local storage")
+                return self._create_local_session(admin_user_id, folder_id, metadata)
             
             print(f"✅ Created shared session: {session_id}")
             print(f"   Admin: {admin_user_id}")

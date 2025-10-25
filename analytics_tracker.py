@@ -400,6 +400,18 @@ class AnalyticsTracker:
         
         popular_pages = sorted(page_stats.items(), key=lambda x: x[1]['views'], reverse=True)[:10]
         
+        # Calculate weekly metrics
+        week_ago = datetime.now() - timedelta(days=7)
+        week_actions = [a for a in actions if 
+                       datetime.fromisoformat(a['timestamp']) >= week_ago]
+        week_pageviews = [p for p in pageviews if 
+                         datetime.fromisoformat(p['timestamp']) >= week_ago]
+        
+        photos_this_week = len([a for a in week_actions if a['action_type'] == 'photo_processed'])
+        links_this_week = len([a for a in week_actions if a['action_type'] == 'link_created'])
+        downloads_this_week = len([a for a in week_actions if a['action_type'] == 'photo_downloaded'])
+        views_this_week = len(week_pageviews)
+
         return {
             'period_days': days,
             'unique_users': unique_users,
@@ -417,7 +429,11 @@ class AnalyticsTracker:
             'qr_downloads': qr_downloads,
             'country_distribution': dict(sorted(country_stats.items(), key=lambda x: x[1], reverse=True)[:10]),
             'traffic_sources': dict(sorted(source_stats.items(), key=lambda x: x[1], reverse=True)[:10]),
-            'popular_pages': popular_pages
+            'popular_pages': popular_pages,
+            'photos_this_week': photos_this_week,
+            'links_this_week': links_this_week,
+            'downloads_this_week': downloads_this_week,
+            'views_this_week': views_this_week
         }
     
     def get_realtime_stats(self) -> Dict[str, Any]:
@@ -452,6 +468,152 @@ class AnalyticsTracker:
             'photos_processed_1h': photos_processed_1h,
             'last_updated': now.isoformat()
         }
+    
+    def get_chart_data(self, days: int = 30) -> Dict[str, Any]:
+        """Get chart data for the last N days"""
+        try:
+            cutoff_date = datetime.now() - timedelta(days=days)
+            
+            # Load all data
+            actions = self._load_data(self.actions_file)
+            shares = self._load_data(self.shares_file)
+            
+            # Filter by date
+            recent_actions = [a for a in actions if 
+                            datetime.fromisoformat(a['timestamp']) >= cutoff_date]
+            recent_shares = [s for s in shares if 
+                           datetime.fromisoformat(s['timestamp']) >= cutoff_date]
+            
+            # Generate daily data for the last 30 days
+            daily_data = {}
+            for i in range(days):
+                date = datetime.now() - timedelta(days=i)
+                date_str = date.strftime('%Y-%m-%d')
+                daily_data[date_str] = {
+                    'photos_processed': 0,
+                    'links_created': 0,
+                    'downloads': 0
+                }
+            
+            # Count actions by day
+            for action in recent_actions:
+                action_date = datetime.fromisoformat(action['timestamp']).strftime('%Y-%m-%d')
+                if action_date in daily_data:
+                    if action['action_type'] == 'photo_processed':
+                        daily_data[action_date]['photos_processed'] += 1
+                    elif action['action_type'] == 'link_created':
+                        daily_data[action_date]['links_created'] += 1
+                    elif action['action_type'] == 'photo_downloaded':
+                        daily_data[action_date]['downloads'] += 1
+            
+            # Generate chart data (last 30 days, most recent first)
+            chart_data = {
+                'labels': [],
+                'photos_data': [],
+                'links_data': [],
+                'downloads_data': []
+            }
+            
+            for i in range(days-1, -1, -1):  # Reverse order (oldest to newest)
+                date = datetime.now() - timedelta(days=i)
+                date_str = date.strftime('%Y-%m-%d')
+                day_data = daily_data[date_str]
+                
+                chart_data['labels'].append(f"Day {days-i}")
+                chart_data['photos_data'].append(day_data['photos_processed'])
+                chart_data['links_data'].append(day_data['links_created'])
+                chart_data['downloads_data'].append(day_data['downloads'])
+            
+            # Share sources data
+            whatsapp_shares = len([s for s in recent_shares if s['share_type'] == 'whatsapp'])
+            email_shares = len([s for s in recent_shares if s['share_type'] == 'email'])
+            qr_downloads = len([s for s in recent_shares if s['share_type'] == 'qr_download'])
+            other_shares = len(recent_shares) - whatsapp_shares - email_shares - qr_downloads
+            
+            chart_data['sources_labels'] = ['WhatsApp', 'Email', 'QR Download', 'Other']
+            chart_data['sources_data'] = [whatsapp_shares, email_shares, qr_downloads, other_shares]
+            
+            return chart_data
+            
+        except Exception as e:
+            print(f"Error getting chart data: {e}")
+            return {
+                'labels': [],
+                'photos_data': [],
+                'links_data': [],
+                'downloads_data': [],
+                'sources_labels': ['WhatsApp', 'Email', 'QR Download', 'Other'],
+                'sources_data': [0, 0, 0, 0]
+            }
+    
+    def get_recent_activity(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """Get recent activity feed"""
+        try:
+            # Load all data
+            actions = self._load_data(self.actions_file)
+            shares = self._load_data(self.shares_file)
+            
+            # Combine and sort by timestamp
+            all_activities = []
+            
+            # Add actions
+            for action in actions:
+                all_activities.append({
+                    'type': action['action_type'],
+                    'description': self._get_action_description(action),
+                    'timestamp': action['timestamp'],
+                    'user_id': action['user_id']
+                })
+            
+            # Add shares
+            for share in shares:
+                all_activities.append({
+                    'type': f"share_{share['share_type']}",
+                    'description': self._get_share_description(share),
+                    'timestamp': share['timestamp'],
+                    'user_id': share['user_id']
+                })
+            
+            # Sort by timestamp (most recent first)
+            all_activities.sort(key=lambda x: x['timestamp'], reverse=True)
+            
+            return all_activities[:limit]
+            
+        except Exception as e:
+            print(f"Error getting recent activity: {e}")
+            return []
+    
+    def _get_action_description(self, action: Dict[str, Any]) -> str:
+        """Generate human-readable action description"""
+        action_type = action['action_type']
+        metadata = action.get('metadata', {})
+        
+        if action_type == 'photo_processed':
+            count = metadata.get('count', 0)
+            return f"Processed {count} photos"
+        elif action_type == 'link_created':
+            return "Created a shareable link"
+        elif action_type == 'search_performed':
+            return "Performed a face search"
+        elif action_type == 'photo_downloaded':
+            filename = metadata.get('filename', 'photo')
+            return f"Downloaded {filename}"
+        else:
+            return f"Performed {action_type.replace('_', ' ')}"
+    
+    def _get_share_description(self, share: Dict[str, Any]) -> str:
+        """Generate human-readable share description"""
+        share_type = share['share_type']
+        metadata = share.get('metadata', {})
+        
+        if share_type == 'whatsapp':
+            return "Shared via WhatsApp"
+        elif share_type == 'email':
+            return "Shared via Email"
+        elif share_type == 'qr_download':
+            return "Downloaded QR code"
+        else:
+            return f"Shared via {share_type}"
 
 # Global analytics tracker instance
 analytics = AnalyticsTracker()

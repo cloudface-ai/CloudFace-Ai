@@ -1076,6 +1076,7 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                         <a href="/pricing">Pricing</a>
                         <a href="/how-it-works">How It Works</a>
                         <a href="/#features">Features</a>
+                        <a href="/admin/dashboard" style="color: var(--accent); font-weight: 600;">📊 Admin</a>
                         <a href="/app" class="cta-button">Try App</a>
                     </nav>
                 </div>
@@ -1361,6 +1362,13 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
         // Progress Bar Functions - Define early to avoid "not defined" errors
         function showProgressBar() {
             document.getElementById('progressContainer').style.display = 'block';
+            
+            // Reset progress bar to 0% when starting
+            const mainProgressBar = document.getElementById('mainProgressBar');
+            const mainPercentage = document.getElementById('mainPercentage');
+            if (mainProgressBar) mainProgressBar.style.width = '0%';
+            if (mainPercentage) mainPercentage.textContent = '0%';
+            
             startProgressTracking();
         }
 
@@ -2377,20 +2385,8 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
             // Show progress bar immediately when processing starts
             showProgressBar();
             
-            // Simulate progress animation while processing
-            let progress = 0;
-            const progressInterval = setInterval(() => {
-                progress += Math.random() * 15; // Random progress increments
-                if (progress > 90) progress = 90; // Don't go to 100% until completion
-                
-                const mainProgressBar = document.getElementById('mainProgressBar');
-                // Hide the main percentage - we show detailed progress below
-                // if (mainPercentage) mainPercentage.textContent = Math.round(progress) + '%';
-                if (mainProgressBar) mainProgressBar.style.width = progress + '%';
-            }, 200);
-            
-            // Store interval ID for cleanup
-            window.progressInterval = progressInterval;
+            // Don't simulate progress - let the real progress tracking handle it
+            // The progress bar will be updated by the server's real progress data
 
             // Send request to backend
             fetch(endpoint, {
@@ -2424,43 +2420,43 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                         const message = data.message || `✅ Processed ${data.processed_count} photos successfully!`;
                         showStatus('processStatus', `✅ ${message}`, 'success');
                         
+                        // Progress tracking is handled by the server's real progress data
+                        
                         // Show completion in progress bar
                         const mainProgressBar = document.getElementById('mainProgressBar');
                         if (mainProgressBar) mainProgressBar.style.width = '100%';
                         // Hide main percentage - detailed progress shows below
                         
-                        // Show next steps with share button
-                        setTimeout(() => {
-                            const nextSteps = document.getElementById('nextSteps');
-                            if (nextSteps) nextSteps.style.display = 'block';
-                        }, 500);
+                    // Don't show share button yet - wait for actual completion
+                    // The share button will be shown by the progress tracking system
                     } else {
                         const message = data.message || `✅ Processed ${data.processed_count} photos successfully!`;
                         showStatus('processStatus', `✅ ${message}`, 'success');
                         
+                        // Progress tracking is handled by the server's real progress data
+                        
                         // Show completion in progress bar
                         const mainProgressBar = document.getElementById('mainProgressBar');
                         if (mainProgressBar) mainProgressBar.style.width = '100%';
                         // Hide main percentage - detailed progress shows below
                         
-                        setTimeout(() => {
-                            const nextSteps = document.getElementById('nextSteps');
-                            if (nextSteps) nextSteps.style.display = 'block';
-                        }, 500);
+                        // Don't show share button yet - wait for actual completion
+                        // The share button will be shown by the progress tracking system
                     }
                 } else {
                     showStatus('processStatus', `❌ Error: ${data.error}`, 'error');
-                    // Keep progress bar open even on error for debugging
+                    // Progress tracking is handled by the server's real progress data
+                    // Hide progress bar on error
+                    hideProgressBar();
                 }
             })
             .catch(error => {
                 document.getElementById('processLoading').style.display = 'none';
                 
-                // Clear progress animation interval on error
-                if (window.progressInterval) {
-                    clearInterval(window.progressInterval);
-                    window.progressInterval = null;
-                }
+                // Progress tracking is handled by the server's real progress data
+                
+                // Hide progress bar on error
+                hideProgressBar();
                 
                 showStatus('processStatus', `❌ Error: ${error.message}`, 'error');
             });
@@ -3514,7 +3510,7 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
         font-size: 14px;
         font-weight: 600;
         color: #1a73e8;
-        display: none; /* Hide main percentage - detailed progress shows below */
+        display: block; /* Show main percentage - shows real progress */
     }
 
     .current-operation {
