@@ -1696,38 +1696,71 @@ def process_drive_shared():
         # Mint a service account access token
         access_token = get_service_account_access_token()
 
-        # Reuse existing processing flow
-        from real_drive_processor import process_drive_folder_and_store
-        result = process_drive_folder_and_store(user_id, drive_url, access_token, force_reprocess, max_depth)
+        # Import progress tracking and threading
+        import threading
+        try:
+            from progress_tracker import start_progress, stop_progress, set_status, set_total, increment, update_folder_info
+        except ImportError:
+            from real_progress_tracker import start_progress, stop_progress, set_status, set_total, increment, update_folder_info
         
-        # Convert result format to match frontend expectations
-        if result.get('success'):
-            # Track photo processing analytics
-            session_id = session.get('analytics_session_id')
-            if session_id:
-                analytics.track_action(
-                    session_id, 
-                    user_id, 
-                    'photo_processed', 
-                    {
-                        'processed_count': result.get('processed_count', 0),
-                        'total_files': result.get('total_files', 0),
-                        'folder_url': drive_url
-                    },
-                    '/app'
+        # Background processing to avoid timeout
+        def background_process():
+            try:
+                # Start progress tracking
+                start_progress()
+                
+                # Update folder info with the drive URL
+                update_folder_info(folder_path=f"Processing: {drive_url}")
+                
+                # Use real drive processing with recursive support
+                from real_drive_processor import process_drive_folder_and_store
+                result = process_drive_folder_and_store(
+                    user_id=user_id,
+                    url=drive_url,
+                    access_token=access_token,
+                    force_reprocess=force_reprocess,
+                    max_depth=max_depth
                 )
-            
-            # If processing is complete, return success with processed count
-            return jsonify({
-                'success': True,
-                'status': 'completed',
-                'processed_count': result.get('processed_count', 0),
-                'total_files': result.get('total_files', 0),
-                'message': result.get('message', 'Processing completed successfully')
-            })
-        else:
-            # Return error
-            return jsonify(result)
+                
+                # Track photo processing analytics
+                if result.get('success') and result.get('processed_count', 0) > 0:
+                    try:
+                        session_id = session.get('analytics_session_id')
+                        if session_id:
+                            analytics.track_action(
+                                session_id, 
+                                user_id, 
+                                'photo_processed', 
+                                {
+                                    'processed_count': result.get('processed_count', 0),
+                                    'total_files': result.get('total_files', 0),
+                                    'folder_url': drive_url
+                                },
+                                '/app'
+                            )
+                    except Exception as e:
+                        print(f"⚠️ Analytics tracking failed: {e}")
+                
+                # Finalize
+                try:
+                    update_folder_info(folder_path="Processing Done — Return to main screen")
+                except Exception:
+                    pass
+                print(f"✅ Background processing completed for user {user_id}")
+            except Exception as e:
+                stop_progress()
+                print(f"❌ Background processing failed for user {user_id}: {e}")
+        
+        # Start background thread
+        thread = threading.Thread(target=background_process, daemon=True)
+        thread.start()
+        
+        # Return immediately to avoid timeout
+        return jsonify({
+            'success': True,
+            'message': 'Processing your request...',
+            'status': 'processing'
+        })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
