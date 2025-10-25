@@ -260,7 +260,9 @@ class RealFaceRecognitionEngine:
                     'extractor': face_data['extractor']
                 }
                 
-                print(f"💾 Added face to FAISS database: {person_id}")
+                print(f"💾 Added face to FAISS database: {person_id} (face_id: {face_id})")
+                print(f"🔍 Debug: face_database now has {len(self.face_database)} entries")
+                print(f"🔍 Debug: faiss_index now has {self.faiss_index.ntotal} faces")
                 return True
             else:
                 print(f"⚠️  FAISS not available, skipping database add")
@@ -474,11 +476,18 @@ class RealFaceRecognitionEngine:
         """Save FAISS index and metadata to disk for current scope."""
         try:
             if self.faiss_index is None:
+                print("⚠️  FAISS index is None, cannot save")
                 return False
             index_path, metadata_path = self._get_paths_for_scope()
+            print(f"🔍 Debug: Saving to {index_path} and {metadata_path}")
+            print(f"🔍 Debug: face_database has {len(self.face_database)} entries")
+            print(f"🔍 Debug: faiss_index has {self.faiss_index.ntotal} faces")
+            
             lock = self._get_scope_lock()
             with lock:
                 faiss.write_index(self.faiss_index, index_path)
+                print(f"✅ FAISS index saved to {index_path}")
+                
                 # Save metadata
                 import json
                 with open(metadata_path, "w") as f:
@@ -489,10 +498,14 @@ class RealFaceRecognitionEngine:
                             for key, val in v.items()
                         }
                     json.dump(serializable_db, f, indent=2)
+                print(f"✅ Metadata saved to {metadata_path} with {len(serializable_db)} entries")
             print(f"💾 Saved FAISS database with {self.faiss_index.ntotal} faces -> {index_path}")
             return True
         except Exception as e:
             logger.error(f"Failed to save database: {e}")
+            print(f"❌ Error saving database: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     def load_database(self):
