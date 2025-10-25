@@ -40,8 +40,8 @@ class BatchDownloader:
             # Create local file path
             local_file_path = os.path.join(download_dir, file_name)
             
-            # Download from Google Drive
-            download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+            # Download from Google Drive using API v3
+            download_url = f"https://www.googleapis.com/drive/v3/files/{file_id}?alt=media"
             headers = {'Authorization': f'Bearer {access_token}'}
             
             import requests

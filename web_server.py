@@ -1851,7 +1851,9 @@ def search():
             from real_face_recognition_engine import search_with_real_recognition_universal
             
             # Use universal search across admin's photos if shared session, otherwise user's photos
-            search_result = search_with_real_recognition_universal(normalized_path, search_user_id, threshold)
+            # If shared session, search only in the specific shared folder
+            shared_folder_id = session.get('shared_folder_id')
+            search_result = search_with_real_recognition_universal(normalized_path, search_user_id, threshold, shared_folder_id)
             print(f"🔧 DEBUG: Universal search result: {search_result.get('total_matches', 0)} matches found")
             
             # Cache the search results so they appear in /my-photos

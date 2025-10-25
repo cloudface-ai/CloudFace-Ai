@@ -260,9 +260,7 @@ class RealFaceRecognitionEngine:
                     'extractor': face_data['extractor']
                 }
                 
-                print(f"💾 Added face to FAISS database: {person_id} (face_id: {face_id})")
-                print(f"🔍 Debug: face_database now has {len(self.face_database)} entries")
-                print(f"🔍 Debug: faiss_index now has {self.faiss_index.ntotal} faces")
+                print(f"💾 Added face to FAISS database: {person_id}")
                 return True
             else:
                 print(f"⚠️  FAISS not available, skipping database add")
@@ -476,18 +474,11 @@ class RealFaceRecognitionEngine:
         """Save FAISS index and metadata to disk for current scope."""
         try:
             if self.faiss_index is None:
-                print("⚠️  FAISS index is None, cannot save")
                 return False
             index_path, metadata_path = self._get_paths_for_scope()
-            print(f"🔍 Debug: Saving to {index_path} and {metadata_path}")
-            print(f"🔍 Debug: face_database has {len(self.face_database)} entries")
-            print(f"🔍 Debug: faiss_index has {self.faiss_index.ntotal} faces")
-            
             lock = self._get_scope_lock()
             with lock:
                 faiss.write_index(self.faiss_index, index_path)
-                print(f"✅ FAISS index saved to {index_path}")
-                
                 # Save metadata
                 import json
                 with open(metadata_path, "w") as f:
@@ -498,14 +489,10 @@ class RealFaceRecognitionEngine:
                             for key, val in v.items()
                         }
                     json.dump(serializable_db, f, indent=2)
-                print(f"✅ Metadata saved to {metadata_path} with {len(serializable_db)} entries")
             print(f"💾 Saved FAISS database with {self.faiss_index.ntotal} faces -> {index_path}")
             return True
         except Exception as e:
             logger.error(f"Failed to save database: {e}")
-            print(f"❌ Error saving database: {e}")
-            import traceback
-            traceback.print_exc()
             return False
     
     def load_database(self):
@@ -653,8 +640,8 @@ def search_with_real_recognition(selfie_path: str, user_id: str, folder_id: str,
         logger.error(f"Search with real recognition failed: {e}")
         return {'success': False, 'error': str(e)}
 
-def search_with_real_recognition_universal(selfie_path: str, user_id: str, threshold: float = 0.7) -> Dict[str, Any]:
-    """Search for faces across ALL user's photos (Drive + Uploaded) using real face recognition."""
+def search_with_real_recognition_universal(selfie_path: str, user_id: str, threshold: float = 0.7, shared_folder_id: str = None) -> Dict[str, Any]:
+    """Search for faces across user's photos (Drive + Uploaded) using real face recognition."""
     try:
         engine = get_real_engine()
         
@@ -672,7 +659,29 @@ def search_with_real_recognition_universal(selfie_path: str, user_id: str, thres
         # Use first detected face for search
         query_embedding = faces[0]['embedding']
         
-        # Aggregate matches across all folder scopes for this user by loading each scoped index
+        # If shared_folder_id is provided, search only in that specific folder
+        if shared_folder_id:
+            print(f"🔍 Searching in shared folder: {shared_folder_id}")
+            try:
+                engine.set_scope(user_id, shared_folder_id)
+                engine.load_database()
+                matches = engine.search_similar_faces(query_embedding, user_id, shared_folder_id, k=None, threshold=threshold)
+                for m in matches:
+                    m['folder_id'] = shared_folder_id
+                
+                return {
+                    'success': True,
+                    'faces_detected': len(faces),
+                    'matches': matches,
+                    'total_matches': len(matches),
+                    'threshold': threshold,
+                    'search_type': 'shared_folder'
+                }
+            except Exception as e:
+                print(f"❌ Error searching shared folder {shared_folder_id}: {e}")
+                return {'success': False, 'error': f'Could not search shared folder: {e}'}
+        
+        # Otherwise, aggregate matches across all folder scopes for this user
         all_matches = []
         try:
             user_models_dir = os.path.join('models', user_id)

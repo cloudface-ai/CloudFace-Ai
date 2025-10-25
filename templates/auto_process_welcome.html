@@ -327,7 +327,7 @@
         function proceedToApp() {
             // Build the app URL with parameters
             {% if session_id %}
-            // Session ID provided - use pre-processed data
+            // Session ID provided - redirect to /app with session ID so it can be loaded
             let appUrl = '/app?session={{ session_id }}';
             {% else %}
             // No session ID - regular auto-process with Drive URL
