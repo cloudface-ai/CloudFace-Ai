@@ -465,6 +465,8 @@
             price: {{ plan.price }},
             currency: '{{ currency }}'
         };
+        
+        console.log('Plan data:', planData);
 
         function processPayment() {
             const paymentMethod = document.querySelector('input[name="payment_method"]:checked').value;
@@ -503,12 +505,14 @@
                     // Check if this is a subscription or one-time payment
                     if (data.subscription_id) {
                         // This is a subscription - use subscription options
+                        console.log('Using subscription payment:', data.subscription_id);
                         const options = {
                             key: data.key,
                             subscription_id: data.subscription_id,
                             name: 'CloudFace AI',
                             description: `${planData.name} Plan Subscription`,
                             handler: function(response) {
+                                console.log('Subscription payment response:', response);
                                 // Verify subscription payment
                                 verifyPayment({
                                     razorpay_subscription_id: response.razorpay_subscription_id,
@@ -526,6 +530,11 @@
                             },
                             theme: {
                                 color: '#1a73e8'
+                            },
+                            modal: {
+                                ondismiss: function() {
+                                    resetPaymentButton();
+                                }
                             }
                         };
                         const razorpay = new Razorpay(options);
