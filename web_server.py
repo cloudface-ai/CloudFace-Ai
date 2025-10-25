@@ -2831,11 +2831,18 @@ def auto_process():
                 logo_filename = metadata.get('logo_filename', '')
                 drive_url = metadata.get('drive_url', drive_url)
                 
+                # Set shared session variables for search
+                session['shared_user_id'] = session_data.get('admin_user_id')
+                session['shared_folder_id'] = session_data.get('folder_id')
+                session['shared_session_id'] = session_id
+                
                 print(f"📋 Loaded metadata for session {session_id}:")
                 print(f"   Event: {event_name}")
                 print(f"   Date: {event_date}")
                 print(f"   Company: {company_name}")
                 print(f"   Logo: {logo_filename}")
+                print(f"   Admin User ID: {session_data.get('admin_user_id')}")
+                print(f"   Folder ID: {session_data.get('folder_id')}")
         except Exception as e:
             print(f"❌ Error loading session metadata: {e}")
     
