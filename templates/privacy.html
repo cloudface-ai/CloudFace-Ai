@@ -361,6 +361,8 @@
                     <li>Payment method information (processed securely by Razorpay)</li>
                     <li>Billing information and transaction history</li>
                     <li>We do NOT store your credit card details - Razorpay handles all payment data securely</li>
+                    <li>Transaction IDs and payment status for subscription management</li>
+                    <li>Billing address for tax compliance (GST for Indian customers)</li>
                 </ul>
 
                 <h3>1.5 Usage and Analytics Data</h3>
@@ -424,6 +426,14 @@
                     <li><strong>Search:</strong> When you upload a selfie, we match it against your stored embeddings</li>
                 </ol>
                 <p><strong>⏱️ Data Retention:</strong> Photos are retained in memory for less than 60 seconds during processing, then permanently deleted.</p>
+
+                <h3>3.3 Payment Data Retention</h3>
+                <ul>
+                    <li><strong>Transaction Records:</strong> Kept for 7 years for tax compliance (GST requirements)</li>
+                    <li><strong>Subscription Data:</strong> Retained for active subscriptions, deleted after cancellation</li>
+                    <li><strong>Payment Method Info:</strong> Stored by Razorpay, not on our servers</li>
+                    <li><strong>Billing History:</strong> Available in your account dashboard, deleted with account</li>
+                </ul>
 
                 <h3>3.2 What We Store vs. What We Don't</h3>
                 <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
@@ -520,6 +530,16 @@
                     <li><strong>Firebase/Firestore:</strong> To store face embeddings in YOUR Google Drive</li>
                     <li><strong>Razorpay:</strong> Payment processing (they see payment info only, not photos)</li>
                 </ul>
+
+                <h3>6.4 Razorpay Data Sharing</h3>
+                <p>We share the following data with Razorpay for payment processing:</p>
+                <ul>
+                    <li><strong>Transaction Details:</strong> Amount, currency, subscription plan</li>
+                    <li><strong>Customer Information:</strong> Email, billing address, phone number</li>
+                    <li><strong>Payment Method:</strong> Card details, UPI ID, bank account (processed securely by Razorpay)</li>
+                    <li><strong>Fraud Prevention:</strong> IP address, device information for security</li>
+                </ul>
+                <p><strong>What Razorpay Does NOT See:</strong> Your photos, face data, search history, or any personal content.</p>
 
                 <h3>6.3 Legal Requirements</h3>
                 <p>We may disclose information if required by law:</p>
