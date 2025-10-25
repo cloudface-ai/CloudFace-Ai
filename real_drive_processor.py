@@ -300,6 +300,11 @@ class RealDriveProcessor:
                 from pricing_manager import pricing_manager
                 pricing_manager.track_image_usage(user_id, self.processed_count)
                 print(f"📊 Tracked usage: {self.processed_count} images for user {user_id}")
+                
+                # Track video usage if any videos were processed
+                if hasattr(self, 'videos_processed') and self.videos_processed > 0:
+                    pricing_manager.track_video_usage(user_id, self.videos_processed)
+                    print(f"📊 Tracked usage: {self.videos_processed} videos for user {user_id}")
             except Exception as e:
                 print(f"⚠️ Usage tracking failed: {e}")
             

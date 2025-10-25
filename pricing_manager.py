@@ -171,6 +171,19 @@ class PricingManager:
             print(f"❌ Error tracking usage: {e}")
             return False
     
+    def track_video_usage(self, user_id: str, video_count: int) -> bool:
+        """Track video processing usage"""
+        try:
+            user_plan = self.get_user_plan(user_id)
+            user_plan['usage']['videos_processed'] += video_count
+            user_plan['usage']['last_activity'] = datetime.now().isoformat()
+            
+            return self._save_user_plan(user_id, user_plan)
+            
+        except Exception as e:
+            print(f"❌ Error tracking video usage: {e}")
+            return False
+    
     def _suggest_upgrade_plan(self, needed_images: int) -> Dict[str, Any]:
         """Suggest appropriate plan upgrade"""
         for plan_type, plan_config in self.plans.items():

@@ -1388,9 +1388,9 @@ def process_local():
                 user_plan = pricing_manager.get_user_plan(user_id)
                 return jsonify({
                     'success': False, 
-                    'error': f'Plan limit exceeded. Found {estimated_images} images, but your {user_plan["name"]} plan allows {user_plan["image_limit"]} images.',
+                    'error': f'Plan limit exceeded. Found {estimated_images} images, but your {user_plan["plan_name"]} plan allows {user_plan["limits"]["images"]} images.',
                     'upgrade_needed': True,
-                    'current_plan': user_plan["name"],
+                    'current_plan': user_plan["plan_name"],
                     'estimated_images': estimated_images
                 })
         except ImportError:
@@ -1409,6 +1409,15 @@ def process_local():
             uploaded_files=uploaded_files,
             force_reprocess=force_reprocess
         )
+        
+        # Track usage if processing was successful
+        if result.get('success') and result.get('processed_count', 0) > 0:
+            try:
+                from pricing_manager import pricing_manager
+                pricing_manager.track_image_usage(user_id, result['processed_count'])
+                print(f"📊 Tracked {result['processed_count']} images for user {user_id}")
+            except Exception as e:
+                print(f"⚠️ Usage tracking failed: {e}")
         
         print(f"✅ Upload processing result: {result}")
         return jsonify(result)
@@ -1525,6 +1534,15 @@ def process_drive():
                     force_reprocess=force_reprocess,
                     max_depth=max_depth
                 )
+                
+                # Track usage if processing was successful
+                if result.get('success') and result.get('processed_count', 0) > 0:
+                    try:
+                        from pricing_manager import pricing_manager
+                        pricing_manager.track_image_usage(user_id, result['processed_count'])
+                        print(f"📊 Tracked {result['processed_count']} images for user {user_id}")
+                    except Exception as e:
+                        print(f"⚠️ Usage tracking failed: {e}")
                 
                 # Finalize note: completion is handled inside the processor at the real end
                 try:
