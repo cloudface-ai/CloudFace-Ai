@@ -3404,30 +3404,48 @@ def admin_dashboard_data():
         user_id = session.get('user_id', 'guest')
         user_plan = pricing_manager.get_user_plan(user_id)
         
-        # Calculate usage percentages
-        images_used = user_plan.get('usage', {}).get('images_processed', 0)
-        images_limit = user_plan.get('limits', {}).get('images', 0)
-        images_percentage = int((images_used / images_limit * 100)) if images_limit > 0 else 0
+        # Check if user is super user and override plan
+        if is_super_user(user_id):
+            profile = {
+                'user_id': user_id,
+                'plan_name': 'Enterprise',
+                'plan_type': 'enterprise',
+                'images_used': user_plan.get('usage', {}).get('images_processed', 0),
+                'images_limit': 9999999,  # Unlimited
+                'images_percentage': 0,
+                'images_remaining': 9999999,
+                'videos_used': user_plan.get('usage', {}).get('videos_processed', 0),
+                'videos_limit': 9999999,  # Unlimited
+                'videos_percentage': 0,
+                'videos_remaining': 9999999,
+            }
+        else:
+            # Calculate usage percentages for regular users
+            images_used = user_plan.get('usage', {}).get('images_processed', 0)
+            images_limit = user_plan.get('limits', {}).get('images', 0)
+            images_percentage = int((images_used / images_limit * 100)) if images_limit > 0 else 0
+            
+            videos_used = user_plan.get('usage', {}).get('videos_processed', 0)
+            videos_limit = user_plan.get('limits', {}).get('videos', 0)
+            videos_percentage = int((videos_used / videos_limit * 100)) if videos_limit > 0 else 0
+            
+            profile = {
+                'user_id': user_id,
+                'plan_name': user_plan.get('plan_name', 'Starter'),
+                'plan_type': user_plan.get('plan_type', 'free'),
+                'images_used': images_used,
+                'images_limit': images_limit,
+                'images_percentage': min(images_percentage, 100),
+                'images_remaining': max(images_limit - images_used, 0),
+                'videos_used': videos_used,
+                'videos_limit': videos_limit,
+                'videos_percentage': min(videos_percentage, 100),
+                'videos_remaining': max(videos_limit - videos_used, 0),
+            }
         
-        videos_used = user_plan.get('usage', {}).get('videos_processed', 0)
-        videos_limit = user_plan.get('limits', {}).get('videos', 0)
-        videos_percentage = int((videos_used / videos_limit * 100)) if videos_limit > 0 else 0
-        
-        profile = {
-            'user_id': user_id,
-            'plan_name': user_plan.get('plan_name', 'Starter'),
-            'plan_type': user_plan.get('plan_type', 'free'),
-            'images_used': images_used,
-            'images_limit': images_limit,
-            'images_percentage': min(images_percentage, 100),
-            'images_remaining': max(images_limit - images_used, 0),
-            'videos_used': videos_used,
-            'videos_limit': videos_limit,
-            'videos_percentage': min(videos_percentage, 100),
-            'videos_remaining': max(videos_limit - videos_used, 0),
-            'expires_at': user_plan.get('expires_at'),
-            'features': user_plan.get('limits', {}).get('features', [])
-        }
+        # Add common fields to profile
+        profile['expires_at'] = user_plan.get('expires_at')
+        profile['features'] = user_plan.get('limits', {}).get('features', []) if not is_super_user(user_id) else ['Unlimited Processing']
         
         # Get user-specific analytics (filtered by user_id)
         user_analytics = analytics.get_user_analytics(user_id)
