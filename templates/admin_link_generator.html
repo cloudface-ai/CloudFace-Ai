@@ -655,8 +655,11 @@
                     const baseUrl = window.location.hostname === 'cloudface-ai.com' ? 'https://cloudface-ai.com' : window.location.origin;
                     const shareableLink = `${baseUrl}/auto-process?session=${data.session_id}`;
                     
-                    // Create short link
-                    createShortLink(shareableLink, eventName);
+                    // Store session_id for later use
+                    window.currentSessionId = data.session_id;
+                    
+                    // Create short link with session_id
+                    createShortLink(shareableLink, eventName, data.session_id);
                     
                     document.getElementById('generatedLink').textContent = shareableLink;
                     document.getElementById('output').classList.add('show');
@@ -676,7 +679,7 @@
         }
 
         // Create short link function
-        function createShortLink(fullUrl, eventName) {
+        function createShortLink(fullUrl, eventName, sessionId) {
             fetch('/api/create-short-link', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
@@ -702,6 +705,16 @@
                     generatedShareLink = data.short_url; // Use short link for sharing
                     generatedFullLink = fullUrl; // Keep full link for reference (hidden)
                     
+                    // Extract short_code from short_url (everything after /s/)
+                    const shortCode = data.short_url.split('/s/')[1];
+                    
+                    // Save link to admin dashboard with correct session_id
+                    if (sessionId && shortCode) {
+                        saveLinkToAdminDashboard(sessionId, shortCode, fullUrl, eventName);
+                    } else {
+                        console.error('Missing session_id or short_code for saving link');
+                    }
+                    
                     console.log('✅ Short link created:', data.short_url);
                 } else {
                     console.error('Failed to create short link:', data.error);
@@ -714,6 +727,64 @@
                 // Fallback to full link
                 document.getElementById('generatedLink').textContent = fullUrl;
             });
+        }
+
+        // Save link to admin dashboard
+        function saveLinkToAdminDashboard(sessionId, shortCode, fullUrl, eventName) {
+            const companyName = document.getElementById('companyName').value.trim();
+            const eventDate = document.getElementById('eventDate').value.trim();
+            const driveUrl = document.getElementById('driveUrl').value.trim();
+            
+            // Get logged-in user email
+            fetch('/auth/status', { credentials: 'same-origin' })
+                .then(res => res.json())
+                .then(authData => {
+                    if (!authData.authenticated) {
+                        console.log('Not logged in, skipping link save');
+                        return;
+                    }
+                    
+                    const adminUserId = authData.user_email;
+                    
+                    // Extract folder_id from drive_url
+                    let folderId = '';
+                    if (driveUrl.includes('/folders/')) {
+                        folderId = driveUrl.split('/folders/')[1].split('/')[0].split('?')[0];
+                    }
+                    
+                    fetch('/api/save-admin-link', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            admin_user_id: adminUserId,
+                            session_id: sessionId,
+                            short_code: shortCode,
+                            full_url: fullUrl,
+                            metadata: {
+                                drive_url: driveUrl,
+                                folder_id: folderId,
+                                event_name: eventName,
+                                company_name: companyName,
+                                event_date: eventDate,
+                                created_via: 'admin_link_generator'
+                            }
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log('✅ Link saved to admin dashboard');
+                        } else {
+                            console.error('Failed to save link to dashboard:', data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error saving link to dashboard:', error);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error getting auth status:', error);
+                });
         }
 
         // Analytics tracking function

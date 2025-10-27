@@ -193,6 +193,204 @@
             border: 1px solid var(--border);
         }
 
+        .link-management {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .link-item {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .link-item:hover {
+            box-shadow: var(--shadow-hover);
+            border-color: var(--primary-light);
+        }
+
+        .link-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .link-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .link-meta {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .link-url {
+            background: #e8f5e8;
+            padding: 0.5rem;
+            border-radius: var(--radius-sm);
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            color: #2e7d32;
+            word-break: break-all;
+            margin: 0.5rem 0;
+        }
+
+        .link-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .link-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .btn-small {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-small:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .btn-copy {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .btn-copy:hover {
+            background: #2d7d32;
+            border-color: #2d7d32;
+        }
+
+        /* User Profile Card */
+        .profile-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-hover);
+            color: white;
+        }
+
+        .profile-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .profile-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .profile-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .plan-badge {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .usage-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .usage-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.75rem;
+            border-radius: var(--radius-sm);
+        }
+
+        .usage-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+
+        .usage-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .usage-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .usage-bar-fill {
+            height: 100%;
+            background: white;
+            transition: width 0.3s ease;
+        }
+
+        .btn-upgrade {
+            background: white;
+            color: var(--primary);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 1rem;
+        }
+
+        .btn-upgrade:hover {
+            background: #f5f5f5;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Hide Recent Activity section for now */
+        .recent-activity {
+            display: none;
+        }
+
         .activity-item {
             display: flex;
             align-items: center;
@@ -350,6 +548,38 @@
         </div>
 
         <div class="dashboard-content">
+            <!-- User Profile Card -->
+            <div class="profile-card">
+                <div class="profile-header">
+                    <div>
+                        <div class="profile-title" id="profileUserName">Loading...</div>
+                        <div class="profile-subtitle">Photo Management Dashboard</div>
+                    </div>
+                    <div class="plan-badge" id="profilePlanBadge">Plan</div>
+                </div>
+                
+                <div class="usage-stats">
+                    <div class="usage-item">
+                        <div class="usage-label">Images</div>
+                        <div class="usage-value" id="profileImagesUsage">- / -</div>
+                        <div class="usage-bar">
+                            <div class="usage-bar-fill" id="profileImagesBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="usage-item">
+                        <div class="usage-label">Videos</div>
+                        <div class="usage-value" id="profileVideosUsage">- / -</div>
+                        <div class="usage-bar">
+                            <div class="usage-bar-fill" id="profileVideosBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn-upgrade" onclick="window.location.href='/pricing'">
+                    ⬆️ Upgrade Plan
+                </button>
+            </div>
+
             <!-- Time Filter -->
             <div class="time-filter">
                 <button class="time-btn active" data-period="24h">Last 24h</button>
@@ -427,6 +657,17 @@
             <div class="recent-activity">
                 <h3 class="chart-title">Recent Activity</h3>
                 <div id="recentActivityList">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+
+            <!-- Link Management -->
+            <div class="link-management">
+                <div class="section-header">
+                    <h3 class="chart-title">🔗 Your Shared Links</h3>
+                    <button class="refresh-btn" onclick="loadAdminLinks()">🔄 Refresh Links</button>
+                </div>
+                <div id="adminLinksList">
                     <div class="loading-spinner"></div>
                 </div>
             </div>
@@ -538,6 +779,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
+                    updateProfile(data.profile);
                     updateStats(data.stats);
                     updateCharts(data.charts);
                     updateRecentActivity(data.recent_activity);
@@ -561,6 +803,30 @@
             updateChange('linksChange', stats.links_this_week, 'links');
             updateChange('downloadsChange', stats.downloads_this_week, 'downloads');
             updateChange('viewsChange', stats.views_this_week, 'views');
+        }
+
+        function updateProfile(profile) {
+            // Update user name and plan badge
+            document.getElementById('profileUserName').textContent = profile.user_id || 'Guest User';
+            document.getElementById('profilePlanBadge').textContent = profile.plan_name || 'Starter';
+            
+            // Update images usage
+            document.getElementById('profileImagesUsage').textContent = 
+                `${formatNumber(profile.images_used)} / ${formatNumber(profile.images_limit)}`;
+            document.getElementById('profileImagesBar').style.width = profile.images_percentage + '%';
+            
+            // Update videos usage
+            document.getElementById('profileVideosUsage').textContent = 
+                `${formatNumber(profile.videos_used)} / ${formatNumber(profile.videos_limit)}`;
+            document.getElementById('profileVideosBar').style.width = profile.videos_percentage + '%';
+            
+            // Hide upgrade button for enterprise plan
+            const upgradeBtn = document.querySelector('.btn-upgrade');
+            if (profile.plan_type === 'enterprise') {
+                upgradeBtn.style.display = 'none';
+            } else {
+                upgradeBtn.style.display = 'block';
+            }
         }
 
         function updateChange(elementId, weeklyValue, type) {
@@ -658,7 +924,130 @@
 
         function refreshData() {
             loadDashboardData();
+            loadAdminLinks();
         }
+
+        // Load admin links
+        async function loadAdminLinks() {
+            try {
+                const response = await fetch('/api/get-admin-links');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayAdminLinks(data.links);
+                } else {
+                    document.getElementById('adminLinksList').innerHTML = `
+                        <div class="error-message">Failed to load links: ${data.error}</div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('adminLinksList').innerHTML = `
+                    <div class="error-message">Error loading links: ${error.message}</div>
+                `;
+            }
+        }
+
+        function displayAdminLinks(links) {
+            const container = document.getElementById('adminLinksList');
+            
+            if (links.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🔗</div>
+                        <h4>No shared links yet</h4>
+                        <p>Create your first shareable link using the <a href="/admin/link-generator" style="color: var(--primary);">Link Generator</a></p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = links.map(link => `
+                <div class="link-item">
+                    <div class="link-header">
+                        <div>
+                            <div class="link-title">${link.metadata.event_name || 'Untitled Event'}</div>
+                            <div class="link-meta">
+                                ${link.metadata.company_name || 'No Company'} • 
+                                Created ${formatTime(link.created_at)}
+                                ${link.last_used ? ` • Last used ${formatTime(link.last_used)}` : ''}
+                            </div>
+                        </div>
+                        <div class="link-stats">
+                            <span>👆 ${link.click_count || 0} clicks</span>
+                        </div>
+                    </div>
+                    
+                    <div class="link-url">${link.short_url}</div>
+                    
+                    ${link.downloaders && link.downloaders.length > 0 ? `
+                    <div class="downloaders-section" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <div style="font-weight: 600; margin-bottom: 0.5rem; color: white;">👥 Who Downloaded (${link.downloaders.length} users):</div>
+                        ${link.downloaders.map(downloader => `
+                            <div style="background: rgba(255,255,255,0.1); padding: 0.5rem; border-radius: 4px; margin-bottom: 0.5rem;">
+                                <div style="font-weight: 500;">${downloader.user_id}</div>
+                                <div style="font-size: 0.85rem; opacity: 0.9;">${downloader.download_count} photo(s) • Last: ${formatTime(downloader.last_download)}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ` : ''}
+                    
+                    <div class="link-actions">
+                        <button class="btn-small btn-copy" onclick="copyLink('${link.short_url}')">
+                            📋 Copy Link
+                        </button>
+                        <button class="btn-small" onclick="openLink('${link.short_url}')">
+                            🔗 Open Link
+                        </button>
+                        <button class="btn-small" onclick="shareLink('${link.short_url}', '${link.metadata.event_name || 'Event'}')">
+                            📤 Share
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function copyLink(url) {
+            navigator.clipboard.writeText(url).then(() => {
+                // Show success feedback
+                const button = event.target;
+                const originalText = button.textContent;
+                button.textContent = '✅ Copied!';
+                button.style.background = '#28a745';
+                
+                setTimeout(() => {
+                    button.textContent = originalText;
+                    button.style.background = '';
+                }, 2000);
+            }).catch(err => {
+                alert('Failed to copy: ' + err);
+            });
+        }
+
+        function openLink(url) {
+            window.open(url, '_blank');
+        }
+
+        function shareLink(url, eventName) {
+            const shareText = `Check out photos from ${eventName}: ${url}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: eventName,
+                    text: shareText,
+                    url: url
+                });
+            } else {
+                // Fallback to copying to clipboard
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert('Share text copied to clipboard!');
+                });
+            }
+        }
+
+        // Load admin links on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAdminLinks();
+        });
 
         // Auto-refresh every 5 minutes
         setInterval(loadDashboardData, 300000);

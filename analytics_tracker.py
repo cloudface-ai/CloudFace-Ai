@@ -362,7 +362,7 @@ class AnalyticsTracker:
         total_time_spent = sum(s['total_time_spent'] for s in recent_sessions)
         
         # Action counts
-        photos_processed = len([a for a in recent_actions if a['action_type'] == 'photo_processed'])
+        photos_processed = sum([a.get('action_data', {}).get('processed_count', 0) for a in recent_actions if a['action_type'] == 'photo_processed'])
         links_created = len([a for a in recent_actions if a['action_type'] == 'link_created'])
         searches_performed = len([a for a in recent_actions if a['action_type'] == 'search_performed'])
         photos_downloaded = len([a for a in recent_actions if a['action_type'] == 'photo_downloaded'])
@@ -407,7 +407,7 @@ class AnalyticsTracker:
         week_pageviews = [p for p in pageviews if 
                          datetime.fromisoformat(p['timestamp']) >= week_ago]
         
-        photos_this_week = len([a for a in week_actions if a['action_type'] == 'photo_processed'])
+        photos_this_week = sum([a.get('action_data', {}).get('processed_count', 0) for a in week_actions if a['action_type'] == 'photo_processed'])
         links_this_week = len([a for a in week_actions if a['action_type'] == 'link_created'])
         downloads_this_week = len([a for a in week_actions if a['action_type'] == 'photo_downloaded'])
         views_this_week = len(week_pageviews)
@@ -469,7 +469,7 @@ class AnalyticsTracker:
             'last_updated': now.isoformat()
         }
     
-    def get_chart_data(self, days: int = 30) -> Dict[str, Any]:
+    def get_chart_data(self, days: int = 30, user_id: str = None) -> Dict[str, Any]:
         """Get chart data for the last N days"""
         try:
             cutoff_date = datetime.now() - timedelta(days=days)
@@ -477,6 +477,11 @@ class AnalyticsTracker:
             # Load all data
             actions = self._load_data(self.actions_file)
             shares = self._load_data(self.shares_file)
+            
+            # Filter by user if specified
+            if user_id:
+                actions = [a for a in actions if a.get('user_id') == user_id]
+                shares = [s for s in shares if s.get('user_id') == user_id]
             
             # Filter by date
             recent_actions = [a for a in actions if 
@@ -589,7 +594,7 @@ class AnalyticsTracker:
         metadata = action.get('metadata', {})
         
         if action_type == 'photo_processed':
-            count = metadata.get('count', 0)
+            count = metadata.get('processed_count', 0)
             return f"Processed {count} photos"
         elif action_type == 'link_created':
             return "Created a shareable link"

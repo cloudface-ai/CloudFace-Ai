@@ -43,6 +43,24 @@ from firebase_store import save_face_embedding, fetch_embeddings_for_user
 # Import analytics tracker
 from analytics_tracker import analytics
 
+# Super user/Admin list
+SUPER_USERS = ['spvinodmandan@gmail.com']
+
+def is_super_user(user_id):
+    """Check if user is a super user/admin"""
+    return user_id in SUPER_USERS
+
+def require_super_user(func):
+    """Decorator to require super user authentication"""
+    def wrapper(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({'error': 'Not authenticated'}), 401
+        if not is_super_user(session['user_id']):
+            return jsonify({'error': 'Access denied. Super user only.'}), 403
+        return func(*args, **kwargs)
+    wrapper.__name__ = func.__name__
+    return wrapper
+
 def record_user_feedback(user_id: str, photo_reference: str, is_correct: bool, 
                         selfie_path: str = None, similarity_score: float = None) -> bool:
     """
@@ -906,7 +924,7 @@ def pricing():
             user_plan_data = pricing_manager.get_user_plan(session['user_id'])
             current_plan = user_plan_data.get('plan_type', 'free')
         
-        return render_template('pricing-new.html', 
+        return render_template('pricing.html', 
                              plans=plans,
                              currency=currency,
                              current_plan=current_plan)
@@ -916,7 +934,7 @@ def pricing():
         import traceback
         traceback.print_exc()
         # Fallback to static pricing page with default values
-        return render_template('pricing-new.html', 
+        return render_template('pricing.html', 
                              plans={}, 
                              currency='inr', 
                              current_plan='free')
@@ -1486,19 +1504,22 @@ def process_drive():
             image_files = temp_processor._filter_image_files(all_files) if all_files else []
             estimated_images = len(image_files)
             
-            # Check if user can process this many images
-            usage_check = pricing_manager.can_process_images(user_id, estimated_images)
-            
-            if not usage_check['allowed']:
-                return jsonify({
-                    'success': False,
-                    'error': 'plan_limit_exceeded',
-                    'message': f'Your plan allows {usage_check["limit"]} images. This folder has {estimated_images} images.',
-                    'usage_info': usage_check,
-                    'upgrade_required': True
-                })
-            
-            print(f"✅ Plan check passed: {estimated_images} images, {usage_check['remaining']} remaining")
+            # Check if user can process this many images (skip for super users)
+            if is_super_user(user_id):
+                print(f"🔑 Super user detected, bypassing pricing limits")
+            else:
+                usage_check = pricing_manager.can_process_images(user_id, estimated_images)
+                
+                if not usage_check['allowed']:
+                    return jsonify({
+                        'success': False,
+                        'error': 'plan_limit_exceeded',
+                        'message': f'Your plan allows {usage_check["limit"]} images. This folder has {estimated_images} images.',
+                        'usage_info': usage_check,
+                        'upgrade_required': True
+                    })
+                
+                print(f"✅ Plan check passed: {estimated_images} images, {usage_check['remaining']} remaining")
             
         except Exception as e:
             print(f"⚠️ Plan check failed, proceeding anyway: {e}")
@@ -1689,12 +1710,45 @@ def process_drive_shared():
         if not folder_id:
             return jsonify({'success': False, 'error': 'Could not extract folder ID from URL'}), 400
 
+        # Mint a service account access token
+        access_token = get_service_account_access_token()
+        
+        # Check user's plan limits before processing
+        try:
+            from pricing_manager import pricing_manager
+            
+            # Get estimated file count (quick check)
+            from real_drive_processor import RealDriveProcessor
+            temp_processor = RealDriveProcessor()
+            all_files = temp_processor._get_folder_contents_recursive(folder_id, access_token, max_depth)
+            image_files = temp_processor._filter_image_files(all_files) if all_files else []
+            estimated_images = len(image_files)
+            
+            # Check if user can process this many images (skip for super users)
+            if is_super_user(user_id):
+                print(f"🔑 Super user detected, bypassing pricing limits")
+            else:
+                usage_check = pricing_manager.can_process_images(user_id, estimated_images)
+                
+                if not usage_check['allowed']:
+                    return jsonify({
+                        'success': False,
+                        'error': 'plan_limit_exceeded',
+                        'message': f'Your {usage_check.get("plan_name", "plan")} allows {usage_check["limit"]} images. This folder has {estimated_images} images. You have already used {usage_check["current_usage"]} images.',
+                        'usage_info': usage_check,
+                        'upgrade_required': True
+                    })
+                
+                print(f"✅ Plan check passed: {estimated_images} images, {usage_check['remaining']} remaining")
+            
+        except Exception as e:
+            print(f"⚠️ Plan check failed, proceeding anyway: {e}")
+            import traceback
+            traceback.print_exc()
+
         # Store current folder_id in session for search isolation
         session['current_folder_id'] = folder_id
         print(f"📁 Set current folder_id in session for bot processing: {folder_id}")
-
-        # Mint a service account access token
-        access_token = get_service_account_access_token()
 
         # Import progress tracking and threading
         import threading
@@ -2062,6 +2116,76 @@ def search():
         print(f"Error in search: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
+def track_downloader_info(admin_user_id, downloader_user_id, filename, source):
+    """Track who downloaded photos from shared links"""
+    try:
+        # Find which session this download is from (shared_session_id is the session ID from the shared link)
+        shared_session_id = session.get('shared_session_id') or session.get('shared_folder_id')
+        
+        if not shared_session_id:
+            print(f"⚠️ No shared session found for download tracking")
+            return
+        
+        # Get session manager to find the link
+        from shared_session_manager import get_session_manager
+        manager = get_session_manager()
+        session_data = manager.get_session(shared_session_id) if shared_session_id else None
+        
+        # Find the admin link for this session
+        links_file = 'storage/admin_links.json'
+        try:
+            with open(links_file, 'r') as f:
+                links = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return
+        
+        # Get folder_id from current session
+        folder_id = session.get('shared_folder_id') or session.get('current_folder_id')
+        
+        # Find link matching this admin and session/folder
+        print(f"🔍 Tracking downloader - Admin: {admin_user_id}, Downloader: {downloader_user_id}, Session: {shared_session_id}, Folder: {folder_id}")
+        print(f"🔍 Checking {len(links)} links...")
+        
+        for link in links:
+            print(f"🔍 Link: admin={link.get('admin_user_id')}, session_id={link.get('session_id')}, metadata={link.get('metadata', {})}")
+            # Try to match by session_id first, then by folder_id from metadata
+            link_folder_id = link.get('metadata', {}).get('folder_id') or link.get('metadata', {}).get('drive_url', '').split('/folders/')[-1].split('/')[0] if link.get('metadata', {}).get('drive_url') else None
+            
+            if (link.get('admin_user_id') == admin_user_id and 
+                (link.get('session_id') == shared_session_id or link_folder_id == folder_id)):
+                
+                print(f"✅ Found matching link!")
+                # Add downloader info
+                if 'downloaders' not in link:
+                    link['downloaders'] = []
+                
+                # Check if this user already downloaded (to avoid duplicates)
+                existing = next((d for d in link['downloaders'] if d['user_id'] == downloader_user_id), None)
+                if existing:
+                    existing['download_count'] = existing.get('download_count', 0) + 1
+                    existing['last_download'] = datetime.now().isoformat()
+                else:
+                    link['downloaders'].append({
+                        'user_id': downloader_user_id,
+                        'download_count': 1,
+                        'first_download': datetime.now().isoformat(),
+                        'last_download': datetime.now().isoformat()
+                    })
+                
+                # Save updated links
+                with open(links_file, 'w') as f:
+                    json.dump(links, f, indent=2)
+                
+                print(f"✅ Tracked downloader: {downloader_user_id} for admin: {admin_user_id}")
+                break
+        else:
+            print(f"⚠️ No matching link found for session {shared_session_id}")
+        
+    except Exception as e:
+        print(f"⚠️ Failed to track downloader info: {e}")
+        import traceback
+        traceback.print_exc()
+
 @app.route('/photo/<path:filename>')
 def serve_photo(filename):
     """Serve photos from user's cache folder"""
@@ -2107,10 +2231,15 @@ def serve_photo(filename):
             # Track download
             try:
                 from analytics_tracker import analytics
-                analytics.track_action(photo_user_id, 'photo_downloaded', {
+                session_id = session.get('analytics_session_id', 'default_session')
+                analytics.track_action(session_id, photo_user_id, 'photo_downloaded', {
                     'filename': filename,
                     'source': 'upload'
                 })
+                
+                # Track downloader info if from shared link
+                if shared_user_id:
+                    track_downloader_info(shared_user_id, user_id, filename, 'upload')
             except Exception as e:
                 print(f"⚠️ Failed to track download: {e}")
             # For nested paths like "1111/ABN10404.jpg", we need to serve from the base upload folder
@@ -2124,17 +2253,29 @@ def serve_photo(filename):
             
             if os.path.exists(cache_file_path):
                 print(f"   ✅ Found cached file: {cache_file_path}")
-                # Track download
-                try:
-                    from analytics_tracker import analytics
-                    analytics.track_action(photo_user_id, 'photo_downloaded', {
-                        'filename': filename,
-                        'source': 'cache',
-                        'folder_id': photo_folder_id
-                    })
-                except Exception as e:
-                    print(f"⚠️ Failed to track download: {e}")
-                return send_from_directory(cache_folder, filename)
+                
+                # Check if file was modified (to avoid counting cache hits as downloads)
+                from flask import request
+                response = send_from_directory(cache_folder, filename)
+                
+                # Track download only if it's not a 304 (cached response)
+                if response.status_code == 200:
+                    try:
+                        from analytics_tracker import analytics
+                        session_id = session.get('analytics_session_id', 'default_session')
+                        analytics.track_action(session_id, photo_user_id, 'photo_downloaded', {
+                            'filename': filename,
+                            'source': 'cache',
+                            'folder_id': photo_folder_id
+                        })
+                        
+                        # Track downloader info if from shared link
+                        if shared_user_id:
+                            track_downloader_info(shared_user_id, user_id, filename, 'cache')
+                    except Exception as e:
+                        print(f"⚠️ Failed to track download: {e}")
+                
+                return response
         
         # Fallback: Try to find the file in any cache folder for this user
         if photo_folder_id:
@@ -2155,11 +2296,16 @@ def serve_photo(filename):
                             # Track download
                             try:
                                 from analytics_tracker import analytics
-                                analytics.track_action(photo_user_id, 'photo_downloaded', {
+                                session_id = session.get('analytics_session_id', 'default_session')
+                                analytics.track_action(session_id, photo_user_id, 'photo_downloaded', {
                                     'filename': filename,
                                     'source': 'fallback_cache',
                                     'folder_id': folder_name
                                 })
+                                
+                                # Track downloader info if from shared link
+                                if shared_user_id:
+                                    track_downloader_info(shared_user_id, user_id, filename, 'fallback_cache')
                             except Exception as e:
                                 print(f"⚠️ Failed to track download: {e}")
                             return send_from_directory(cache_folder, filename)
@@ -2794,6 +2940,12 @@ def redirect_short_link(short_code):
         link_data['click_count'] += 1
         save_short_links(links)
         
+        # Also track click in admin links if it exists (direct call, no HTTP request)
+        try:
+            track_link_click_direct(short_code)
+        except Exception as e:
+            print(f"⚠️ Failed to track admin link click: {e}")
+        
         # Redirect to full URL
         return redirect(link_data['full_url'])
         
@@ -2805,6 +2957,11 @@ def redirect_short_link(short_code):
 def robots_txt():
     """Serve robots.txt file"""
     return send_from_directory('.', 'robots.txt', mimetype='text/plain')
+
+@app.route('/favicon.ico')
+def favicon():
+    """Serve favicon"""
+    return send_from_directory('.', 'favicon.ico', mimetype='image/x-icon')
 
 @app.route('/api/create-short-link', methods=['POST'])
 def create_short_link_api():
@@ -2999,6 +3156,132 @@ def load_share_session_api(session_id):
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/api/save-admin-link', methods=['POST'])
+def save_admin_link():
+    """Save admin generated link for future use"""
+    try:
+        data = request.get_json()
+        admin_user_id = data.get('admin_user_id', 'unknown')
+        session_id = data.get('session_id')
+        short_code = data.get('short_code')
+        full_url = data.get('full_url')
+        metadata = data.get('metadata', {})
+        
+        if not all([session_id, short_code, full_url]):
+            return jsonify({'success': False, 'error': 'Missing required fields'})
+        
+        # Load existing links
+        links_file = 'storage/admin_links.json'
+        try:
+            with open(links_file, 'r') as f:
+                links = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            links = []
+        
+        # Add new link
+        link_data = {
+            'id': len(links) + 1,
+            'admin_user_id': admin_user_id,
+            'session_id': session_id,
+            'short_code': short_code,
+            'full_url': full_url,
+            'short_url': f"https://cloudface-ai.com/s/{short_code}",
+            'metadata': metadata,
+            'created_at': datetime.now().isoformat(),
+            'click_count': 0,
+            'last_used': None
+        }
+        
+        links.append(link_data)
+        
+        # Save back to file
+        os.makedirs(os.path.dirname(links_file), exist_ok=True)
+        with open(links_file, 'w') as f:
+            json.dump(links, f, indent=2)
+        
+        print(f"✅ Saved admin link: {link_data['short_url']}")
+        return jsonify({'success': True, 'link_id': link_data['id']})
+        
+    except Exception as e:
+        print(f"❌ Error saving admin link: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/get-admin-links')
+def get_admin_links():
+    """Get all admin generated links for the logged-in user"""
+    try:
+        # Get logged-in user ID
+        user_id = session.get('user_id')
+        
+        if not user_id:
+            # Not logged in - return empty
+            return jsonify({'success': True, 'links': []})
+        
+        links_file = 'storage/admin_links.json'
+        try:
+            with open(links_file, 'r') as f:
+                all_links = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            all_links = []
+        
+        # Filter links by user_id
+        user_links = [link for link in all_links if link.get('admin_user_id') == user_id]
+        
+        # Sort by creation date (newest first)
+        user_links.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+        
+        return jsonify({'success': True, 'links': user_links})
+        
+    except Exception as e:
+        print(f"❌ Error getting admin links: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
+def track_link_click_direct(short_code):
+    """Track link click directly (used internally)"""
+    try:
+        if not short_code:
+            return
+        
+        # Load existing links
+        links_file = 'storage/admin_links.json'
+        try:
+            with open(links_file, 'r') as f:
+                links = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return
+        
+        # Find and update the link
+        for link in links:
+            if link.get('short_code') == short_code:
+                link['click_count'] = link.get('click_count', 0) + 1
+                link['last_used'] = datetime.now().isoformat()
+                break
+        
+        # Save back to file
+        with open(links_file, 'w') as f:
+            json.dump(links, f, indent=2)
+        print(f"✅ Tracked click for link: {short_code}")
+        
+    except Exception as e:
+        print(f"⚠️ Failed to track link click: {e}")
+
+@app.route('/api/track-link-click', methods=['POST'])
+def track_link_click():
+    """Track when a short link is clicked"""
+    try:
+        data = request.get_json()
+        short_code = data.get('short_code')
+        
+        if not short_code:
+            return jsonify({'success': False, 'error': 'Missing short_code'})
+        
+        track_link_click_direct(short_code)
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        print(f"❌ Error tracking link click: {e}")
+        return jsonify({'success': False, 'error': str(e)})
+
 @app.route('/store-return-url', methods=['POST'])
 def store_return_url():
     """Store return URL in session for after authentication"""
@@ -3115,24 +3398,54 @@ def admin_dashboard_data():
     """Get admin dashboard data"""
     try:
         from analytics_tracker import analytics
+        from pricing_manager import pricing_manager
         
-        # Get overall analytics
-        overall = analytics.get_overall_analytics()
+        # Get user profile and plan info
+        user_id = session.get('user_id', 'guest')
+        user_plan = pricing_manager.get_user_plan(user_id)
         
-        # Calculate sharing metrics
+        # Calculate usage percentages
+        images_used = user_plan.get('usage', {}).get('images_processed', 0)
+        images_limit = user_plan.get('limits', {}).get('images', 0)
+        images_percentage = int((images_used / images_limit * 100)) if images_limit > 0 else 0
+        
+        videos_used = user_plan.get('usage', {}).get('videos_processed', 0)
+        videos_limit = user_plan.get('limits', {}).get('videos', 0)
+        videos_percentage = int((videos_used / videos_limit * 100)) if videos_limit > 0 else 0
+        
+        profile = {
+            'user_id': user_id,
+            'plan_name': user_plan.get('plan_name', 'Starter'),
+            'plan_type': user_plan.get('plan_type', 'free'),
+            'images_used': images_used,
+            'images_limit': images_limit,
+            'images_percentage': min(images_percentage, 100),
+            'images_remaining': max(images_limit - images_used, 0),
+            'videos_used': videos_used,
+            'videos_limit': videos_limit,
+            'videos_percentage': min(videos_percentage, 100),
+            'videos_remaining': max(videos_limit - videos_used, 0),
+            'expires_at': user_plan.get('expires_at'),
+            'features': user_plan.get('limits', {}).get('features', [])
+        }
+        
+        # Get user-specific analytics (filtered by user_id)
+        user_analytics = analytics.get_user_analytics(user_id)
+        
+        # Calculate sharing metrics (use profile data for accurate photo count)
         stats = {
-            'photos_shared': overall.get('total_photos_processed', 0),
-            'links_created': overall.get('total_links_created', 0),
-            'total_downloads': overall.get('total_downloads', 0),
-            'total_views': overall.get('total_page_views', 0),
-            'photos_this_week': overall.get('photos_this_week', 0),
-            'links_this_week': overall.get('links_this_week', 0),
-            'downloads_this_week': overall.get('downloads_this_week', 0),
-            'views_this_week': overall.get('views_this_week', 0)
+            'photos_shared': profile.get('images_used', 0),  # Use actual usage from profile, not analytics
+            'links_created': user_analytics.get('links_created', 0),
+            'total_downloads': user_analytics.get('photos_downloaded', 0),
+            'total_views': user_analytics.get('total_page_views', 0),
+            'photos_this_week': user_analytics.get('photos_this_week', 0),
+            'links_this_week': user_analytics.get('links_this_week', 0),
+            'downloads_this_week': user_analytics.get('downloads_this_week', 0),
+            'views_this_week': user_analytics.get('views_this_week', 0)
         }
         
         # Get real chart data
-        chart_data = analytics.get_chart_data(30)
+        chart_data = analytics.get_chart_data(30, user_id=user_id)
         charts = {
             'activity_labels': chart_data['labels'],
             'photos_data': chart_data['photos_data'],
@@ -3146,6 +3459,7 @@ def admin_dashboard_data():
         
         return jsonify({
             'success': True,
+            'profile': profile,
             'stats': stats,
             'charts': charts,
             'recent_activity': recent_activity
@@ -3156,6 +3470,18 @@ def admin_dashboard_data():
         return jsonify({
             'success': False,
             'error': str(e),
+            'profile': {
+                'plan_name': 'Starter',
+                'plan_type': 'free',
+                'images_used': 0,
+                'images_limit': 500,
+                'images_percentage': 0,
+                'images_remaining': 500,
+                'videos_used': 0,
+                'videos_limit': 0,
+                'videos_percentage': 0,
+                'videos_remaining': 0
+            },
             'stats': {
                 'photos_shared': 0,
                 'links_created': 0,
