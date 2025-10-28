@@ -921,8 +921,13 @@ def pricing():
         # Get user's current plan if authenticated
         current_plan = None
         if 'user_id' in session:
-            user_plan_data = pricing_manager.get_user_plan(session['user_id'])
-            current_plan = user_plan_data.get('plan_type', 'free')
+            user_id = session['user_id']
+            # Check if super user
+            if is_super_user(user_id):
+                current_plan = 'enterprise'
+            else:
+                user_plan_data = pricing_manager.get_user_plan(user_id)
+                current_plan = user_plan_data.get('plan_type', 'free')
         
         return render_template('pricing.html', 
                              plans=plans,
