@@ -20,6 +20,10 @@ def extract_file_id_from_url(drive_url):
             # Format 1: https://drive.google.com/file/d/FILE_ID/view
             if '/file/d/' in drive_url:
                 file_id = drive_url.split('/file/d/')[1].split('/')[0]
+                # Strip any query/hash fragments accidentally captured
+                if any(ch in file_id for ch in ['?', '&', '#']):
+                    print(f"⚠️  Cleaning file ID, removing query/hash: {file_id}")
+                    file_id = file_id.split('?')[0].split('&')[0].split('#')[0]
                 print(f"✅ Found file ID (format 1): {file_id}")
                 return file_id
             
@@ -27,30 +31,46 @@ def extract_file_id_from_url(drive_url):
             elif 'id=' in drive_url:
                 parsed = urlparse(drive_url)
                 file_id = parse_qs(parsed.query)['id'][0]
+                if any(ch in file_id for ch in ['?', '&', '#']):
+                    print(f"⚠️  Cleaning file ID, removing query/hash: {file_id}")
+                    file_id = file_id.split('?')[0].split('&')[0].split('#')[0]
                 print(f"✅ Found file ID (format 2): {file_id}")
                 return file_id
             
             # Format 3: https://drive.google.com/drive/folders/FILE_ID
             elif '/drive/folders/' in drive_url:
                 file_id = drive_url.split('/drive/folders/')[1].split('/')[0]
+                # Handle shared links like .../folders/ID?usp=drive_link
+                if any(ch in file_id for ch in ['?', '&', '#']):
+                    print(f"⚠️  Cleaning folder ID, removing query/hash: {file_id}")
+                    file_id = file_id.split('?')[0].split('&')[0].split('#')[0]
                 print(f"✅ Found folder ID (format 3): {file_id}")
                 return file_id
             
             # Format 3b: https://drive.google.com/drive/u/1/folders/FILE_ID
             elif '/drive/u/' in drive_url and '/folders/' in drive_url:
                 file_id = drive_url.split('/folders/')[1].split('/')[0]
+                if any(ch in file_id for ch in ['?', '&', '#']):
+                    print(f"⚠️  Cleaning folder ID, removing query/hash: {file_id}")
+                    file_id = file_id.split('?')[0].split('&')[0].split('#')[0]
                 print(f"✅ Found folder ID (format 3b): {file_id}")
                 return file_id
             
             # Format 4: https://drive.google.com/uc?id=FILE_ID
             elif '/uc?id=' in drive_url:
                 file_id = drive_url.split('/uc?id=')[1].split('&')[0]
+                if any(ch in file_id for ch in ['?', '&', '#']):
+                    print(f"⚠️  Cleaning file ID, removing query/hash: {file_id}")
+                    file_id = file_id.split('?')[0].split('&')[0].split('#')[0]
                 print(f"✅ Found file ID (format 4): {file_id}")
                 return file_id
             
             # Format 5: https://drive.google.com/viewer?srcid=FILE_ID
             elif 'srcid=' in drive_url:
                 file_id = drive_url.split('srcid=')[1].split('&')[0]
+                if any(ch in file_id for ch in ['?', '&', '#']):
+                    print(f"⚠️  Cleaning file ID, removing query/hash: {file_id}")
+                    file_id = file_id.split('?')[0].split('&')[0].split('#')[0]
                 print(f"✅ Found file ID (format 5): {file_id}")
                 return file_id
             
