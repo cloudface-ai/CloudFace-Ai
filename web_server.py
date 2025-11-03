@@ -2544,7 +2544,7 @@ def get_learning_stats():
 
 # Folder browsing functionality temporarily disabled to fix Google Drive processing
 
-@app.route('/process_local', methods=['POST'])
+@app.route('/process_local_legacy', methods=['POST'])
 def process_local_photos():
     """Process local photos and generate embeddings"""
     try:
