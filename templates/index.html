@@ -1212,8 +1212,8 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                     <span>or</span>
                 </div>
                 
-                <!-- Local Folder Option (Hidden for now) -->
-                <div class="folder-selector" style="display: none;">
+                <!-- Local Folder Option -->
+                <div class="folder-selector">
                     <button type="button" class="btn btn-outline" onclick="selectLocalFolder()">
                         📂 Select local folder
                     </button>
@@ -2416,32 +2416,14 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                         showStatus('processStatus', `🔄 ${data.message}`, 'info');
                         // Progress bar already shown, keep it visible
                     } else if (data.status === 'completed') {
-                        // Bot method completed - show success with progress bar
-                        const message = data.message || `✅ Processed ${data.processed_count} photos successfully!`;
-                        showStatus('processStatus', `✅ ${message}`, 'success');
-                        
-                        // Progress tracking is handled by the server's real progress data
-                        
-                        // Show completion in progress bar
-                        const mainProgressBar = document.getElementById('mainProgressBar');
-                        if (mainProgressBar) mainProgressBar.style.width = '100%';
-                        // Hide main percentage - detailed progress shows below
-                        
-                    // Don't show share button yet - wait for actual completion
-                    // The share button will be shown by the progress tracking system
+                        // Backend accepted/finished an initial phase; let SSE drive actual completion
+                        const message = data.message || 'Processing started...';
+                        showStatus('processStatus', `🔄 ${message}`, 'info');
+                        // Do not force progress bar to 100% here; wait for SSE search_ready
                     } else {
-                        const message = data.message || `✅ Processed ${data.processed_count} photos successfully!`;
-                        showStatus('processStatus', `✅ ${message}`, 'success');
-                        
-                        // Progress tracking is handled by the server's real progress data
-                        
-                        // Show completion in progress bar
-                        const mainProgressBar = document.getElementById('mainProgressBar');
-                        if (mainProgressBar) mainProgressBar.style.width = '100%';
-                        // Hide main percentage - detailed progress shows below
-                        
-                        // Don't show share button yet - wait for actual completion
-                        // The share button will be shown by the progress tracking system
+                        const message = data.message || 'Processing in progress...';
+                        showStatus('processStatus', `🔄 ${message}`, 'info');
+                        // Do not force completion; SSE will update progress and completion
                     }
                 } else {
                     showStatus('processStatus', `❌ Error: ${data.error}`, 'error');
