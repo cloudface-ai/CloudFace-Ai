@@ -48,6 +48,9 @@ class RealProgressTracker:
             self.progress_data['errors'] = []
             self.progress_data['warnings'] = []
             self.progress_data['start_time'] = time.strftime('%Y-%m-%dT%H:%M:%S')
+            # Reset completion flags to avoid stale SSE state
+            self.progress_data['search_ready'] = False
+            self.progress_data['completion_message'] = ''
     
     def stop_progress(self):
         """Stop progress tracking"""
