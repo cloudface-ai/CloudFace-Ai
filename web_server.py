@@ -929,14 +929,43 @@ def dynamic_blog_post(slug):
             # Find post by slug
             post = next((p for p in posts if p.get('slug') == slug and p.get('status') == 'published'), None)
             if post:
+                # Try to load from template file first
                 template_path = f"blog_posts/{slug}.html"
                 if os.path.exists(os.path.join('templates', template_path)):
                     return render_template(template_path)
+                
+                # If template doesn't exist, generate it on-the-fly
+                try:
+                    from blog_manager import generate_blog_template
+                    # Load content from storage
+                    content_file = os.path.join('storage/blog_posts', f"{post['id']}.html")
+                    content = ''
+                    if os.path.exists(content_file):
+                        with open(content_file, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                    
+                    # Generate the full HTML with header/footer
+                    full_html = generate_blog_template(post, content)
+                    
+                    # Save it for future requests
+                    template_file = os.path.join('templates', template_path)
+                    os.makedirs(os.path.dirname(template_file), exist_ok=True)
+                    with open(template_file, 'w', encoding='utf-8') as f:
+                        f.write(full_html)
+                    
+                    return full_html
+                except Exception as e:
+                    print(f"⚠️ Error generating template for {slug}: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    return f"Error generating blog post: {str(e)}", 500
         
         # If not found in dynamic posts, return 404
         return "Blog post not found", 404
     except Exception as e:
         print(f"⚠️ Error loading dynamic blog post: {e}")
+        import traceback
+        traceback.print_exc()
         return "Error loading blog post", 500
 
 # Register static blog routes on startup (for existing hardcoded posts)
