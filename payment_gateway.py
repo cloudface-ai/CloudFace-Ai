@@ -32,7 +32,7 @@ class PaymentGateway:
         # Payment logs directory
         self.logs_dir = "storage/payment_logs"
         os.makedirs(self.logs_dir, exist_ok=True)
-        
+    
         # Razorpay plan ID mapping
         self.razorpay_plans = {
             'free': None,  # No payment needed

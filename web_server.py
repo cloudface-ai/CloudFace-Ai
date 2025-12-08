@@ -43,6 +43,14 @@ from firebase_store import save_face_embedding, fetch_embeddings_for_user
 # Import analytics tracker
 from analytics_tracker import analytics
 
+# Import blog manager
+try:
+    from blog_manager import blog_manager_bp
+    BLOG_MANAGER_AVAILABLE = True
+except ImportError:
+    print("⚠️ Blog manager not available")
+    BLOG_MANAGER_AVAILABLE = False
+
 # Super user/Admin list
 SUPER_USERS = ['spvinodmandan@gmail.com']
 
@@ -346,6 +354,11 @@ def get_user_learning_stats(user_id: str) -> dict:
         }
 
 app = Flask(__name__)
+
+# Register blog manager blueprint
+if BLOG_MANAGER_AVAILABLE:
+    app.register_blueprint(blog_manager_bp)
+    print("✅ Blog Manager registered")
 # Load secret key from environment variable (more secure)
 # Use a fixed secret key to prevent session invalidation on server restart
 app.secret_key = os.environ.get('SECRET_KEY', 'cloudface-ai-secret-key-2024-stable-session-persistence')
@@ -357,7 +370,8 @@ app.permanent_session_lifetime = timedelta(hours=24)  # Sessions last 24 hours
 # Session configuration for persistent login
 from datetime import timedelta
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
-app.config['SESSION_COOKIE_SECURE'] = True  # Required for HTTPS
+# Only use secure cookies in production (HTTPS), allow HTTP in development
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production' or os.environ.get('HTTPS_ENABLED', 'false').lower() == 'true'
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
@@ -784,7 +798,21 @@ def about():
 @app.route('/blog')
 def blog():
     """Show the blog page with all articles"""
-    return render_template('blog.html')
+    # Load dynamic blog posts from metadata
+    dynamic_posts = []
+    try:
+        metadata_file = 'storage/blog_posts_metadata.json'
+        if os.path.exists(metadata_file):
+            with open(metadata_file, 'r', encoding='utf-8') as f:
+                all_posts = json.load(f)
+                # Filter only published posts
+                dynamic_posts = [p for p in all_posts if p.get('status') == 'published']
+                # Sort by created_at (newest first)
+                dynamic_posts.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+    except Exception as e:
+        print(f"⚠️ Error loading dynamic blog posts: {e}")
+    
+    return render_template('blog.html', dynamic_posts=dynamic_posts)
 
 @app.route('/blog/fortune-500-photo-software')
 def blog_fortune_500():
@@ -885,6 +913,37 @@ def privacy_first_face_recognition_trends_2025():
 def hybrid_events_photo_organization_ai_2025():
     """Show the hybrid events photo organization with AI blog post"""
     return render_template('blog/hybrid-events-photo-organization-ai-2025.html')
+
+# Dynamic blog post route handler (catches all /blog/* routes)
+@app.route('/blog/<slug>')
+def dynamic_blog_post(slug):
+    """Dynamic route handler for blog posts created via blog manager"""
+    try:
+        # Check if it's a static route first (existing hardcoded posts)
+        # If not found, try dynamic route
+        metadata_file = 'storage/blog_posts_metadata.json'
+        if os.path.exists(metadata_file):
+            with open(metadata_file, 'r', encoding='utf-8') as f:
+                posts = json.load(f)
+            
+            # Find post by slug
+            post = next((p for p in posts if p.get('slug') == slug and p.get('status') == 'published'), None)
+            if post:
+                template_path = f"blog_posts/{slug}.html"
+                if os.path.exists(os.path.join('templates', template_path)):
+                    return render_template(template_path)
+        
+        # If not found in dynamic posts, return 404
+        return "Blog post not found", 404
+    except Exception as e:
+        print(f"⚠️ Error loading dynamic blog post: {e}")
+        return "Error loading blog post", 500
+
+# Register static blog routes on startup (for existing hardcoded posts)
+def register_static_blog_routes():
+    """Register static routes for existing hardcoded blog posts"""
+    # This is handled by the @app.route decorators above
+    pass
 
 @app.route('/privacy')
 def privacy():
@@ -3070,6 +3129,12 @@ def admin_link_generator():
         analytics.track_page_view(session_id, user_id, '/admin/link-generator', 'Admin Link Generator', referrer)
     
     return render_template('admin_link_generator.html')
+
+@app.route('/admin/blog-manager')
+@app.route('/blog-manager')
+def blog_manager_direct():
+    """Direct route to blog manager (no authentication required for testing)"""
+    return render_template('blog_manager.html')
 
 @app.route('/api/create-share-session', methods=['POST'])
 def create_share_session():

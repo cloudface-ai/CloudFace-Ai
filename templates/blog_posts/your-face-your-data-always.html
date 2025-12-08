@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Face. Your Data. Always. | CloudFace AI</title>
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://cloudface-ai.com/blog/your-face-your-data-always">
+    <meta property="og:title" content="Your Face. Your Data. Always.">
+    <meta property="og:description" content="">
+    <meta property="og:image" content="https://cloudface-ai.com/static/Cloudface-ai-logo.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://cloudface-ai.com/blog/your-face-your-data-always">
+    <meta property="twitter:title" content="Your Face. Your Data. Always.">
+    <meta property="twitter:description" content="">
+    <meta property="twitter:image" content="https://cloudface-ai.com/static/Cloudface-ai-logo.png">
+
+    <link rel="canonical" href="https://cloudface-ai.com/blog/your-face-your-data-always">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #1a73e8;
+            --primary-light: #4285f4;
+            --primary-dark: #0d47a1;
+            --accent: #ea4335;
+            --success: #34a853;
+            --warning: #fbbc04;
+            --bg: #fafafa;
+            --surface: #ffffff;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --text-tertiary: #9aa0a6;
+            --border: #dadce0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            --radius: 16px;
+        }
+
+        body {
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--primary);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 1rem;
+            list-style: none;
+        }
+
+        .nav-menu a {
+            color: var(--text-primary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .nav-menu a:hover {
+            background: var(--bg);
+            color: var(--primary);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .blog-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 2rem 0;
+        }
+
+        .blog-title {
+            font-size: 2.5rem;
+            font-weight: 400;
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            line-height: 1.2;
+        }
+
+        .blog-meta {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .blog-content {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            line-height: 1.8;
+        }
+
+        .blog-content h1,
+        .blog-content h2,
+        .blog-content h3 {
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .blog-content h1 {
+            font-size: 2rem;
+        }
+
+        .blog-content h2 {
+            font-size: 1.5rem;
+        }
+
+        .blog-content h3 {
+            font-size: 1.25rem;
+        }
+
+        .blog-content p {
+            margin-bottom: 1rem;
+        }
+
+        .blog-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: var(--radius);
+            margin: 1.5rem 0;
+        }
+
+        .blog-content ul,
+        .blog-content ol {
+            margin: 1rem 0;
+            padding-left: 2rem;
+        }
+
+        .blog-content li {
+            margin-bottom: 0.5rem;
+        }
+
+        .blog-content a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .blog-content a:hover {
+            text-decoration: underline;
+        }
+
+        .blog-content blockquote {
+            border-left: 4px solid var(--primary);
+            padding-left: 1.5rem;
+            margin: 1.5rem 0;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .blog-content code {
+            background: var(--bg);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .blog-content pre {
+            background: var(--bg);
+            padding: 1rem;
+            border-radius: var(--radius);
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .blog-title {
+                font-size: 1.8rem;
+            }
+            
+            .blog-content {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">
+                <img src="/static/Cloudface-ai-logo.png" alt="Cloudface AI" style="height:1.3em; width:auto; vertical-align:middle;">
+                <span>Cloudface AI</span>
+            </a>
+            <nav class="nav-menu">
+                <a href="/">Home</a>
+                <a href="/blog">Blog</a>
+                <a href="/pricing">Pricing</a>
+                <a href="/app">Try App</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="blog-header">
+            <h1 class="blog-title">Your Face. Your Data. Always.</h1>
+            <div class="blog-meta">
+                <span>📅 November 29, 2025</span>
+                <span>⏱️ 5 min read</span>
+                <span>✍️ CloudFace AI Team</span>
+            </div>
+        </div>
+
+        <article class="blog-content">
+<p>When you upload a photo to an AI platform, you should never have to wonder what happens to it next. CloudFace AI was built around one uncompromisable promise: <strong>your face stays yours</strong>. Not stored. Not shared. Not used to train models. Not analyzed beyond what <em>you</em> request.</p><p>In a world where AI companies quietly turn user photos into datasets, CloudFace AI takes the opposite path. We built a system designed to forget.</p><h2>The Promise Behind the Line</h2><p>“Your Face. Your Data. Always.” isn’t a catchy slogan—it’s our core architecture.</p><p>It means your identity isn’t a commodity, and your photos don’t become someone else’s property. It means you stay in control from the moment you upload to the moment your output is delivered.</p><p>This philosophy shaped every engineering and design decision we’ve made.</p><h2>What This Commitment Looks Like in Real Life</h2><h3><strong>1. Your Photos Never Sit on Servers</strong></h3><p>Every image you upload is processed inside a secure, isolated environment.</p><p> Once the task is complete, the system automatically deletes:</p><ul><li>The source image</li><li>Temporary working files</li><li>Any cached output</li><li>AI processing data</li></ul><p>The deletion is permanent and immediate.</p><h3><strong>2. Encryption at Every Step</strong></h3><p>To ensure absolute privacy, CloudFace AI uses:</p><ul><li><strong>TLS 1.3</strong> for secure, encrypted communication</li><li><strong>AES-256</strong> for temporary data in memory</li><li><strong>Isolated processing containers</strong> so your data never mixes with another user’s</li></ul><p>Your uploads are protected with the same standards used in modern banking.</p><h3><strong>3. Zero Human Access</strong></h3><p>No one at CloudFace—engineers, support, admins—can access user photos.</p><p>Internal guardrails block:</p><ul><li>Manual downloads</li><li>Access from logs</li><li>Viewing images directly</li><li>Injection attempts</li></ul><p>Your image stays invisible and untouchable.</p><h3><strong>4. Not Used for Training—Ever</strong></h3><p>Many AI companies quietly train their models using user uploads.</p><p>CloudFace AI does not.</p><p>Your images are never:</p><ul><li>Added to training datasets</li><li>Used for model improvement</li><li>Stored for later analysis</li><li>Sent to third parties</li></ul><p>Your photo exists only for the task you choose.</p><h2>Why We Built It This Way</h2><p>AI is evolving faster than regulations. Users deserve tools that prioritize trust even when laws don’t.</p><p> We believe powerful technology doesn’t have to compromise user rights. Privacy can be baked into the architecture—not patched on top later.</p><p>This is why CloudFace AI operates with a “forget-first” approach rather than a “store-everything” culture.</p><h2>Trust Isn’t Claimed. It’s Engineered.</h2><p>When you use CloudFace AI, you should feel safe because the system is built to protect you—not because we made a promise.</p><p>We designed every layer of CloudFace AI to uphold three simple truths:</p><ul><li><strong>Your face belongs to you.</strong></li><li><strong>Your data never leaves your control.</strong></li><li><strong>Your privacy is the highest priority.</strong></li></ul><p>Everything else—speed, quality, features—comes after that.</p><h1>Your Face. Your Data. Always.</h1><p>That’s not a tagline.</p><p> It’s the structure beneath the entire platform.</p>
+        </article>
+    </div>
+
+    <!-- JSON-LD Schema -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BlogPosting",
+        "headline": "Your Face. Your Data. Always.",
+        "description": "",
+        "author": {
+            "@type": "Organization",
+            "name": "CloudFace AI"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "CloudFace AI",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://cloudface-ai.com/static/Cloudface-ai-logo.png"
+            }
+        },
+        "datePublished": "November 29, 2025",
+        "dateModified": "2025-11-29T14:43:26.996000",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https://cloudface-ai.com/blog/your-face-your-data-always"
+        },
+        "image": "https://cloudface-ai.com/static/Cloudface-ai-logo.png"
+    }
+    </script>
+</body>
+</html>

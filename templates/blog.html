@@ -809,6 +809,41 @@
         </article>
 
         <div class="blog-grid">
+            <!-- Dynamic Blog Posts from Blog Manager (Newest First) -->
+            {% if dynamic_posts %}
+            {% for post in dynamic_posts %}
+            <article class="blog-card">
+                <div class="blog-image">🔒 PRIVACY</div>
+                <div class="blog-content">
+                    <div class="blog-meta">
+                        <span>
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                            {{ post.published_date or (post.created_at[:10] if post.created_at else '') }}
+                        </span>
+                        <span>
+                            <svg viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                            {{ post.read_time or '5' }} min read
+                        </span>
+                    </div>
+                    <h3 class="blog-title">{{ post.title }}</h3>
+                    <p class="blog-excerpt">
+                        {{ post.meta_description or 'Read the full article to learn more.' }}
+                    </p>
+                    <a href="/blog/{{ post.slug }}" class="read-more">
+                        Read More
+                        <svg viewBox="0 0 24 24">
+                            <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+                        </svg>
+                    </a>
+                </div>
+            </article>
+            {% endfor %}
+            {% endif %}
+
             <article class="blog-card">
                 <div class="blog-image">🔍 GOOGLE DRIVE</div>
                 <div class="blog-content">

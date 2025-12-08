@@ -57,8 +57,8 @@ class SharedSessionManager:
             # Save to Firestore
             print(f"🔍 Saving to Firebase collection: {SESSIONS_COLLECTION}")
             try:
-                doc_ref = self.db.collection(SESSIONS_COLLECTION).document(session_id)
-                doc_ref.set(session_data)
+            doc_ref = self.db.collection(SESSIONS_COLLECTION).document(session_id)
+            doc_ref.set(session_data)
                 print(f"🔍 Document saved to Firebase")
             except Exception as firebase_error:
                 print(f"❌ Firebase save failed: {firebase_error}")
@@ -131,32 +131,32 @@ class SharedSessionManager:
             
             # Try Firebase first
             try:
-                # Get session document
-                doc_ref = self.db.collection(SESSIONS_COLLECTION).document(session_id)
-                doc = doc_ref.get()
-                
-                if not doc.exists:
+            # Get session document
+            doc_ref = self.db.collection(SESSIONS_COLLECTION).document(session_id)
+            doc = doc_ref.get()
+            
+            if not doc.exists:
                     print(f"❌ Session not found in Firebase: {session_id}")
-                    return None
-                
-                session_data = doc.to_dict()
-                
-                # Check if expired
-                expires_at = datetime.fromisoformat(session_data['expires_at'])
-                if datetime.utcnow() > expires_at:
-                    print(f"❌ Session expired: {session_id}")
-                    return None
-                
-                # Check if active
-                if session_data.get('status') != 'active':
-                    print(f"❌ Session not active: {session_id}")
-                    return None
-                
-                # Increment access count
-                doc_ref.update({'access_count': session_data.get('access_count', 0) + 1})
-                
+                return None
+            
+            session_data = doc.to_dict()
+            
+            # Check if expired
+            expires_at = datetime.fromisoformat(session_data['expires_at'])
+            if datetime.utcnow() > expires_at:
+                print(f"❌ Session expired: {session_id}")
+                return None
+            
+            # Check if active
+            if session_data.get('status') != 'active':
+                print(f"❌ Session not active: {session_id}")
+                return None
+            
+            # Increment access count
+            doc_ref.update({'access_count': session_data.get('access_count', 0) + 1})
+            
                 print(f"✅ Retrieved session from Firebase: {session_id}")
-                return session_data
+            return session_data
                 
             except Exception as firebase_error:
                 print(f"⚠️  Firebase error, falling back to local storage: {firebase_error}")
