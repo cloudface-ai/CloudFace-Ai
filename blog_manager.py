@@ -352,6 +352,61 @@ def generate_blog_template(metadata: Dict, content: str) -> str:
 </html>'''
     return template
 
+
+@blog_manager_bp.route('/api/blog/upload-image', methods=['POST'])
+@require_auth
+def upload_blog_image():
+    """Upload and resize blog images"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'error': 'No file uploaded'}), 400
+
+        file_obj = request.files['file']
+        if not file_obj or not file_obj.filename:
+            return jsonify({'success': False, 'error': 'Empty file'}), 400
+
+        filename = secure_filename(file_obj.filename)
+        ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+        allowed = {'jpg', 'jpeg', 'png', 'webp'}
+        if ext not in allowed:
+            return jsonify({'success': False, 'error': 'Invalid file type'}), 400
+
+        from PIL import Image
+        import time
+
+        upload_dir = os.path.join('static', 'uploads', 'blog')
+        os.makedirs(upload_dir, exist_ok=True)
+
+        base_name = f"blog_{int(time.time())}_{filename}"
+        file_path = os.path.join(upload_dir, base_name)
+
+        image = Image.open(file_obj.stream)
+
+        max_width = 1200
+        if image.width > max_width:
+            new_height = int(image.height * (max_width / image.width))
+            image = image.resize((max_width, new_height), Image.LANCZOS)
+
+        save_kwargs = {}
+        if ext in {'jpg', 'jpeg'}:
+            if image.mode in {'RGBA', 'P'}:
+                image = image.convert('RGB')
+            save_kwargs = {'format': 'JPEG', 'quality': 85, 'optimize': True}
+        elif ext == 'png':
+            save_kwargs = {'format': 'PNG', 'optimize': True}
+        elif ext == 'webp':
+            save_kwargs = {'format': 'WEBP', 'quality': 80}
+
+        image.save(file_path, **save_kwargs)
+
+        return jsonify({
+            'success': True,
+            'url': f"/static/uploads/blog/{base_name}"
+        })
+    except Exception as e:
+        print(f"❌ Error uploading blog image: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @blog_manager_bp.route('/admin/blog-manager/check-password', methods=['POST'])
 def check_password():
     """Check password and redirect with URL parameter (session fallback)"""
@@ -449,6 +504,8 @@ def create_post():
             'author': data.get('author', 'CloudFace AI Team'),
             'meta_description': data.get('meta_description', ''),
             'meta_keywords': data.get('meta_keywords', ''),
+            'badge': data.get('badge', '📝 BLOG'),
+            'thumbnail_image': data.get('thumbnail_image', ''),
             'og_image': data.get('og_image', 'https://cloudface-ai.com/static/Cloudface-ai-logo.png'),
             'read_time': data.get('read_time', '5'),
             'published_date': data.get('published_date', datetime.now().strftime('%B %d, %Y')),
@@ -524,6 +581,12 @@ def update_post(post_id):
         
         if 'meta_keywords' in data:
             post['meta_keywords'] = data['meta_keywords']
+
+        if 'badge' in data:
+            post['badge'] = data['badge']
+
+        if 'thumbnail_image' in data:
+            post['thumbnail_image'] = data['thumbnail_image']
         
         if 'og_image' in data:
             post['og_image'] = data['og_image']

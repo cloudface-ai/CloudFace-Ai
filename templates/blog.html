@@ -813,7 +813,13 @@
             {% if dynamic_posts %}
             {% for post in dynamic_posts %}
             <article class="blog-card">
-                <div class="blog-image">🔒 PRIVACY</div>
+                <div class="blog-image">
+                    {% if post.thumbnail_image %}
+                    <img src="{{ post.thumbnail_image }}" alt="{{ post.title }}" style="width:100%;height:100%;object-fit:cover;">
+                    {% else %}
+                    {{ post.badge or '📝 BLOG' }}
+                    {% endif %}
+                </div>
                 <div class="blog-content">
                     <div class="blog-meta">
                         <span>
