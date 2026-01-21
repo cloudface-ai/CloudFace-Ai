@@ -57,8 +57,8 @@ class SharedSessionManager:
             # Save to Firestore
             print(f"🔍 Saving to Firebase collection: {SESSIONS_COLLECTION}")
             try:
-            doc_ref = self.db.collection(SESSIONS_COLLECTION).document(session_id)
-            doc_ref.set(session_data)
+                doc_ref = self.db.collection(SESSIONS_COLLECTION).document(session_id)
+                doc_ref.set(session_data)
                 print(f"🔍 Document saved to Firebase")
             except Exception as firebase_error:
                 print(f"❌ Firebase save failed: {firebase_error}")
