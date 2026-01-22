@@ -51,6 +51,13 @@ except ImportError:
     print("⚠️ Blog manager not available")
     BLOG_MANAGER_AVAILABLE = False
 
+try:
+    from image_tools import image_tools_bp
+    IMAGE_TOOLS_AVAILABLE = True
+except ImportError:
+    print("⚠️ Image tools not available")
+    IMAGE_TOOLS_AVAILABLE = False
+
 # Super user/Admin list
 SUPER_USERS = ['spvinodmandan@gmail.com']
 
@@ -358,6 +365,8 @@ app = Flask(__name__)
 # Register blog manager blueprint
 if BLOG_MANAGER_AVAILABLE:
     app.register_blueprint(blog_manager_bp)
+if IMAGE_TOOLS_AVAILABLE:
+    app.register_blueprint(image_tools_bp)
     print("✅ Blog Manager registered")
 # Load secret key from environment variable (more secure)
 # Use a fixed secret key to prevent session invalidation on server restart
