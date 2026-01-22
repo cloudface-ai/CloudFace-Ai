@@ -201,6 +201,94 @@
             background: var(--surface);
         }
 
+        .watermark-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .watermark-grid .full-row {
+            grid-column: 1 / -1;
+        }
+
+        .position-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .position-btn {
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface);
+            color: var(--text-primary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .position-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        .watermark-preview {
+            margin-top: 12px;
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg);
+            padding: 12px;
+        }
+
+        .preview-area {
+            position: relative;
+            height: 180px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f5f7fb, #e9eef6);
+            border: 1px solid var(--border);
+        }
+
+        .preview-caption {
+            position: absolute;
+            top: 8px;
+            left: 10px;
+            font-size: 12px;
+            color: var(--text-tertiary);
+            background: rgba(255, 255, 255, 0.7);
+            padding: 2px 8px;
+            border-radius: 999px;
+        }
+
+        .watermark-overlay {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            border-radius: 8px;
+            user-select: none;
+        }
+
+        .watermark-overlay.draggable {
+            cursor: move;
+        }
+
+        .watermark-overlay img {
+            height: auto;
+            display: block;
+            border-radius: 4px;
+        }
+
+        .watermark-text-preview {
+            color: #ffffff;
+            font-weight: 600;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+            white-space: nowrap;
+        }
+
         .success-message {
             background: #d4edda;
             color: #155724;
@@ -322,6 +410,67 @@
         </div>
 
         <div class="form-group">
+            <label>Watermark for Shared Results</label>
+            <p class="help-text">Applies only to processed/filtered results for this share session.</p>
+            <div class="watermark-grid">
+                <div class="full-row">
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:600;">
+                        <input type="checkbox" id="watermarkEnabled" checked>
+                        Enable watermark on processed results
+                    </label>
+                </div>
+                <div class="full-row">
+                    <label for="watermarkText">Watermark Text (optional)</label>
+                    <input type="text" id="watermarkText" placeholder="Leave empty for logo-only watermark">
+                </div>
+                <div>
+                    <label for="watermarkLogo">Watermark Logo</label>
+                    <input type="file" id="watermarkLogo" accept="image/*" onchange="handleWatermarkLogoUpload(event)">
+                    <div id="watermarkLogoPreview" style="display: none; margin-top: 8px;">
+                        <img id="watermarkLogoPreviewImg" style="max-width: 120px; max-height: 60px; border-radius: 4px; border: 1px solid var(--border);">
+                        <button type="button" onclick="removeWatermarkLogo()" style="margin-left: 10px; padding: 4px 8px; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer;">Remove</button>
+                    </div>
+                </div>
+                <div>
+                    <label for="watermarkSize">Size <span id="watermarkSizeValue">15%</span></label>
+                    <input type="range" id="watermarkSize" min="5" max="40" value="15">
+                </div>
+                <div>
+                    <label for="watermarkOpacity">Opacity <span id="watermarkOpacityValue">70%</span></label>
+                    <input type="range" id="watermarkOpacity" min="20" max="100" value="70">
+                </div>
+                <div>
+                    <label for="watermarkMargin">Margin <span id="watermarkMarginValue">12px</span></label>
+                    <input type="range" id="watermarkMargin" min="0" max="40" value="12">
+                </div>
+                <div class="full-row">
+                    <label>Position</label>
+                    <div class="position-grid" id="watermarkPositionGrid">
+                        <button type="button" class="position-btn" data-position="top-left">Top Left</button>
+                        <button type="button" class="position-btn" data-position="top-center">Top Center</button>
+                        <button type="button" class="position-btn" data-position="top-right">Top Right</button>
+                        <button type="button" class="position-btn" data-position="bottom-left">Bottom Left</button>
+                        <button type="button" class="position-btn" data-position="bottom-center">Bottom Center</button>
+                        <button type="button" class="position-btn active" data-position="bottom-right">Bottom Right</button>
+                        <button type="button" class="position-btn" data-position="custom">Custom (Drag)</button>
+                    </div>
+                </div>
+            </div>
+            <div class="watermark-preview">
+                <div class="preview-area" id="watermarkPreviewArea">
+                    <div class="preview-caption">Preview</div>
+                    <div class="watermark-overlay" id="watermarkOverlay">
+                        <img id="watermarkOverlayLogo" alt="Logo">
+                        <span class="watermark-text-preview" id="watermarkOverlayText">CloudFace AI</span>
+                    </div>
+                </div>
+                <p class="help-text" id="watermarkCustomHint" style="display:none; margin-top:8px;">
+                    Drag the watermark in the preview to set a custom position.
+                </p>
+            </div>
+        </div>
+
+        <div class="form-group">
             <label for="driveUrl">Google Drive Folder URL</label>
             <input type="text" id="driveUrl" placeholder="Paste your Google Drive folder link here">
             <p class="help-text">Users will be able to click your link and automatically process this folder</p>
@@ -397,6 +546,8 @@
                     console.warn('⚠️ QRCode library not loaded, QR codes will not be generated');
                 }
             }, 500);
+
+            setupWatermarkControls();
         });
 
         function generateQRCode(text) {
@@ -528,6 +679,10 @@
 
         // Global variable to store logo filename
         let logoFilename = null;
+        let watermarkLogoFilename = null;
+        let watermarkPosition = 'bottom-right';
+        let watermarkOffsetX = 85;
+        let watermarkOffsetY = 85;
 
         function handleLogoUpload(event) {
             const file = event.target.files[0];
@@ -585,8 +740,233 @@
             logoFilename = null;
         }
 
+        function handleWatermarkLogoUpload(event) {
+            const file = event.target.files[0];
+
+            if (!file) {
+                removeWatermarkLogo();
+                return;
+            }
+
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Logo file is too large. Please choose a file smaller than 2MB.');
+                event.target.value = '';
+                return;
+            }
+
+            if (!file.type.startsWith('image/')) {
+                alert('Please select a valid image file (PNG, JPG, GIF).');
+                event.target.value = '';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('logo', file);
+
+            fetch('/upload-logo', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    watermarkLogoFilename = data.filename;
+                    const preview = document.getElementById('watermarkLogoPreview');
+                    const previewImg = document.getElementById('watermarkLogoPreviewImg');
+                    previewImg.src = `/static/logos/${data.filename}`;
+                    preview.style.display = 'block';
+                    updateWatermarkPreview();
+                } else {
+                    alert('Failed to upload watermark logo: ' + data.error);
+                    event.target.value = '';
+                }
+            })
+            .catch(error => {
+                console.error('Watermark logo upload error:', error);
+                alert('Failed to upload watermark logo. Please try again.');
+                event.target.value = '';
+            });
+        }
+
+        function removeWatermarkLogo() {
+            document.getElementById('watermarkLogo').value = '';
+            document.getElementById('watermarkLogoPreview').style.display = 'none';
+            watermarkLogoFilename = null;
+            updateWatermarkPreview();
+        }
+
+        function getWatermarkTextValue() {
+            const text = document.getElementById('watermarkText').value.trim();
+            return text;
+        }
+
+        function setWatermarkPosition(position) {
+            watermarkPosition = position;
+            document.querySelectorAll('#watermarkPositionGrid .position-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.position === position);
+            });
+            updateWatermarkPreview();
+        }
+
+        function updateWatermarkPreview() {
+            const enabled = document.getElementById('watermarkEnabled').checked;
+            const overlay = document.getElementById('watermarkOverlay');
+            const overlayText = document.getElementById('watermarkOverlayText');
+            const overlayLogo = document.getElementById('watermarkOverlayLogo');
+            const previewArea = document.getElementById('watermarkPreviewArea');
+            const margin = parseInt(document.getElementById('watermarkMargin').value, 10);
+            const size = parseInt(document.getElementById('watermarkSize').value, 10);
+            const opacity = parseInt(document.getElementById('watermarkOpacity').value, 10);
+
+            document.getElementById('watermarkSizeValue').textContent = `${size}%`;
+            document.getElementById('watermarkOpacityValue').textContent = `${opacity}%`;
+            document.getElementById('watermarkMarginValue').textContent = `${margin}px`;
+
+            if (!enabled) {
+                overlay.style.display = 'none';
+                return;
+            }
+
+            overlay.style.display = 'flex';
+            overlay.style.opacity = opacity / 100;
+            const textValue = getWatermarkTextValue();
+            overlayText.textContent = textValue;
+            overlayText.style.display = textValue ? 'inline-block' : 'none';
+
+            if (watermarkLogoFilename) {
+                overlayLogo.src = `/static/logos/${watermarkLogoFilename}`;
+                overlayLogo.style.display = 'block';
+            } else {
+                overlayLogo.style.display = 'none';
+            }
+
+            const baseWidth = previewArea.clientWidth || 320;
+            const logoWidth = Math.max(28, Math.round(baseWidth * size / 100));
+            overlayLogo.style.width = `${logoWidth}px`;
+            overlayText.style.fontSize = `${Math.max(12, Math.round(baseWidth * (size / 100) * 0.25))}px`;
+
+            updateWatermarkPreviewPosition(margin);
+        }
+
+        function updateWatermarkPreviewPosition(margin) {
+            const overlay = document.getElementById('watermarkOverlay');
+            const previewArea = document.getElementById('watermarkPreviewArea');
+            const customHint = document.getElementById('watermarkCustomHint');
+            const isCustom = watermarkPosition === 'custom';
+
+            overlay.classList.toggle('draggable', isCustom);
+            customHint.style.display = isCustom ? 'block' : 'none';
+
+            if (isCustom) {
+                const maxLeft = Math.max(0, previewArea.clientWidth - overlay.offsetWidth);
+                const maxTop = Math.max(0, previewArea.clientHeight - overlay.offsetHeight);
+                const left = Math.round(maxLeft * (watermarkOffsetX / 100));
+                const top = Math.round(maxTop * (watermarkOffsetY / 100));
+                overlay.style.left = `${Math.min(Math.max(0, left), maxLeft)}px`;
+                overlay.style.top = `${Math.min(Math.max(0, top), maxTop)}px`;
+                overlay.style.right = 'auto';
+                overlay.style.bottom = 'auto';
+                overlay.style.transform = 'none';
+                return;
+            }
+
+            overlay.style.left = 'auto';
+            overlay.style.right = 'auto';
+            overlay.style.top = 'auto';
+            overlay.style.bottom = 'auto';
+            overlay.style.transform = 'none';
+
+            if (watermarkPosition.startsWith('top')) {
+                overlay.style.top = `${margin}px`;
+            } else {
+                overlay.style.bottom = `${margin}px`;
+            }
+
+            if (watermarkPosition.endsWith('left')) {
+                overlay.style.left = `${margin}px`;
+            } else if (watermarkPosition.endsWith('right')) {
+                overlay.style.right = `${margin}px`;
+            } else {
+                overlay.style.left = '50%';
+                overlay.style.transform = 'translateX(-50%)';
+            }
+        }
+
+        function setupWatermarkControls() {
+            document.getElementById('watermarkEnabled').addEventListener('change', updateWatermarkPreview);
+            document.getElementById('watermarkText').addEventListener('input', updateWatermarkPreview);
+            document.getElementById('companyName').addEventListener('input', updateWatermarkPreview);
+            ['watermarkSize', 'watermarkOpacity', 'watermarkMargin'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updateWatermarkPreview);
+            });
+            document.querySelectorAll('#watermarkPositionGrid .position-btn').forEach(btn => {
+                btn.addEventListener('click', () => setWatermarkPosition(btn.dataset.position));
+            });
+
+            const overlay = document.getElementById('watermarkOverlay');
+            const previewArea = document.getElementById('watermarkPreviewArea');
+            let dragging = false;
+            let dragOffsetX = 0;
+            let dragOffsetY = 0;
+
+            overlay.addEventListener('mousedown', (event) => {
+                if (watermarkPosition !== 'custom') return;
+                dragging = true;
+                const rect = overlay.getBoundingClientRect();
+                dragOffsetX = event.clientX - rect.left;
+                dragOffsetY = event.clientY - rect.top;
+            });
+
+            document.addEventListener('mousemove', (event) => {
+                if (!dragging || watermarkPosition !== 'custom') return;
+                const areaRect = previewArea.getBoundingClientRect();
+                const maxLeft = Math.max(0, previewArea.clientWidth - overlay.offsetWidth);
+                const maxTop = Math.max(0, previewArea.clientHeight - overlay.offsetHeight);
+                const rawLeft = event.clientX - areaRect.left - dragOffsetX;
+                const rawTop = event.clientY - areaRect.top - dragOffsetY;
+                const left = Math.min(Math.max(0, rawLeft), maxLeft);
+                const top = Math.min(Math.max(0, rawTop), maxTop);
+                overlay.style.left = `${left}px`;
+                overlay.style.top = `${top}px`;
+                overlay.style.right = 'auto';
+                overlay.style.bottom = 'auto';
+                overlay.style.transform = 'none';
+                watermarkOffsetX = maxLeft === 0 ? 0 : Math.round((left / maxLeft) * 100);
+                watermarkOffsetY = maxTop === 0 ? 0 : Math.round((top / maxTop) * 100);
+            });
+
+            document.addEventListener('mouseup', () => {
+                dragging = false;
+            });
+
+            setWatermarkPosition('bottom-right');
+            updateWatermarkPreview();
+        }
+
+        function getWatermarkSettings() {
+            const enabled = document.getElementById('watermarkEnabled').checked;
+            const text = getWatermarkTextValue();
+            const opacity = parseInt(document.getElementById('watermarkOpacity').value, 10);
+            const size = parseInt(document.getElementById('watermarkSize').value, 10);
+            const margin = parseInt(document.getElementById('watermarkMargin').value, 10);
+            const position = watermarkPosition === 'custom' ? 'custom' : watermarkPosition;
+
+            return {
+                watermark_enabled: enabled,
+                watermark_text: text,
+                watermark_logo_filename: watermarkLogoFilename,
+                watermark_position: position,
+                watermark_opacity: opacity,
+                watermark_size: size,
+                watermark_margin: margin,
+                watermark_offset_x: position === 'custom' ? watermarkOffsetX : null,
+                watermark_offset_y: position === 'custom' ? watermarkOffsetY : null
+            };
+        }
+
         function generateLink() {
             const driveUrl = document.getElementById('driveUrl').value.trim();
+            const watermarkSettings = getWatermarkSettings();
             const companyName = document.getElementById('companyName').value.trim();
             const eventName = document.getElementById('eventName').value.trim();
             const eventDate = document.getElementById('eventDate').value.trim();
@@ -626,6 +1006,7 @@
                     }
                     
                     const adminUserId = authData.user_email;
+                    const watermarkSettings = getWatermarkSettings();
                     
                     // Create shareable session via API
                     return fetch('/api/create-share-session', {
@@ -639,7 +1020,16 @@
                                 company_name: companyName,
                                 event_name: eventName,
                                 event_date: eventDate,
-                                logo_filename: logoFilename
+                                logo_filename: logoFilename,
+                                watermark_enabled: watermarkSettings.watermark_enabled,
+                                watermark_text: watermarkSettings.watermark_text,
+                                watermark_logo_filename: watermarkSettings.watermark_logo_filename,
+                                watermark_position: watermarkSettings.watermark_position,
+                                watermark_opacity: watermarkSettings.watermark_opacity,
+                                watermark_size: watermarkSettings.watermark_size,
+                                watermark_margin: watermarkSettings.watermark_margin,
+                                watermark_offset_x: watermarkSettings.watermark_offset_x,
+                                watermark_offset_y: watermarkSettings.watermark_offset_y
                             }
                         })
                     });
@@ -766,6 +1156,15 @@
                                 event_name: eventName,
                                 company_name: companyName,
                                 event_date: eventDate,
+                                watermark_enabled: watermarkSettings.watermark_enabled,
+                                watermark_text: watermarkSettings.watermark_text,
+                                watermark_logo_filename: watermarkSettings.watermark_logo_filename,
+                                watermark_position: watermarkSettings.watermark_position,
+                                watermark_opacity: watermarkSettings.watermark_opacity,
+                                watermark_size: watermarkSettings.watermark_size,
+                                watermark_margin: watermarkSettings.watermark_margin,
+                                watermark_offset_x: watermarkSettings.watermark_offset_x,
+                                watermark_offset_y: watermarkSettings.watermark_offset_y,
                                 created_via: 'admin_link_generator'
                             }
                         })

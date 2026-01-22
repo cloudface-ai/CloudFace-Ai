@@ -919,16 +919,21 @@ def hybrid_events_photo_organization_ai_2025():
 def dynamic_blog_post(slug):
     """Dynamic route handler for blog posts created via blog manager"""
     try:
+        print(f"🔍 Looking for blog post with slug: {slug}")
         # Check if it's a static route first (existing hardcoded posts)
         # If not found, try dynamic route
         metadata_file = 'storage/blog_posts_metadata.json'
+        print(f"🔍 Metadata file exists: {os.path.exists(metadata_file)}")
         if os.path.exists(metadata_file):
             with open(metadata_file, 'r', encoding='utf-8') as f:
                 posts = json.load(f)
             
+            print(f"🔍 Loaded {len(posts)} posts from metadata")
             # Find post by slug
             post = next((p for p in posts if p.get('slug') == slug and p.get('status') == 'published'), None)
+            print(f"🔍 Post found: {post is not None}")
             if post:
+                print(f"✅ Found post: {post.get('title', 'Untitled')}")
                 # Try to load from template file first
                 template_path = f"blog_posts/{slug}.html"
                 if os.path.exists(os.path.join('templates', template_path)):
@@ -959,8 +964,14 @@ def dynamic_blog_post(slug):
                     import traceback
                     traceback.print_exc()
                     return f"Error generating blog post: {str(e)}", 500
+            else:
+                print(f"❌ Post not found or not published. Slug: {slug}")
+                # Debug: show all slugs
+                all_slugs = [p.get('slug') for p in posts]
+                print(f"🔍 Available slugs: {all_slugs[:5]}...")
         
         # If not found in dynamic posts, return 404
+        print(f"❌ Returning 404 for slug: {slug}")
         return "Blog post not found", 404
     except Exception as e:
         print(f"⚠️ Error loading dynamic blog post: {e}")
@@ -2279,6 +2290,144 @@ def track_downloader_info(admin_user_id, downloader_user_id, filename, source):
         import traceback
         traceback.print_exc()
 
+
+def _get_shared_watermark_settings():
+    shared_session_id = session.get('shared_session_id') or session.get('shared_folder_id')
+    if not shared_session_id:
+        return None
+    try:
+        from shared_session_manager import get_session_manager
+        manager = get_session_manager()
+        session_data = manager.get_session(shared_session_id)
+        if not session_data:
+            return None
+        metadata = session_data.get('metadata', {})
+        if not metadata.get('watermark_enabled'):
+            return None
+        return metadata
+    except Exception as e:
+        print(f"⚠️ Failed to load watermark settings: {e}")
+        return None
+
+
+def _is_image_file(filename):
+    ext = os.path.splitext(filename)[1].lower()
+    return ext in {'.jpg', '.jpeg', '.png', '.webp'}
+
+
+def _apply_watermark_to_image(image_path, settings):
+    from io import BytesIO
+    from PIL import Image, ImageDraw, ImageFont
+
+    text = (settings.get('watermark_text') or '').strip()
+    logo_filename = settings.get('watermark_logo_filename') or ''
+    opacity = float(settings.get('watermark_opacity', 70))
+    size_pct = float(settings.get('watermark_size', 15))
+    margin = int(settings.get('watermark_margin', 12))
+    position = settings.get('watermark_position', 'bottom-right')
+    offset_x = float(settings.get('watermark_offset_x', 0) or 0)
+    offset_y = float(settings.get('watermark_offset_y', 0) or 0)
+
+    if not text and not logo_filename:
+        return None, None
+
+    with Image.open(image_path) as base_image:
+        image_format = base_image.format or 'JPEG'
+        image = base_image.convert('RGBA')
+
+    logo = None
+    if logo_filename:
+        logo_path = os.path.join('static', 'logos', logo_filename)
+        if os.path.exists(logo_path):
+            logo = Image.open(logo_path).convert('RGBA')
+            target_width = max(40, int(image.width * size_pct / 100))
+            target_height = int(logo.height * (target_width / logo.width))
+            logo = logo.resize((target_width, target_height), Image.LANCZOS)
+
+    font_size = max(14, int(image.width * (size_pct / 100) * 0.25))
+    try:
+        font = ImageFont.truetype("DejaVuSans.ttf", font_size)
+    except Exception:
+        font = ImageFont.load_default()
+
+    text_image = None
+    if text:
+        dummy_draw = ImageDraw.Draw(Image.new('RGBA', (1, 1)))
+        bbox = dummy_draw.textbbox((0, 0), text, font=font)
+        text_width = bbox[2] - bbox[0]
+        text_height = bbox[3] - bbox[1]
+        text_image = Image.new('RGBA', (text_width + 2, text_height + 2), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(text_image)
+        draw.text((1, 1), text, font=font, fill=(0, 0, 0, 255))
+        draw.text((0, 0), text, font=font, fill=(255, 255, 255, 255))
+
+    gap = max(6, int(image.width * 0.01))
+    if logo and text_image:
+        watermark_width = max(logo.width, text_image.width)
+        watermark_height = logo.height + gap + text_image.height
+        watermark = Image.new('RGBA', (watermark_width, watermark_height), (0, 0, 0, 0))
+        watermark.paste(logo, ((watermark_width - logo.width) // 2, 0), logo)
+        watermark.paste(text_image, ((watermark_width - text_image.width) // 2, logo.height + gap), text_image)
+    elif logo:
+        watermark = logo
+    else:
+        watermark = text_image
+
+    if watermark is None:
+        return None, None
+
+    if opacity < 100:
+        alpha = watermark.split()[3]
+        alpha = alpha.point(lambda p: int(p * opacity / 100))
+        watermark.putalpha(alpha)
+
+    max_x = max(0, image.width - watermark.width)
+    max_y = max(0, image.height - watermark.height)
+
+    if position == 'custom':
+        x = int(max_x * (offset_x / 100)) if max_x else 0
+        y = int(max_y * (offset_y / 100)) if max_y else 0
+    else:
+        if position.endswith('left'):
+            x = margin
+        elif position.endswith('right'):
+            x = image.width - watermark.width - margin
+        else:
+            x = (image.width - watermark.width) // 2
+
+        if position.startswith('top'):
+            y = margin
+        else:
+            y = image.height - watermark.height - margin
+
+    x = max(0, min(x, max_x))
+    y = max(0, min(y, max_y))
+
+    image.alpha_composite(watermark, (x, y))
+
+    output = BytesIO()
+    ext = os.path.splitext(image_path)[1].lower()
+    output_format = 'PNG' if ext == '.png' else 'JPEG'
+    mimetype = 'image/png' if output_format == 'PNG' else 'image/jpeg'
+    if output_format == 'JPEG':
+        image = image.convert('RGB')
+    image.save(output, format=output_format, quality=90)
+    output.seek(0)
+    return output, mimetype
+
+
+def _send_photo_with_optional_watermark(file_path, filename, base_dir, watermark_settings):
+    if not watermark_settings or not _is_image_file(filename):
+        return send_from_directory(base_dir, filename)
+    try:
+        watermarked_file, mimetype = _apply_watermark_to_image(file_path, watermark_settings)
+        if watermarked_file is None:
+            return send_from_directory(base_dir, filename)
+        return send_file(watermarked_file, mimetype=mimetype, download_name=os.path.basename(filename))
+    except Exception as e:
+        print(f"⚠️ Watermark failed, serving original: {e}")
+        return send_from_directory(base_dir, filename)
+
 @app.route('/photo/<path:filename>')
 def serve_photo(filename):
     """Serve photos from user's cache folder"""
@@ -2300,6 +2449,7 @@ def serve_photo(filename):
         # Check for shared session - use admin's data if available
         shared_user_id = session.get('shared_user_id')
         shared_folder_id = session.get('shared_folder_id')
+        watermark_settings = _get_shared_watermark_settings()
         
         # Use shared session data if available, otherwise use logged-in user's data
         photo_user_id = shared_user_id if shared_user_id else user_id
@@ -2336,7 +2486,7 @@ def serve_photo(filename):
             except Exception as e:
                 print(f"⚠️ Failed to track download: {e}")
             # For nested paths like "1111/ABN10404.jpg", we need to serve from the base upload folder
-            return send_from_directory(upload_folder, filename)
+            return _send_photo_with_optional_watermark(upload_file_path, filename, upload_folder, watermark_settings)
         
         # Second, try Google Drive cache folder (if folder session exists)
         if photo_folder_id:
@@ -2349,7 +2499,7 @@ def serve_photo(filename):
                 
                 # Check if file was modified (to avoid counting cache hits as downloads)
                 from flask import request
-                response = send_from_directory(cache_folder, filename)
+                response = _send_photo_with_optional_watermark(cache_file_path, filename, cache_folder, watermark_settings)
                 
                 # Track download only if it's not a 304 (cached response)
                 if response.status_code == 200:
@@ -2401,7 +2551,7 @@ def serve_photo(filename):
                                     track_downloader_info(shared_user_id, user_id, filename, 'fallback_cache')
                             except Exception as e:
                                 print(f"⚠️ Failed to track download: {e}")
-                            return send_from_directory(cache_folder, filename)
+                            return _send_photo_with_optional_watermark(cache_file_path, filename, cache_folder, watermark_settings)
                         else:
                             # List files in the cache folder to see what's available
                             if os.path.exists(cache_folder):

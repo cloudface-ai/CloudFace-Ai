@@ -1493,32 +1493,21 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
             if (window.progressEventSource) {
                 window.progressEventSource.close();
             }
-            
-            // Set up completion timeout (fallback)
-            if (window.completionTimeout) {
-                clearTimeout(window.completionTimeout);
+
+            if (window.progressHeartbeatInterval) {
+                clearInterval(window.progressHeartbeatInterval);
+                window.progressHeartbeatInterval = null;
             }
-            window.completionTimeout = setTimeout(() => {
-                console.log('⏰ Completion timeout reached - forcing completion');
-                const progressStatus = document.getElementById('progressStatus');
-                const progressDetails = document.getElementById('progressDetails');
-                const operationIcon = document.getElementById('operationIcon');
-                const operationText = document.getElementById('operationText');
-                const nextSteps = document.getElementById('nextSteps');
-                
-                if (progressStatus) progressStatus.textContent = '✅ Processing complete!';
-                if (progressDetails) progressDetails.textContent = 'Your photos are ready for face search!';
-                if (operationIcon) operationIcon.textContent = '✅';
-                if (operationText) operationText.textContent = 'Processing complete!';
-                if (nextSteps) nextSteps.style.display = 'block';
-                
-                // Keep progress bar open to show Share button - don't auto-hide
-                showStatus('processStatus', '✅ Processing complete! You can now search for faces in your photos.', 'success');
-                document.getElementById('searchBtn').disabled = false;
-                // User can manually close the progress bar to see the Share button
-                
-                stopProgressTracking();
-            }, 1800000); // 30 minutes timeout (for large folders like 589 files)
+            window.lastProgressUpdateAt = Date.now();
+            window.progressStalled = false;
+            window.progressHeartbeatInterval = setInterval(() => {
+                const lastUpdate = window.lastProgressUpdateAt || 0;
+                const idleMs = Date.now() - lastUpdate;
+                if (idleMs > 120000 && !window.progressStalled) {
+                    window.progressStalled = true;
+                    showStatus('processStatus', '⏳ Still processing on server... please keep this tab open.', 'info');
+                }
+            }, 30000);
             
             // Start new SSE connection
             window.progressEventSource = new EventSource('/progress/stream');
@@ -1538,6 +1527,8 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                     }
                     
                     const progressData = JSON.parse(event.data);
+                    window.lastProgressUpdateAt = Date.now();
+                    window.progressStalled = false;
                     
                     // Handle error messages
                     if (progressData.error) {
@@ -1614,6 +1605,10 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
             if (window.progressEventSource) {
                 window.progressEventSource.close();
                 window.progressEventSource = null;
+            }
+            if (window.progressHeartbeatInterval) {
+                clearInterval(window.progressHeartbeatInterval);
+                window.progressHeartbeatInterval = null;
             }
         }
 
@@ -1735,11 +1730,6 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                     // Stop progress tracking when complete
                     stopProgressTracking();
                     
-                    // Clear completion timeout
-                    if (window.completionTimeout) {
-                        clearTimeout(window.completionTimeout);
-                        window.completionTimeout = null;
-                    }
                 } else {
                     operationIcon.textContent = '⏳';
                     operationText.textContent = 'Getting ready...';
