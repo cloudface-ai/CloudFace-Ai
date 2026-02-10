@@ -2326,7 +2326,7 @@ def _is_image_file(filename):
 
 def _apply_watermark_to_image(image_path, settings):
     from io import BytesIO
-    from PIL import Image, ImageDraw, ImageFont
+    from PIL import Image, ImageDraw, ImageFont, ImageOps
 
     text = (settings.get('watermark_text') or '').strip()
     logo_filename = settings.get('watermark_logo_filename') or ''
@@ -2342,6 +2342,7 @@ def _apply_watermark_to_image(image_path, settings):
 
     with Image.open(image_path) as base_image:
         image_format = base_image.format or 'JPEG'
+        base_image = ImageOps.exif_transpose(base_image)
         image = base_image.convert('RGBA')
 
     logo = None

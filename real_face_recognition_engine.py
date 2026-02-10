@@ -343,24 +343,37 @@ class RealFaceRecognitionEngine:
                             
                             # Extract file_id from person_id to find photo
                             person_id = face_meta['person_id']
-                            if '_' in person_id:
-                                file_id = person_id.split('_', 1)[1]
-                                
+                            if person_id.startswith('uploaded_'):
+                                temp = person_id.replace('uploaded_', '')
+                                temp = temp.replace(f'{user_id}_', '', 1)
+                                parts = temp.split('_', 1)
+                                if len(parts) >= 2:
+                                    filename_part = parts[1]
+                                    photo_name = (
+                                        filename_part
+                                        .replace('_face_0', '')
+                                        .replace('_face_1', '')
+                                        .replace('_face_2', '')
+                                    )
+                                else:
+                                    photo_name = temp
+                            else:
+                                file_id = person_id.split('_', 1)[1] if '_' in person_id else person_id
                                 # Find photo filename using file_id and mapping
                                 photo_name = self._find_photo_by_file_id(user_id, file_id, folder_id)
-                                
-                                # Only add if photo found (prevent unknown.jpg entries)
-                                if photo_name:
-                                    results.append({
-                                        'similarity': similarity_clamped,
-                                        'person_id': person_id,
-                                        'photo_name': photo_name,
-                                        'photo_path': photo_name,
-                                        'confidence': f"{similarity_clamped:.2%}",
-                                        'quality_score': face_meta['quality_score'],
-                                        'detector': face_meta['detector'],
-                                        'extractor': face_meta['extractor']
-                                    })
+                            
+                            # Only add if photo found (prevent unknown.jpg entries)
+                            if photo_name:
+                                results.append({
+                                    'similarity': similarity_clamped,
+                                    'person_id': person_id,
+                                    'photo_name': photo_name,
+                                    'photo_path': photo_name,
+                                    'confidence': f"{similarity_clamped:.2%}",
+                                    'quality_score': face_meta['quality_score'],
+                                    'detector': face_meta['detector'],
+                                    'extractor': face_meta['extractor']
+                                })
             
             # Sort by similarity (highest first)
             results.sort(key=lambda x: x['similarity'], reverse=True)

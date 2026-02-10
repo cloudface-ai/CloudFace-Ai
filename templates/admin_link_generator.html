@@ -470,10 +470,10 @@
             </div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" id="driveUrlGroup">
             <label for="driveUrl">Google Drive Folder URL</label>
             <input type="text" id="driveUrl" placeholder="Paste your Google Drive folder link here">
-            <p class="help-text">Users will be able to click your link and automatically process this folder</p>
+            <p class="help-text" id="driveUrlHelp">Users will be able to click your link and automatically process this folder</p>
         </div>
 
 
@@ -523,6 +523,7 @@
         let currentQRDataURL = null;  // Store QR code for download
         let generatedShareLink = '';  // Store generated link
         let generatedFullLink = '';   // Store full link for reference
+        let localShareMode = false;
         
         // Auto-fill Drive URL from URL parameters (when coming from main app)
         window.addEventListener('load', function() {
@@ -530,11 +531,33 @@
             const urlParams = new URLSearchParams(window.location.search);
             const driveUrl = urlParams.get('drive');
             const depth = urlParams.get('depth');
+            localShareMode = urlParams.get('local') === '1';
             
             // Auto-fill if coming from processing
             if (driveUrl) {
                 document.getElementById('driveUrl').value = decodeURIComponent(driveUrl);
                 console.log('✅ Auto-filled Drive URL from processed folder');
+            }
+
+            if (localShareMode) {
+                const driveGroup = document.getElementById('driveUrlGroup');
+                const driveInput = document.getElementById('driveUrl');
+                const driveHelp = document.getElementById('driveUrlHelp');
+                if (driveInput) {
+                    driveInput.value = 'Local uploads (no Drive URL needed)';
+                    driveInput.disabled = true;
+                }
+                if (driveHelp) {
+                    driveHelp.textContent = 'This link will use your locally uploaded photos';
+                }
+                if (driveGroup) {
+                    const label = driveGroup.querySelector('label');
+                    if (label) label.textContent = 'Local Upload Source';
+                }
+                const eventInput = document.getElementById('eventName');
+                if (eventInput && !eventInput.value.trim()) {
+                    eventInput.value = 'Local Upload';
+                }
             }
             
             // Wait for QRCode library to load
@@ -971,21 +994,25 @@
             const eventName = document.getElementById('eventName').value.trim();
             const eventDate = document.getElementById('eventDate').value.trim();
             
-            if (!driveUrl) {
-                alert('Please enter a Google Drive folder URL');
-                return;
-            }
-
-            // Validate it's a Drive URL
-            if (!driveUrl.includes('drive.google.com')) {
-                alert('Please enter a valid Google Drive URL');
-                return;
-            }
-
-            // Extract folder ID from URL
             let folderId = driveUrl;
-            if (driveUrl.includes('/folders/')) {
-                folderId = driveUrl.split('/folders/')[1].split('/')[0].split('?')[0];
+            if (!localShareMode) {
+                if (!driveUrl) {
+                    alert('Please enter a Google Drive folder URL');
+                    return;
+                }
+
+                // Validate it's a Drive URL
+                if (!driveUrl.includes('drive.google.com')) {
+                    alert('Please enter a valid Google Drive URL');
+                    return;
+                }
+
+                // Extract folder ID from URL
+                if (driveUrl.includes('/folders/')) {
+                    folderId = driveUrl.split('/folders/')[1].split('/')[0].split('?')[0];
+                }
+            } else {
+                folderId = 'uploaded';
             }
             
             // Show loading
@@ -1016,7 +1043,8 @@
                             admin_user_id: adminUserId,
                             folder_id: folderId,
                             metadata: {
-                                drive_url: driveUrl,
+                                drive_url: localShareMode ? '' : driveUrl,
+                                local_upload: localShareMode,
                                 company_name: companyName,
                                 event_name: eventName,
                                 event_date: eventDate,

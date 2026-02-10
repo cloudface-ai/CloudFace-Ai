@@ -55,7 +55,7 @@ class SharedSessionManager:
             print(f"🔍 Session data prepared: {session_data}")
             
             # Save to Firestore
-            print(f"🔍 Saving to Firebase collection: {SESSIONS_COLLECTION}")
+            print(f"🔍 Saving to Firestore collection: {SESSIONS_COLLECTION}")
             try:
                 doc_ref = self.db.collection(SESSIONS_COLLECTION).document(session_id)
                 doc_ref.set(session_data)
@@ -134,24 +134,24 @@ class SharedSessionManager:
                 # Get session document
                 doc_ref = self.db.collection(SESSIONS_COLLECTION).document(session_id)
                 doc = doc_ref.get()
-                
+            
                 if not doc.exists:
                     print(f"❌ Session not found in Firebase: {session_id}")
                     return None
-                
+            
                 session_data = doc.to_dict()
-                
+            
                 # Check if expired
                 expires_at = datetime.fromisoformat(session_data['expires_at'])
                 if datetime.utcnow() > expires_at:
                     print(f"❌ Session expired: {session_id}")
                     return None
-                
+            
                 # Check if active
                 if session_data.get('status') != 'active':
                     print(f"❌ Session not active: {session_id}")
                     return None
-                
+            
                 # Increment access count
                 doc_ref.update({'access_count': session_data.get('access_count', 0) + 1})
                 

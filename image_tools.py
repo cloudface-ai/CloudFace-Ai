@@ -24,13 +24,13 @@ def _is_image(filename):
 
 
 def _build_watermark(image, text, logo, opacity, size_pct, margin, position, offset_x=0, offset_y=0):
-    from PIL import Image, ImageDraw, ImageFont
+    from PIL import Image, ImageDraw, ImageFont, ImageOps
 
     text = (text or '').strip()
     if not text and logo is None:
         return image
 
-    base = image.convert('RGBA')
+    base = ImageOps.exif_transpose(image).convert('RGBA')
 
     wm_logo = None
     if logo is not None:

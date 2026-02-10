@@ -145,6 +145,10 @@ class LocalFolderProcessor:
             progress_tracker.start_progress()
             progress_tracker.set_total(self.total_files)
             progress_tracker.update_folder_info("Uploaded Files", self.total_files, 0)
+
+            # Ensure FAISS scope is set for local uploads
+            self.real_engine.set_scope(user_id, "uploaded")
+            self.real_engine.load_database()
             
             # Process images with batch processing
             progress_tracker.set_status('processing', 'Processing uploaded images...')
