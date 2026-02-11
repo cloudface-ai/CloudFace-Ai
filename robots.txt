@@ -12,6 +12,7 @@ Allow: /refund
 Allow: /video-app
 Allow: /my-photos
 Allow: /landing
+Allow: /image-tools
 
 # Allow all blog posts for SEO
 Allow: /blog/best-face-search-apps-2025
@@ -39,6 +40,7 @@ Allow: /blog/step-by-step-photo-processing-guide
 
 # Disallow admin and private areas
 Disallow: /admin/
+Disallow: /blog-manager
 Disallow: /private/
 Disallow: /api/
 Disallow: /storage/
@@ -63,6 +65,7 @@ Allow: /sw.js
 Sitemap: https://cloudface-ai.com/sitemap-index.xml
 Sitemap: https://cloudface-ai.com/sitemap.xml
 Sitemap: https://cloudface-ai.com/blog-sitemap.xml
+Sitemap: https://cloudface-ai.com/image-sitemap.xml
 
 # Additional search engine bots
 User-agent: Googlebot

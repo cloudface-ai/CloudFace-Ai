@@ -220,6 +220,11 @@ def generate_blog_template(metadata: Dict, content: str) -> str:
             </div>
         </div>
     </footer>'''
+
+    seo_css = '''
+    .internal-links{margin:2.5rem 0 1rem 0;padding:1.5rem;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow)}.internal-links h2{margin:0 0 1rem 0;font-size:1.3rem;color:var(--text-primary)}.internal-links-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.internal-link-card{display:block;padding:12px 14px;border:1px solid var(--border);border-radius:12px;text-decoration:none;background:var(--bg);color:var(--text-primary);transition:background .1s ease}.internal-link-card:hover{background:#f1f3f4}.internal-link-card strong{display:block;margin-bottom:4px;color:var(--primary)}.internal-link-card span{display:block;font-size:.9rem;color:var(--text-secondary)}
+    '''
+    css_content += seo_css
     
     template = f'''<!DOCTYPE html>
 <html lang="en">
@@ -247,6 +252,8 @@ def generate_blog_template(metadata: Dict, content: str) -> str:
     <link rel="canonical" href="{canonical_url}">
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="manifest" href="/manifest.json">
+    <link rel="stylesheet" href="/static/pwa-install.css">
+    <script src="/static/pwa-install.js" defer></script>
     
     <style>
 {css_content}
@@ -329,6 +336,32 @@ def generate_blog_template(metadata: Dict, content: str) -> str:
         <div class="blog-body">
 {content}
         </div>
+
+        <section class="internal-links">
+            <h2>Explore CloudFace AI</h2>
+            <div class="internal-links-grid">
+                <a class="internal-link-card" href="/app">
+                    <strong>Try the App</strong>
+                    <span>Run face search in minutes.</span>
+                </a>
+                <a class="internal-link-card" href="/image-tools">
+                    <strong>Image Tools</strong>
+                    <span>Batch watermark and resize.</span>
+                </a>
+                <a class="internal-link-card" href="/pricing">
+                    <strong>Pricing Plans</strong>
+                    <span>Choose the right plan.</span>
+                </a>
+                <a class="internal-link-card" href="/how-it-works">
+                    <strong>How It Works</strong>
+                    <span>See the full workflow.</span>
+                </a>
+                <a class="internal-link-card" href="/blog">
+                    <strong>More Articles</strong>
+                    <span>Read the latest guides.</span>
+                </a>
+            </div>
+        </section>
     </main>
 
 {footer_html}

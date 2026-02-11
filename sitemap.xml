@@ -100,6 +100,14 @@
         <priority>0.7</priority>
     </url>
 
+    <!-- Image Tools Page -->
+    <url>
+        <loc>https://cloudface-ai.com/image-tools</loc>
+        <lastmod>2026-02-10</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
+    </url>
+
 
     <!-- NEW BLOG POSTS - High Priority SEO Content -->
     

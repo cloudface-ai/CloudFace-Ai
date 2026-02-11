@@ -4,7 +4,7 @@
     <!-- Main Sitemap -->
     <sitemap>
         <loc>https://cloudface-ai.com/sitemap.xml</loc>
-        <lastmod>2025-10-24</lastmod>
+        <lastmod>2026-02-10</lastmod>
     </sitemap>
     
     <!-- Blog Posts Sitemap -->
@@ -12,11 +12,11 @@
         <loc>https://cloudface-ai.com/blog-sitemap.xml</loc>
         <lastmod>2025-10-24</lastmod>
     </sitemap>
-    
-    <!-- Images Sitemap -->
+
+    <!-- Image Sitemap -->
     <sitemap>
         <loc>https://cloudface-ai.com/image-sitemap.xml</loc>
-        <lastmod>2025-10-24</lastmod>
+        <lastmod>2026-02-10</lastmod>
     </sitemap>
-    
+
 </sitemapindex>

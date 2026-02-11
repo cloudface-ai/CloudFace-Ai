@@ -1,0 +1,61 @@
+{
+  "name": "CloudFace AI - Face Recognition Software",
+  "short_name": "CloudFace AI",
+  "description": "AI-powered face recognition and photo organization software for events, weddings, and corporate gatherings",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1a73e8",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["photography", "productivity", "business"],
+  "icons": [
+    {
+      "src": "/static/pwa-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/pwa-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/static/Cloudface-ai-logo.png",
+      "sizes": "156x96",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Process Photos",
+      "short_name": "Process",
+      "description": "Upload and process photos with AI face recognition",
+      "url": "/app",
+      "icons": [
+        {
+          "src": "/static/Cloudface-ai-logo.png",
+          "sizes": "156x96"
+        }
+      ]
+    },
+    {
+      "name": "Pricing",
+      "short_name": "Pricing",
+      "description": "View pricing plans and features",
+      "url": "/pricing",
+      "icons": [
+        {
+          "src": "/static/Cloudface-ai-logo.png",
+          "sizes": "156x96"
+        }
+      ]
+    }
+  ]
+}

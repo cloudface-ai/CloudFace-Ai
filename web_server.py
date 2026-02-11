@@ -3173,6 +3173,21 @@ def sitemap_xml():
     """Serve sitemap.xml file"""
     return send_file('sitemap.xml', mimetype='application/xml')
 
+@app.route('/sitemap-index.xml')
+def sitemap_index_xml():
+    """Serve sitemap-index.xml file"""
+    return send_file('sitemap-index.xml', mimetype='application/xml')
+
+@app.route('/blog-sitemap.xml')
+def blog_sitemap_xml():
+    """Serve blog-sitemap.xml file"""
+    return send_file('blog-sitemap.xml', mimetype='application/xml')
+
+@app.route('/image-sitemap.xml')
+def image_sitemap_xml():
+    """Serve image-sitemap.xml file"""
+    return send_file('image-sitemap.xml', mimetype='application/xml')
+
 @app.route('/s/<short_code>')
 def redirect_short_link(short_code):
     """Redirect short links to full URLs"""
@@ -3245,6 +3260,31 @@ def create_short_link_api():
 def manifest():
     """Serve manifest.json file"""
     return send_from_directory('.', 'manifest.json', mimetype='application/json')
+
+@app.route('/sw.js')
+def service_worker():
+    """Serve service worker file"""
+    return send_from_directory('.', 'sw.js', mimetype='application/javascript')
+
+@app.route('/favicon.ico')
+def favicon_ico():
+    """Serve favicon.ico"""
+    return send_from_directory('.', 'favicon.ico', mimetype='image/x-icon')
+
+@app.route('/apple-touch-icon.png')
+def apple_touch_icon():
+    """Serve Apple touch icon"""
+    return send_from_directory('.', 'apple-touch-icon.png', mimetype='image/png')
+
+@app.route('/favicon-32x32.png')
+def favicon_32():
+    """Serve 32x32 favicon"""
+    return send_from_directory('.', 'favicon-32x32.png', mimetype='image/png')
+
+@app.route('/favicon-16x16.png')
+def favicon_16():
+    """Serve 16x16 favicon"""
+    return send_from_directory('.', 'favicon-16x16.png', mimetype='image/png')
 
 @app.route('/test-logo-qr')
 def test_logo_qr():

@@ -3,8 +3,8 @@
  * Enables offline functionality and caching
  */
 
-const CACHE_NAME = 'cloudface-ai-v1';
-const STATIC_CACHE = 'cloudface-static-v1';
+const CACHE_NAME = 'cloudface-ai-v2';
+const STATIC_CACHE = 'cloudface-static-v2';
 
 // Files to cache for offline functionality
 const STATIC_FILES = [
@@ -14,7 +14,9 @@ const STATIC_FILES = [
     '/apple-touch-icon.png',
     '/favicon-32x32.png',
     '/favicon-16x16.png',
-    '/static/Cloudface-ai-logo.png'
+    '/static/Cloudface-ai-logo.png',
+    '/static/pwa-192.png',
+    '/static/pwa-512.png'
 ];
 
 // Install event - cache static files
@@ -60,60 +62,73 @@ self.addEventListener('activate', (event) => {
     );
 });
 
-// Fetch event - serve from cache when offline
+// Fetch event - safe caching strategy
 self.addEventListener('fetch', (event) => {
     // Skip non-GET requests
     if (event.request.method !== 'GET') {
         return;
     }
-    
-    // Skip requests to external APIs
-    if (event.request.url.includes('googleapis.com') || 
-        event.request.url.includes('google-analytics.com') ||
-        event.request.url.includes('googletagmanager.com')) {
+
+    const url = new URL(event.request.url);
+
+    // Only handle same-origin requests
+    if (url.origin !== self.location.origin) {
         return;
     }
-    
-    event.respondWith(
-        caches.match(event.request)
-            .then((cachedResponse) => {
-                // Return cached version if available
+
+    // Skip dynamic or sensitive routes
+    if (
+        url.pathname.startsWith('/api/') ||
+        url.pathname.startsWith('/auth/') ||
+        url.pathname.startsWith('/admin') ||
+        url.pathname.startsWith('/photo/') ||
+        url.pathname.startsWith('/search') ||
+        url.pathname.startsWith('/process')
+    ) {
+        return;
+    }
+
+    // Network-first for navigation to avoid stale HTML
+    if (event.request.mode === 'navigate') {
+        event.respondWith(
+            fetch(event.request)
+                .then((response) => {
+                    const responseToCache = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseToCache);
+                    });
+                    return response;
+                })
+                .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/')))
+        );
+        return;
+    }
+
+    // Cache-first for static assets
+    if (
+        event.request.destination === 'style' ||
+        event.request.destination === 'script' ||
+        event.request.destination === 'image' ||
+        event.request.destination === 'font' ||
+        url.pathname.startsWith('/static/')
+    ) {
+        event.respondWith(
+            caches.match(event.request).then((cachedResponse) => {
                 if (cachedResponse) {
-                    console.log('Serving from cache:', event.request.url);
                     return cachedResponse;
                 }
-                
-                // Otherwise, fetch from network
-                return fetch(event.request)
-                    .then((response) => {
-                        // Don't cache if not a valid response
-                        if (!response || response.status !== 200 || response.type !== 'basic') {
-                            return response;
-                        }
-                        
-                        // Clone the response
+                return fetch(event.request).then((response) => {
+                    if (response && response.status === 200 && response.type === 'basic') {
                         const responseToCache = response.clone();
-                        
-                        // Cache the response for future use
-                        caches.open(CACHE_NAME)
-                            .then((cache) => {
-                                cache.put(event.request, responseToCache);
-                            });
-                        
-                        return response;
-                    })
-                    .catch((error) => {
-                        console.log('Network request failed:', error);
-                        
-                        // Return offline page for navigation requests
-                        if (event.request.destination === 'document') {
-                            return caches.match('/');
-                        }
-                        
-                        throw error;
-                    });
+                        caches.open(CACHE_NAME).then((cache) => {
+                            cache.put(event.request, responseToCache);
+                        });
+                    }
+                    return response;
+                });
             })
-    );
+        );
+    }
 });
 
 // Handle background sync for face search data
