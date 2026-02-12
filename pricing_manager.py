@@ -23,16 +23,17 @@ class PricingManager:
     def __init__(self, data_dir: str = "storage/pricing"):
         self.data_dir = data_dir
         os.makedirs(data_dir, exist_ok=True)
+        self.trial_days = 7
         
         # Plan configurations
         self.plans = {
             PlanType.FREE: {
                 'name': 'Starter',
-                'images': 500,
+                'images': 200,
                 'videos': 0,
                 'price_inr': 0,
                 'price_usd': 0,
-                'features': ['Basic face recognition', 'Google Drive integration', 'Up to 500 images']
+                'features': ['Basic face recognition', 'Google Drive integration', 'Up to 200 images']
             },
             PlanType.STANDARD: {
                 'name': 'Personal',
@@ -92,6 +93,10 @@ class PricingManager:
             with open(user_file, 'r') as f:
                 user_data = json.load(f)
             
+            # Ensure trial_start exists for free users
+            user_data = self._ensure_trial_start(user_data)
+            self._save_user_plan(user_id, user_data)
+            
             # Check if plan expired
             if self._is_plan_expired(user_data):
                 return self._downgrade_to_free(user_id, user_data)
@@ -104,16 +109,18 @@ class PricingManager:
     
     def _create_free_plan(self, user_id: str) -> Dict[str, Any]:
         """Create new free plan for user"""
+        now = datetime.now().isoformat()
         plan_data = {
             'user_id': user_id,
             'plan_type': PlanType.FREE.value,
             'plan_name': 'Starter',
-            'created_at': datetime.now().isoformat(),
+            'created_at': now,
             'expires_at': None,  # Free plan doesn't expire
+            'trial_start': now,
             'usage': {
                 'images_processed': 0,
                 'videos_processed': 0,
-                'last_reset': datetime.now().isoformat()
+                'last_reset': now
             },
             'limits': self.plans[PlanType.FREE].copy(),
             'payment_history': []
@@ -121,6 +128,51 @@ class PricingManager:
         
         self._save_user_plan(user_id, plan_data)
         return plan_data
+
+    def _ensure_trial_start(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Ensure trial_start is set for free users."""
+        if user_data.get('plan_type') != PlanType.FREE.value:
+            return user_data
+        if user_data.get('trial_start'):
+            return user_data
+        created_at = user_data.get('created_at') or datetime.now().isoformat()
+        user_data['trial_start'] = created_at
+        return user_data
+
+    def is_trial_expired(self, user_data: Dict[str, Any]) -> bool:
+        """Check if free trial expired for a free user."""
+        if user_data.get('plan_type') != PlanType.FREE.value:
+            return False
+        trial_start = user_data.get('trial_start')
+        if not trial_start:
+            return False
+        try:
+            start_dt = datetime.fromisoformat(trial_start)
+            return datetime.now() > start_dt + timedelta(days=self.trial_days)
+        except Exception:
+            return False
+
+    def get_trial_info(self, user_id: str) -> Dict[str, Any]:
+        """Get trial status for a user."""
+        user_plan = self.get_user_plan(user_id)
+        user_plan = self._ensure_trial_start(user_plan)
+        trial_start = user_plan.get('trial_start')
+        if not trial_start:
+            return {
+                'trial_start': None,
+                'trial_end': None,
+                'days_left': 0,
+                'expired': False
+            }
+        start_dt = datetime.fromisoformat(trial_start)
+        trial_end_dt = start_dt + timedelta(days=self.trial_days)
+        days_left = max(0, (trial_end_dt - datetime.now()).days)
+        return {
+            'trial_start': trial_start,
+            'trial_end': trial_end_dt.isoformat(),
+            'days_left': days_left,
+            'expired': datetime.now() > trial_end_dt
+        }
     
     def _save_user_plan(self, user_id: str, plan_data: Dict[str, Any]) -> bool:
         """Save user plan data"""
@@ -284,6 +336,7 @@ class PricingManager:
     def get_usage_stats(self, user_id: str) -> Dict[str, Any]:
         """Get detailed usage statistics for user"""
         user_plan = self.get_user_plan(user_id)
+        trial_info = self.get_trial_info(user_id)
         
         images_used = user_plan['usage']['images_processed']
         images_limit = user_plan['limits']['images']
@@ -298,6 +351,7 @@ class PricingManager:
         return {
             'plan_name': user_plan['plan_name'],
             'plan_type': user_plan['plan_type'],
+            'trial': trial_info,
             'images': {
                 'used': images_used,
                 'limit': images_limit,
@@ -398,6 +452,19 @@ class PricingManager:
             try:
                 with open(path, 'r') as f:
                     data = json.load(f)
+                trial_start = data.get('trial_start')
+                trial_end = None
+                trial_days_left = None
+                trial_expired = False
+                if data.get('plan_type') == PlanType.FREE.value and trial_start:
+                    try:
+                        start_dt = datetime.fromisoformat(trial_start)
+                        trial_end_dt = start_dt + timedelta(days=self.trial_days)
+                        trial_end = trial_end_dt.isoformat()
+                        trial_days_left = max(0, (trial_end_dt - datetime.now()).days)
+                        trial_expired = datetime.now() > trial_end_dt
+                    except Exception:
+                        pass
                 users.append({
                     'user_id': data.get('user_id', filename.replace('_plan.json', '')),
                     'plan_name': data.get('plan_name', ''),
@@ -405,7 +472,11 @@ class PricingManager:
                     'created_at': data.get('created_at', ''),
                     'last_activity': data.get('usage', {}).get('last_activity', data.get('usage', {}).get('last_reset', '')),
                     'images_processed': data.get('usage', {}).get('images_processed', 0),
-                    'videos_processed': data.get('usage', {}).get('videos_processed', 0)
+                    'videos_processed': data.get('usage', {}).get('videos_processed', 0),
+                    'trial_start': trial_start,
+                    'trial_end': trial_end,
+                    'trial_days_left': trial_days_left,
+                    'trial_expired': trial_expired
                 })
             except Exception:
                 continue

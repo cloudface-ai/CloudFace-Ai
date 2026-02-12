@@ -84,6 +84,18 @@
             </div>
         </div>
 
+        <div class="section grid">
+            <div class="card">
+                <h3>Trial Ending Soon</h3>
+                <div id="trialEndingSoon" class="muted">Loading...</div>
+            </div>
+            <div class="card">
+                <h3>Unpaid Active Users</h3>
+                <div id="unpaidActive" class="muted">Loading...</div>
+                <button class="btn btn-secondary" onclick="exportUnpaid()" style="margin-top:0.75rem;">Export Unpaid CSV</button>
+            </div>
+        </div>
+
         <div class="section">
             <div class="card">
                 <h3>Recent Errors</h3>
@@ -178,6 +190,8 @@
             renderKeyValueTable('oses', data.os_distribution);
             renderErrors(data.errors);
             renderRegisteredUsers(data.registered_users || []);
+            renderTrialEndingSoon(data.trial_ending_soon || []);
+            renderUnpaidActive(data.unpaid_active || []);
             window._registeredEmails = (data.registered_users || [])
                 .map(u => u.user_id)
                 .filter(email => email && email.includes('@'));
@@ -197,7 +211,10 @@
             const rows = users.map(user => `
                 <tr class="row-click" data-user="${user.user_id}">
                     <td class="nowrap">${user.user_id}</td>
+                    <td>${user.name || ''}</td>
                     <td>${user.plan_name || ''}</td>
+                    <td>${user.city || ''}</td>
+                    <td>${user.phone || ''}</td>
                     <td>${user.last_activity || ''}</td>
                     <td>${user.images_processed || 0}</td>
                     <td>${user.drive_processed || 0}</td>
@@ -208,13 +225,15 @@
                     <td>${user.shares || 0}</td>
                     <td>${user.sessions || 0}</td>
                     <td>${formatMinutes(user.total_time_spent)}</td>
+                    <td>${user.trial_days_left ?? ''}</td>
+                    <td>${user.trial_expired ? 'Yes' : 'No'}</td>
                     <td><a class="link" href="/superadmin/user?user_id=${encodeURIComponent(user.user_id)}">View</a></td>
                 </tr>
             `).join('');
             container.innerHTML = `
                 <table>
                     <thead>
-                        <tr><th>User</th><th>Plan</th><th>Last Activity</th><th>Images</th><th>Drive</th><th>Local</th><th>Watermark</th><th>Searches</th><th>Downloads</th><th>Shares</th><th>Sessions</th><th>Time (min)</th><th>Details</th></tr>
+                        <tr><th>User</th><th>Name</th><th>Plan</th><th>City</th><th>Phone</th><th>Last Activity</th><th>Images</th><th>Drive</th><th>Local</th><th>Watermark</th><th>Searches</th><th>Downloads</th><th>Shares</th><th>Sessions</th><th>Time (min)</th><th>Trial Days</th><th>Trial Expired</th><th>Details</th></tr>
                     </thead>
                     <tbody>${rows}</tbody>
                 </table>
@@ -238,6 +257,10 @@
 
         function exportUsers() {
             window.open('/api/superadmin/analytics/export-users', '_blank');
+        }
+
+        function exportUnpaid() {
+            window.open('/api/superadmin/analytics/export-unpaid', '_blank');
         }
 
         function openEmailDraft() {
@@ -268,6 +291,53 @@
             loadAnalytics();
         }
 
+        function renderTrialEndingSoon(users) {
+            const container = document.getElementById('trialEndingSoon');
+            if (!users || users.length === 0) {
+                container.innerHTML = '<div class="muted">No users</div>';
+                return;
+            }
+            const rows = users.map(user => `
+                <tr>
+                    <td>${user.user_id}</td>
+                    <td>${user.name || ''}</td>
+                    <td>${user.trial_days_left ?? ''}</td>
+                </tr>
+            `).join('');
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr><th>User</th><th>Name</th><th>Days Left</th></tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
+        }
+
+        function renderUnpaidActive(users) {
+            const container = document.getElementById('unpaidActive');
+            if (!users || users.length === 0) {
+                container.innerHTML = '<div class="muted">No users</div>';
+                return;
+            }
+            const rows = users.map(user => `
+                <tr>
+                    <td>${user.user_id}</td>
+                    <td>${user.name || ''}</td>
+                    <td>${user.images_processed || 0}</td>
+                    <td>${user.last_activity || ''}</td>
+                </tr>
+            `).join('');
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr><th>User</th><th>Name</th><th>Images</th><th>Last Activity</th></tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
+        }
+
         function openUserModal(user) {
             const modal = document.getElementById('userModal');
             const title = document.getElementById('modalTitle');
@@ -291,10 +361,15 @@
             body.innerHTML = `
                 <div class="section">
                     <div><strong>Plan:</strong> ${user.plan_name || ''}</div>
+                    <div><strong>Name:</strong> ${user.name || ''}</div>
+                    <div><strong>City:</strong> ${user.city || ''}</div>
+                    <div><strong>Phone:</strong> ${user.phone || ''}</div>
+                    <div><strong>Use case:</strong> ${user.use_case || ''}</div>
                     <div><strong>Sessions:</strong> ${user.sessions || 0}</div>
                     <div><strong>Time Spent:</strong> ${formatMinutes(user.total_time_spent)} min</div>
                     <div><strong>Drive / Local / Watermark:</strong> ${user.drive_processed || 0} / ${user.local_processed || 0} / ${user.watermark_images || 0}</div>
                     <div><strong>Searches / Downloads / Shares:</strong> ${user.searches || 0} / ${user.downloads || 0} / ${user.shares || 0}</div>
+                    <div><strong>Trial Days Left:</strong> ${user.trial_days_left ?? ''}</div>
                 </div>
                 <div class="section">
                     <h4>Sessions Timeline (latest 20)</h4>

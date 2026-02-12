@@ -392,12 +392,10 @@
                 </div>
 
                 <div class="payment-methods">
-                    {% if currency == 'inr' %}
-                    <!-- Razorpay for India -->
                     <div class="payment-method selected" data-method="razorpay">
                         <input type="radio" name="payment_method" value="razorpay" class="payment-radio" checked>
                         <div class="payment-info">
-                            <div class="payment-name">🇮🇳 Indian Payment Methods</div>
+                            <div class="payment-name">Razorpay</div>
                             <div class="payment-desc">UPI, Cards, Net Banking, Wallets</div>
                         </div>
                         <div class="payment-icons">
@@ -406,20 +404,6 @@
                             <div class="payment-icon">🏦</div>
                         </div>
                     </div>
-                    {% else %}
-                    <!-- PayPal for International -->
-                    <div class="payment-method selected" data-method="paypal">
-                        <input type="radio" name="payment_method" value="paypal" class="payment-radio" checked>
-                        <div class="payment-info">
-                            <div class="payment-name">🌍 PayPal</div>
-                            <div class="payment-desc">Credit Cards, Debit Cards, PayPal Balance</div>
-                        </div>
-                        <div class="payment-icons">
-                            <div class="payment-icon">💳</div>
-                            <div class="payment-icon">PP</div>
-                        </div>
-                    </div>
-                    {% endif %}
                 </div>
 
                 <div class="checkout-actions">
@@ -430,11 +414,7 @@
                         </svg>
                         <span id="paymentBtnText">
                             Complete Payment 
-                            {% if currency == 'inr' %}
-                                (₹{{ "{:,}".format(plan.price) }})
-                            {% else %}
-                                (${{ plan.price }})
-                            {% endif %}
+                            (₹{{ "{:,}".format(plan.price) }})
                         </span>
                         <div class="loading-spinner" id="paymentSpinner"></div>
                     </button>
@@ -450,15 +430,7 @@
         </div>
     </div>
 
-    <!-- Razorpay Script for India -->
-    {% if currency == 'inr' %}
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-    {% endif %}
-
-    <!-- PayPal Script for International -->
-    {% if currency == 'usd' %}
-    <script src="https://www.paypal.com/sdk/js?client-id={{ payment_methods.get('paypal_client_id', 'demo') }}&currency=USD"></script>
-    {% endif %}
 
     <script>
         const planData = {
@@ -483,8 +455,6 @@
             
             if (paymentMethod === 'razorpay') {
                 processRazorpayPayment();
-            } else if (paymentMethod === 'paypal') {
-                processPayPalPayment();
             }
         }
 
@@ -591,11 +561,6 @@
             });
         }
 
-        function processPayPalPayment() {
-            // PayPal integration would go here
-            alert('PayPal integration coming soon! Please use Indian payment methods for now.');
-            resetPaymentButton();
-        }
 
         function verifyPayment(paymentData) {
             fetch('/api/verify-payment', {

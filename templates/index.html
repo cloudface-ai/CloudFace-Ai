@@ -1004,6 +1004,28 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
             cursor: text;
             pointer-events: auto;
         }
+
+        .trial-banner, .usage-widget {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem;
+            margin: 1rem 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .trial-banner strong { color: var(--primary); }
+        .usage-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .usage-bar { height: 8px; background: #e8eaed; border-radius: 6px; overflow: hidden; margin-top: 0.5rem; }
+        .usage-fill { height: 100%; background: var(--primary); width: 0%; }
+        .upgrade-btn { background: var(--primary); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; }
+
+        .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 50; }
+        .modal { background: #fff; border-radius: 12px; width: 95%; max-width: 520px; padding: 1rem; box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+        .modal-close { background: #dadce0; border: none; border-radius: 6px; padding: 0.3rem 0.6rem; cursor: pointer; }
+        .form-group { margin-top: 0.8rem; }
+        .form-group label { display: block; font-weight: 500; margin-bottom: 0.3rem; }
+        .form-group input, .form-group select { width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; }
     </style>
 
         <!-- Structured Data (JSON-LD) for SEO -->
@@ -1120,6 +1142,26 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                         Sign Out
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <div id="trialBanner" class="trial-banner" style="display: none;">
+            <div class="usage-row">
+                <div id="trialText">Your trial status will appear here.</div>
+                <button class="upgrade-btn" onclick="window.location.href='/pricing'">Upgrade</button>
+            </div>
+        </div>
+
+        <div id="usageWidget" class="usage-widget" style="display: none;">
+            <div class="usage-row">
+                <div>
+                    <strong id="planNameText">Plan</strong>
+                    <div id="usageText" style="color: var(--text-secondary); font-size: 0.9rem;">Usage</div>
+                </div>
+                <button class="upgrade-btn" onclick="window.location.href='/pricing'">Upgrade</button>
+            </div>
+            <div class="usage-bar">
+                <div class="usage-fill" id="usageFill"></div>
             </div>
         </div>
 
@@ -1332,6 +1374,53 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
 
         <!-- Include Enterprise Testimonials after Search Results -->
         {% include 'testimonials-section.html' %}
+    </div>
+
+    <div class="modal-backdrop" id="upgradeModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Upgrade to Continue</h3>
+                <button class="modal-close" onclick="closeUpgradeModal()">Close</button>
+            </div>
+            <p style="margin-top: 0.6rem; color: var(--text-secondary);">
+                Your free trial or plan limit has ended. Upgrade to keep processing photos.
+            </p>
+            <button class="btn" onclick="window.location.href='/pricing'" style="margin-top: 1rem;">Upgrade Now</button>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="profileModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>Complete Your Profile</h3>
+                <button class="modal-close" onclick="closeProfileModal()">Close</button>
+            </div>
+            <p style="margin-top: 0.4rem; color: var(--text-secondary);">Please add your details so we can support you better.</p>
+            <div class="form-group">
+                <label for="profileName">Name</label>
+                <input id="profileName" type="text" placeholder="Your name">
+            </div>
+            <div class="form-group">
+                <label for="profileCity">City</label>
+                <input id="profileCity" type="text" placeholder="Your city">
+            </div>
+            <div class="form-group">
+                <label for="profilePhone">Phone</label>
+                <input id="profilePhone" type="text" placeholder="Your phone number">
+            </div>
+            <div class="form-group">
+                <label for="profileUseCase">Use Case</label>
+                <select id="profileUseCase">
+                    <option value="">Select</option>
+                    <option value="photography">Photography</option>
+                    <option value="events">Events</option>
+                    <option value="agency">Agency</option>
+                    <option value="personal">Personal</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            <button class="btn" onclick="saveProfileDetails()" style="margin-top: 1rem;">Save</button>
+        </div>
     </div>
 
     <!-- Modal for enlarged photos -->
@@ -2382,7 +2471,10 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                     hideLocalProgressBar();
                     let errorMessage = data.error || 'Unknown error occurred';
                     
-                    if (data.upgrade_needed) {
+                    if (data.upgrade_needed || data.upgrade_required || data.error === 'trial_expired') {
+                        if (typeof openUpgradeModal === 'function') {
+                            openUpgradeModal();
+                        }
                         errorMessage += ` <a href="/pricing" style="color: var(--primary); text-decoration: underline;">Upgrade your plan</a>`;
                     }
                     
@@ -2457,6 +2549,11 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                         // Do not force completion; SSE will update progress and completion
                     }
                 } else {
+                    if (data.upgrade_required || data.error === 'trial_expired') {
+                        if (typeof openUpgradeModal === 'function') {
+                            openUpgradeModal();
+                        }
+                    }
                     showStatus('processStatus', `❌ Error: ${data.error}`, 'error');
                     // Progress tracking is handled by the server's real progress data
                     // Hide progress bar on error
@@ -2830,7 +2927,7 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
         function downloadPhoto(photoPath) {
             // Create download link for original file
             const link = document.createElement('a');
-            link.href = `/photo/${encodeURIComponent(photoPath)}`;
+            link.href = `/photo/${encodeURIComponent(photoPath)}?download=1`;
             link.download = photoPath.split('/').pop() || 'photo.jpg';
             document.body.appendChild(link);
             link.click();
@@ -3088,7 +3185,7 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
             
             // Process each photo and add to ZIP
             photoPaths.forEach((photoPath, index) => {
-                fetch(`/photo/${encodeURIComponent(photoPath)}`, { credentials: 'same-origin' })
+                fetch(`/photo/${encodeURIComponent(photoPath)}?download=1`, { credentials: 'same-origin' })
                     .then(response => {
                         if (!response.ok) {
                             throw new Error(`HTTP ${response.status}: ${response.statusText}`);

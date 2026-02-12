@@ -147,6 +147,162 @@ def _allowed_storage_roots() -> Dict[str, str]:
         'uploads': os.path.join(base, 'static', 'uploads')
     }
 
+def _user_profile_path(user_id: str) -> str:
+    base = os.path.join('storage', 'users')
+    os.makedirs(base, exist_ok=True)
+    safe_id = secure_filename(user_id) or user_id.replace('/', '_')
+    return os.path.join(base, f"{safe_id}.json")
+
+def _load_user_profile(user_id: str) -> Dict[str, Any]:
+    path = _user_profile_path(user_id)
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, 'r') as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+def _save_user_profile(user_id: str, data: Dict[str, Any]) -> None:
+    path = _user_profile_path(user_id)
+    with open(path, 'w') as f:
+        json.dump(data, f, indent=2)
+
+def _ensure_user_profile(user_id: str, user_info: Dict[str, Any]) -> Dict[str, Any]:
+    profile = _load_user_profile(user_id)
+    updated = False
+    if not profile:
+        profile = {
+            'user_id': user_id,
+            'created_at': datetime.now().isoformat(),
+            'name': user_info.get('name') or user_info.get('given_name') or '',
+            'email': user_info.get('email') or user_id,
+            'city': '',
+            'phone': '',
+            'use_case': '',
+            'trial_emails_sent': {}
+        }
+        updated = True
+    else:
+        if not profile.get('email'):
+            profile['email'] = user_info.get('email') or user_id
+            updated = True
+        if not profile.get('name'):
+            profile['name'] = user_info.get('name') or user_info.get('given_name') or ''
+            updated = True
+        if 'trial_emails_sent' not in profile:
+            profile['trial_emails_sent'] = {}
+            updated = True
+
+    if updated:
+        profile['updated_at'] = datetime.now().isoformat()
+        _save_user_profile(user_id, profile)
+    return profile
+
+def _profile_complete(profile: Dict[str, Any]) -> bool:
+    required = ['name', 'city', 'phone', 'use_case']
+    return all(profile.get(field) for field in required)
+
+def _check_trial_access(user_id: str) -> Dict[str, Any]:
+    from pricing_manager import pricing_manager
+    user_plan = pricing_manager.get_user_plan(user_id)
+    trial_info = pricing_manager.get_trial_info(user_id)
+    if user_plan.get('plan_type') == 'free' and trial_info.get('expired') and not is_super_user(user_id):
+        return {
+            'allowed': False,
+            'plan': user_plan,
+            'trial': trial_info
+        }
+    return {
+        'allowed': True,
+        'plan': user_plan,
+        'trial': trial_info
+    }
+
+def _send_brevo_email(to_email: str, subject: str, html_content: str, text_content: str) -> bool:
+    api_key = os.getenv('BREVO_API_KEY', '')
+    sender_email = os.getenv('BREVO_SENDER_EMAIL', '')
+    sender_name = os.getenv('BREVO_SENDER_NAME', 'CloudFace AI')
+    if not api_key or not sender_email:
+        return False
+    try:
+        response = requests.post(
+            'https://api.brevo.com/v3/smtp/email',
+            headers={
+                'api-key': api_key,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            json={
+                'sender': {'name': sender_name, 'email': sender_email},
+                'to': [{'email': to_email}],
+                'subject': subject,
+                'htmlContent': html_content,
+                'textContent': text_content
+            },
+            timeout=10
+        )
+        return response.status_code in (200, 201, 202)
+    except Exception:
+        return False
+
+def _maybe_send_trial_emails(user_id: str, profile: Dict[str, Any], trial_info: Dict[str, Any]) -> None:
+    if not trial_info.get('trial_start') or not profile:
+        return
+    if trial_info.get('expired'):
+        return
+
+    try:
+        start_dt = datetime.fromisoformat(trial_info['trial_start'])
+    except Exception:
+        return
+
+    day = (datetime.now() - start_dt).days + 1
+    send_days = {1: 'day1', 3: 'day3', 6: 'day6'}
+    if day not in send_days:
+        return
+
+    sent_map = profile.get('trial_emails_sent', {})
+    key = send_days[day]
+    if sent_map.get(key):
+        return
+
+    discount_map = {
+        'standard': 500,
+        'pro': 1000,
+        'pro_plus': 1000,
+        'everything': 3000
+    }
+    subject = "Your CloudFace AI trial is running"
+    discount_lines = [
+        f"Personal: -₹{discount_map['standard']}",
+        f"Professional: -₹{discount_map['pro']}",
+        f"Business: -₹{discount_map['pro_plus']}",
+        f"Business Plus: -₹{discount_map['everything']}"
+    ]
+    discount_text = "\n".join(discount_lines)
+    upgrade_link = "https://cloudface-ai.com/pricing"
+    text_content = (
+        f"Hi {profile.get('name') or ''},\n\n"
+        "Your 7-day free trial is active. Upgrade anytime to keep processing.\n\n"
+        "Limited upgrade discounts:\n"
+        f"{discount_text}\n\n"
+        f"Upgrade now: {upgrade_link}\n"
+    )
+    html_content = (
+        f"<p>Hi {profile.get('name') or ''},</p>"
+        "<p>Your 7-day free trial is active. Upgrade anytime to keep processing.</p>"
+        "<p><strong>Limited upgrade discounts:</strong><br>"
+        f"{'<br>'.join(discount_lines)}</p>"
+        f"<p><a href=\"{upgrade_link}\">Upgrade now</a></p>"
+    )
+
+    if _send_brevo_email(profile.get('email', user_id), subject, html_content, text_content):
+        sent_map[key] = datetime.now().isoformat()
+        profile['trial_emails_sent'] = sent_map
+        profile['updated_at'] = datetime.now().isoformat()
+        _save_user_profile(user_id, profile)
+
 def _safe_user_storage_path(rel_path: str) -> str:
     """Resolve a storage path safely for superadmin file access."""
     base = os.path.abspath(os.getcwd())
@@ -1374,7 +1530,7 @@ def payment_checkout():
             return redirect('/auth/login')
         
         plan_id = request.args.get('plan', 'standard')
-        currency = request.args.get('currency', 'inr')
+        currency = 'inr'
         
         from pricing_manager import pricing_manager
         from payment_gateway import payment_gateway
@@ -1415,6 +1571,54 @@ def get_usage_stats():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/api/trial-status')
+def get_trial_status():
+    """Get trial status for current user"""
+    try:
+        if 'user_id' not in session:
+            return jsonify({'error': 'Not authenticated'}), 401
+        from pricing_manager import pricing_manager
+        user_id = session['user_id']
+        trial_info = pricing_manager.get_trial_info(user_id)
+        plan = pricing_manager.get_user_plan(user_id)
+        profile = _load_user_profile(user_id)
+        _maybe_send_trial_emails(user_id, profile, trial_info)
+        return jsonify({
+            'success': True,
+            'trial': trial_info,
+            'plan': {
+                'plan_type': plan.get('plan_type'),
+                'plan_name': plan.get('plan_name')
+            }
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
+@app.route('/api/user-profile', methods=['GET', 'POST'])
+def user_profile():
+    """Get or update user profile info."""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    user_id = session['user_id']
+    user_info = session.get('user_info', {})
+    profile = _ensure_user_profile(user_id, user_info)
+
+    if request.method == 'GET':
+        return jsonify({
+            'success': True,
+            'profile': profile,
+            'complete': _profile_complete(profile)
+        })
+
+    data = request.get_json() or {}
+    profile['name'] = (data.get('name') or profile.get('name') or '').strip()
+    profile['city'] = (data.get('city') or profile.get('city') or '').strip()
+    profile['phone'] = (data.get('phone') or profile.get('phone') or '').strip()
+    profile['use_case'] = (data.get('use_case') or profile.get('use_case') or '').strip()
+    profile['updated_at'] = datetime.now().isoformat()
+    _save_user_profile(user_id, profile)
+    return jsonify({'success': True, 'profile': profile, 'complete': _profile_complete(profile)})
+
 @app.route('/admin/make-pro')
 def admin_make_pro():
     """Admin endpoint to make current user Pro (for testing)"""
@@ -1450,7 +1654,7 @@ def create_payment():
         
         data = request.get_json()
         plan_id = data.get('plan_id')
-        currency = data.get('currency', 'inr')
+        currency = 'inr'
         
         from pricing_manager import pricing_manager
         from payment_gateway import payment_gateway
@@ -1463,24 +1667,18 @@ def create_payment():
             return jsonify({'success': False, 'error': 'Invalid plan'})
         
         # Create payment order
-        if currency == 'inr':
-            # Try to use Razorpay subscription first
-            razorpay_plan_id = payment_gateway.get_razorpay_plan_id(plan_id)
-            if razorpay_plan_id:
-                result = payment_gateway.create_razorpay_subscription(
-                    razorpay_plan_id, session['user_id']
-                )
-                print(f"💳 Razorpay subscription result: {result}")
-            else:
-                # Fallback to one-time payment
-                result = payment_gateway.create_razorpay_order(
-                    plan['price'], plan['name'], session['user_id']
-                )
-                print(f"💳 Razorpay order result: {result}")
+        # Razorpay only
+        razorpay_plan_id = payment_gateway.get_razorpay_plan_id(plan_id)
+        if razorpay_plan_id:
+            result = payment_gateway.create_razorpay_subscription(
+                razorpay_plan_id, session['user_id']
+            )
+            print(f"💳 Razorpay subscription result: {result}")
         else:
-            result = payment_gateway.create_paypal_order(
+            result = payment_gateway.create_razorpay_order(
                 plan['price'], plan['name'], session['user_id']
             )
+            print(f"💳 Razorpay order result: {result}")
         
         return jsonify(result)
         
@@ -1504,10 +1702,9 @@ def verify_payment():
         from payment_gateway import payment_gateway
         
         # Verify payment
-        if payment_method == 'razorpay':
-            verification = payment_gateway.verify_razorpay_payment(data)
-        else:
-            verification = payment_gateway.verify_paypal_payment(data)
+        if payment_method != 'razorpay' and payment_method != 'razorpay_subscription':
+            return jsonify({'success': False, 'error': 'Only Razorpay is supported'}), 400
+        verification = payment_gateway.verify_razorpay_payment(data)
         
         if verification['success']:
             # Upgrade user plan
@@ -1611,6 +1808,17 @@ def google_callback():
         
         # Make session permanent to prevent expiration
         session.permanent = True
+
+        # Ensure pricing plan and user profile are created
+        try:
+            from pricing_manager import pricing_manager
+            pricing_manager.get_user_plan(user_info['email'])
+        except Exception:
+            pass
+        try:
+            _ensure_user_profile(user_info['email'], user_info)
+        except Exception:
+            pass
         
         # Check for return URL in session (from auto-process flow)
         return_url = session.pop('return_after_auth', '/app')
@@ -1738,6 +1946,17 @@ def process_local():
         
         user_id = session.get('user_id')
         print(f"👤 User ID: {user_id}")
+        
+        # Check trial expiry
+        trial_check = _check_trial_access(user_id)
+        if not trial_check['allowed']:
+            return jsonify({
+                'success': False,
+                'error': 'trial_expired',
+                'message': 'Your 7-day free trial has ended. Please upgrade to continue.',
+                'upgrade_required': True,
+                'trial': trial_check['trial']
+            })
         
         # Get uploaded files
         uploaded_files = request.files.getlist('files')
@@ -1878,6 +2097,17 @@ def process_drive():
         
         if not access_token:
             return jsonify({'success': False, 'error': 'Authentication failed. Please sign in again.'})
+
+        # Check trial expiry
+        trial_check = _check_trial_access(user_id)
+        if not trial_check['allowed']:
+            return jsonify({
+                'success': False,
+                'error': 'trial_expired',
+                'message': 'Your 7-day free trial has ended. Please upgrade to continue.',
+                'upgrade_required': True,
+                'trial': trial_check['trial']
+            })
         
         # Extract folder_id from drive URL for folder isolation
         from google_drive_handler import extract_file_id_from_url
@@ -2088,6 +2318,18 @@ def process_drive_shared():
 
         if not drive_url:
             return jsonify({'success': False, 'error': 'No drive URL provided'}), 400
+
+        # Check trial expiry for authenticated users
+        if user_id != 'shared_bot':
+            trial_check = _check_trial_access(user_id)
+            if not trial_check['allowed']:
+                return jsonify({
+                    'success': False,
+                    'error': 'trial_expired',
+                    'message': 'Your 7-day free trial has ended. Please upgrade to continue.',
+                    'upgrade_required': True,
+                    'trial': trial_check['trial']
+                })
 
         try:
             max_depth = int(max_depth)
@@ -2647,6 +2889,17 @@ def _get_shared_watermark_settings():
         print(f"⚠️ Failed to load watermark settings: {e}")
         return None
 
+def _get_free_user_watermark_settings(user_id: str) -> Dict[str, Any]:
+    return {
+        'watermark_enabled': True,
+        'watermark_text': '',
+        'watermark_logo_filename': 'Cloudface-ai-logo.png',
+        'watermark_opacity': 50,
+        'watermark_size': 8,
+        'watermark_margin': 12,
+        'watermark_position': 'top-left'
+    }
+
 
 def _is_image_file(filename):
     ext = os.path.splitext(filename)[1].lower()
@@ -2677,6 +2930,8 @@ def _apply_watermark_to_image(image_path, settings):
     logo = None
     if logo_filename:
         logo_path = os.path.join('static', 'logos', logo_filename)
+        if not os.path.exists(logo_path):
+            logo_path = os.path.join('static', logo_filename)
         if os.path.exists(logo_path):
             logo = Image.open(logo_path).convert('RGBA')
             target_width = max(40, int(image.width * size_pct / 100))
@@ -2789,6 +3044,15 @@ def serve_photo(filename):
         shared_user_id = session.get('shared_user_id')
         shared_folder_id = session.get('shared_folder_id')
         watermark_settings = _get_shared_watermark_settings()
+        download_requested = request.args.get('download') == '1'
+        if not watermark_settings and download_requested:
+            try:
+                from pricing_manager import pricing_manager
+                user_plan = pricing_manager.get_user_plan(user_id)
+                if user_plan.get('plan_type') == 'free' and not is_super_user(user_id):
+                    watermark_settings = _get_free_user_watermark_settings(user_id)
+            except Exception:
+                pass
         
         # Use shared session data if available, otherwise use logged-in user's data
         photo_user_id = shared_user_id if shared_user_id else user_id
@@ -4091,6 +4355,8 @@ def superadmin_analytics_data():
         registered_users = pricing_manager.list_registered_users()
         activity = data.get('user_activity', {})
         sessions_timeline = data.get('user_sessions', {})
+        trial_ending_soon = []
+        unpaid_active = []
         for user in registered_users:
             user_id = user.get('user_id')
             if not user_id:
@@ -4106,8 +4372,23 @@ def superadmin_analytics_data():
             user['shares'] = stats.get('shares', 0)
             user['errors'] = stats.get('errors', 0)
             user['sessions_timeline'] = sessions_timeline.get(user_id, [])
+
+            profile = _load_user_profile(user_id)
+            user['name'] = profile.get('name', '')
+            user['city'] = profile.get('city', '')
+            user['phone'] = profile.get('phone', '')
+            user['use_case'] = profile.get('use_case', '')
+
+            if user.get('plan_type') == 'free':
+                days_left = user.get('trial_days_left')
+                if days_left is not None and days_left <= 2 and not user.get('trial_expired'):
+                    trial_ending_soon.append(user)
+                if (user.get('images_processed', 0) > 0 or user.get('sessions', 0) > 0):
+                    unpaid_active.append(user)
         data['registered_users'] = registered_users
         data['registered_users_count'] = len(registered_users)
+        data['trial_ending_soon'] = trial_ending_soon
+        data['unpaid_active'] = unpaid_active
         return jsonify({'success': True, 'data': data})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -4142,20 +4423,74 @@ def superadmin_analytics_export_users():
         users = pricing_manager.list_registered_users()
         output = StringIO()
         writer = csv.writer(output)
-        writer.writerow(['user_id', 'plan_name', 'plan_type', 'created_at', 'last_activity', 'images_processed', 'videos_processed'])
+        writer.writerow([
+            'user_id', 'name', 'city', 'phone', 'use_case',
+            'plan_name', 'plan_type', 'created_at', 'last_activity',
+            'images_processed', 'videos_processed',
+            'trial_start', 'trial_end', 'trial_days_left', 'trial_expired'
+        ])
         for user in users:
+            profile = _load_user_profile(user.get('user_id', ''))
             writer.writerow([
                 user.get('user_id', ''),
+                profile.get('name', ''),
+                profile.get('city', ''),
+                profile.get('phone', ''),
+                profile.get('use_case', ''),
                 user.get('plan_name', ''),
                 user.get('plan_type', ''),
                 user.get('created_at', ''),
                 user.get('last_activity', ''),
                 user.get('images_processed', 0),
-                user.get('videos_processed', 0)
+                user.get('videos_processed', 0),
+                user.get('trial_start', ''),
+                user.get('trial_end', ''),
+                user.get('trial_days_left', ''),
+                user.get('trial_expired', '')
             ])
         output.seek(0)
         return Response(output.getvalue(), mimetype='text/csv', headers={
             'Content-Disposition': 'attachment; filename="registered_users.csv"'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/superadmin/analytics/export-unpaid')
+@require_super_user
+def superadmin_analytics_export_unpaid():
+    """Export unpaid active users as CSV."""
+    try:
+        from pricing_manager import pricing_manager
+        users = pricing_manager.list_registered_users()
+        output = StringIO()
+        writer = csv.writer(output)
+        writer.writerow([
+            'user_id', 'name', 'city', 'phone', 'use_case',
+            'plan_name', 'plan_type', 'last_activity',
+            'images_processed', 'trial_days_left', 'trial_expired'
+        ])
+        for user in users:
+            if user.get('plan_type') != 'free':
+                continue
+            if user.get('images_processed', 0) <= 0:
+                continue
+            profile = _load_user_profile(user.get('user_id', ''))
+            writer.writerow([
+                user.get('user_id', ''),
+                profile.get('name', ''),
+                profile.get('city', ''),
+                profile.get('phone', ''),
+                profile.get('use_case', ''),
+                user.get('plan_name', ''),
+                user.get('plan_type', ''),
+                user.get('last_activity', ''),
+                user.get('images_processed', 0),
+                user.get('trial_days_left', ''),
+                user.get('trial_expired', '')
+            ])
+        output.seek(0)
+        return Response(output.getvalue(), mimetype='text/csv', headers={
+            'Content-Disposition': 'attachment; filename="unpaid_active_users.csv"'
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -4228,8 +4563,10 @@ def superadmin_user_detail():
 
     from pricing_manager import pricing_manager
     plan_data = pricing_manager.get_user_plan(user_id)
+    trial_info = pricing_manager.get_trial_info(user_id)
     user_analytics = analytics.get_user_analytics(user_id, 365)
     activity_detail = analytics.get_user_activity_detail(user_id, 365, limit_sessions=50)
+    profile = _load_user_profile(user_id)
 
     uploads = _list_user_uploads(user_id, limit=200)
     downloads = _list_user_downloads(user_id, limit=200)
@@ -4240,6 +4577,8 @@ def superadmin_user_detail():
         plan_data=plan_data,
         user_analytics=user_analytics,
         activity_detail=activity_detail,
+        profile=profile,
+        trial_info=trial_info,
         uploads=uploads,
         downloads=downloads
     )

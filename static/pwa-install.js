@@ -286,5 +286,146 @@
         });
     }
 
-    window.addEventListener('load', initAnalytics);
+    function openUpgradeModal() {
+        const modal = document.getElementById('upgradeModal');
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    }
+
+    function closeUpgradeModal() {
+        const modal = document.getElementById('upgradeModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    function openProfileModal(profile) {
+        const modal = document.getElementById('profileModal');
+        if (!modal) return;
+        const nameField = document.getElementById('profileName');
+        const cityField = document.getElementById('profileCity');
+        const phoneField = document.getElementById('profilePhone');
+        const useCaseField = document.getElementById('profileUseCase');
+        if (nameField && profile && profile.name) nameField.value = profile.name;
+        if (cityField && profile && profile.city) cityField.value = profile.city;
+        if (phoneField && profile && profile.phone) phoneField.value = profile.phone;
+        if (useCaseField && profile && profile.use_case) useCaseField.value = profile.use_case;
+        modal.style.display = 'flex';
+    }
+
+    function closeProfileModal() {
+        const modal = document.getElementById('profileModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    async function saveProfileDetails() {
+        const nameField = document.getElementById('profileName');
+        const cityField = document.getElementById('profileCity');
+        const phoneField = document.getElementById('profilePhone');
+        const useCaseField = document.getElementById('profileUseCase');
+        const payload = {
+            name: nameField ? nameField.value.trim() : '',
+            city: cityField ? cityField.value.trim() : '',
+            phone: phoneField ? phoneField.value.trim() : '',
+            use_case: useCaseField ? useCaseField.value.trim() : ''
+        };
+        try {
+            const response = await fetch('/api/user-profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (result.success) {
+                closeProfileModal();
+            }
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    async function loadTrialStatus() {
+        const banner = document.getElementById('trialBanner');
+        const trialText = document.getElementById('trialText');
+        if (!banner || !trialText) return;
+        try {
+            const response = await fetch('/api/trial-status');
+            const data = await response.json();
+            if (!data.success) return;
+            const trial = data.trial || {};
+            if (!trial.trial_start) {
+                banner.style.display = 'none';
+                return;
+            }
+            if (trial.expired) {
+                trialText.innerHTML = '<strong>Trial ended.</strong> Please upgrade to continue.';
+                banner.style.display = 'block';
+                openUpgradeModal();
+                return;
+            }
+            trialText.innerHTML = `Trial ends in <strong>${trial.days_left}</strong> day(s).`;
+            banner.style.display = 'block';
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    async function loadUsageStats() {
+        const widget = document.getElementById('usageWidget');
+        if (!widget) return;
+        const planName = document.getElementById('planNameText');
+        const usageText = document.getElementById('usageText');
+        const usageFill = document.getElementById('usageFill');
+        try {
+            const response = await fetch('/api/usage-stats');
+            const data = await response.json();
+            if (!data.success) return;
+            const stats = data.stats || {};
+            const images = stats.images || {};
+            if (planName) planName.textContent = stats.plan_name || 'Plan';
+            if (usageText) {
+                usageText.textContent = `${images.used || 0} used / ${images.limit || 0} limit`;
+            }
+            if (usageFill) {
+                usageFill.style.width = `${images.percentage || 0}%`;
+            }
+            widget.style.display = 'block';
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    async function loadUserProfile() {
+        const modal = document.getElementById('profileModal');
+        if (!modal) return;
+        try {
+            const response = await fetch('/api/user-profile');
+            const data = await response.json();
+            if (!data.success) return;
+            if (!data.complete) {
+                openProfileModal(data.profile || {});
+            }
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    function initMonetizationUi() {
+        loadTrialStatus();
+        loadUsageStats();
+        loadUserProfile();
+    }
+
+    window.openUpgradeModal = openUpgradeModal;
+    window.closeUpgradeModal = closeUpgradeModal;
+    window.closeProfileModal = closeProfileModal;
+    window.saveProfileDetails = saveProfileDetails;
+
+    window.addEventListener('load', () => {
+        initAnalytics();
+        initMonetizationUi();
+    });
 })();

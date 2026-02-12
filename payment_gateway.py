@@ -272,20 +272,12 @@ class PaymentGateway:
     
     def get_payment_methods(self, user_location: str = 'IN') -> Dict[str, Any]:
         """Get available payment methods based on user location"""
-        if user_location.upper() == 'IN':
-            return {
-                'primary': 'razorpay',
-                'methods': ['UPI', 'Cards', 'Net Banking', 'Wallets'],
-                'currency': 'INR',
-                'symbol': '₹'
-            }
-        else:
-            return {
-                'primary': 'paypal',
-                'methods': ['PayPal', 'Credit Card', 'Debit Card'],
-                'currency': 'USD',
-                'symbol': '$'
-            }
+        return {
+            'primary': 'razorpay',
+            'methods': ['UPI', 'Cards', 'Net Banking', 'Wallets'],
+            'currency': 'INR',
+            'symbol': '₹'
+        }
 
 # Global payment gateway instance
 payment_gateway = PaymentGateway()

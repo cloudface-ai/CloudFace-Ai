@@ -57,6 +57,7 @@
                 <div class="muted">Plan</div>
                 <div class="stat">{{ plan_data.plan_name }}</div>
                 <div class="muted">Type: {{ plan_data.plan_type }}</div>
+                <div class="muted">Trial Days Left: {{ trial_info.days_left }}</div>
             </div>
             <div class="card">
                 <div class="muted">Images Used</div>
@@ -76,6 +77,13 @@
                 <div>Searches: {{ activity_detail.searches }}</div>
                 <div>Downloads: {{ activity_detail.downloads }}</div>
                 <div>Shares: {{ activity_detail.shares }}</div>
+            </div>
+            <div class="card">
+                <div class="muted">Profile</div>
+                <div><strong>Name:</strong> {{ profile.name or '' }}</div>
+                <div><strong>City:</strong> {{ profile.city or '' }}</div>
+                <div><strong>Phone:</strong> {{ profile.phone or '' }}</div>
+                <div><strong>Use case:</strong> {{ profile.use_case or '' }}</div>
             </div>
         </div>
 

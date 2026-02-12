@@ -614,7 +614,7 @@
         function downloadPhoto(photoPath) {
             // Create download link for original file
             const link = document.createElement('a');
-            link.href = `/photo/${encodeURIComponent(photoPath)}`;
+            link.href = `/photo/${encodeURIComponent(photoPath)}?download=1`;
             link.download = photoPath.split('/').pop() || 'photo.jpg';
             document.body.appendChild(link);
             link.click();
