@@ -4183,6 +4183,8 @@ def superadmin_storage_delete():
         else:
             os.remove(target)
         return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/superadmin/user')
 def superadmin_user_detail():
@@ -4227,8 +4229,6 @@ def superadmin_user_file():
         return render_template('404.html'), 404
 
     return send_file(full_path)
-    except Exception as e:
-        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/dashboard')
 def admin_dashboard_data():
