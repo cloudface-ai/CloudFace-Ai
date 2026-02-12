@@ -38,7 +38,7 @@
     <meta name="apple-mobile-web-app-title" content="CloudFace AI">
     
     <!-- Canonical URL -->
-    <link rel="canonical" href="https://cloudface-ai.com/">
+    <link rel="canonical" href="https://cloudface-ai.com/app">
     
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -197,21 +197,7 @@
         }
     </script>
     
-    <!-- Service Worker Registration -->
-    <script>
-        // Service Worker registration disabled - sw.js not available
-        // if ('serviceWorker' in navigator) {
-        //     window.addEventListener('load', () => {
-        //         navigator.serviceWorker.register('/sw.js')
-        //             .then((registration) => {
-        //                 console.log('SW registered: ', registration);
-        //             })
-        //             .catch((registrationError) => {
-        //                 console.log('SW registration failed: ', registrationError);
-        //             });
-        //     });
-        // }
-    </script>
+    
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>*{margin:0;padding:0;box-sizing:border-box}:root{--primary:#1a73e8;--primary-light:#4285f4;--primary-dark:#0d47a1;--accent:#ea4335;--accent-light:#f28b82;--success:#34a853;--warning:#fbbc04;--bg:#fafafa;--surface:#fff;--text-primary:#202124;--text-secondary:#5f6368;--text-tertiary:#9aa0a6;--border:#dadce0;--shadow:0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.24);--shadow-hover:0 14px 28px rgba(0,0,0,.25),0 10px 10px rgba(0,0,0,.22);--radius:16px;--radius-sm:8px;--transition:none}body{font-family:'Google Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text-primary);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased}
@@ -1041,6 +1027,8 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
         }
         </script>
         
+    <link rel="stylesheet" href="/static/pwa-install.css">
+    <script src="/static/pwa-install.js" defer></script>
 </head>
 <body>
     <!-- Header -->
@@ -2796,6 +2784,7 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                 
                 // Use the full photo_path for the photo source to get original files
                 const photoPath = match.photo_path || match.photo_reference || 'unknown.jpg';
+                const encodedPhotoPath = encodeURIComponent(photoPath);
                 console.log(`📁 Photo path: ${photoPath}`);
                 console.log(`📁 Photo path type:`, typeof photoPath);
                 console.log(`📁 Photo path length:`, photoPath.length);
@@ -2807,7 +2796,7 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                 }
                 
                 // Create the photo card with original file path
-                const photoUrl = `/photo/${photoPath}`;
+                const photoUrl = `/photo/${encodedPhotoPath}`;
                 console.log(`🌐 Photo URL: ${photoUrl}`);
                 console.log(`🌐 Raw path: ${photoPath}`);
                 

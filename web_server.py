@@ -13,6 +13,7 @@ import time
 import requests
 import hashlib
 import json
+import shutil
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from urllib.parse import urlencode, parse_qs, urlparse
@@ -75,6 +76,62 @@ def require_super_user(func):
         return func(*args, **kwargs)
     wrapper.__name__ = func.__name__
     return wrapper
+
+def _format_bytes(num_bytes: int) -> str:
+    """Format bytes into human-readable units."""
+    size = float(num_bytes or 0)
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if size < 1024.0:
+            return f"{size:.1f} {unit}"
+        size /= 1024.0
+    return f"{size:.1f} PB"
+
+def _dir_size(path: str) -> int:
+    total = 0
+    for root, _, files in os.walk(path):
+        for name in files:
+            try:
+                total += os.path.getsize(os.path.join(root, name))
+            except OSError:
+                continue
+    return total
+
+def _list_dir_entries(root_path: str, rel_root: str) -> List[Dict[str, Any]]:
+    entries = []
+    if not os.path.exists(root_path):
+        return entries
+
+    try:
+        items = sorted(os.listdir(root_path))
+    except OSError:
+        return entries
+
+    for name in items:
+        full_path = os.path.join(root_path, name)
+        rel_path = os.path.join(rel_root, name)
+        is_dir = os.path.isdir(full_path)
+        try:
+            mtime = datetime.fromtimestamp(os.path.getmtime(full_path)).strftime('%Y-%m-%d %H:%M')
+        except OSError:
+            mtime = 'unknown'
+
+        size_bytes = _dir_size(full_path) if is_dir else os.path.getsize(full_path)
+        entries.append({
+            'name': name,
+            'path': rel_path.replace('\\', '/'),
+            'is_dir': is_dir,
+            'size': _format_bytes(size_bytes),
+            'modified': mtime
+        })
+    return entries
+
+def _allowed_storage_roots() -> Dict[str, str]:
+    base = os.path.abspath(os.getcwd())
+    return {
+        'models': os.path.join(base, 'models'),
+        'storage': os.path.join(base, 'storage'),
+        'uploads': os.path.join(base, 'static', 'uploads')
+    }
 
 def record_user_feedback(user_id: str, photo_reference: str, is_correct: bool, 
                         selfie_path: str = None, similarity_score: float = None) -> bool:
@@ -774,6 +831,16 @@ def get_google_auth_url():
 def landing():
     """Show the landing/marketing page"""
     return render_template('landing.html')
+
+@app.route('/landing')
+def landing_redirect():
+    """Redirect legacy landing URL to home"""
+    return redirect('/', code=301)
+
+@app.route('/index')
+def index_redirect():
+    """Redirect legacy index URL to home"""
+    return redirect('/', code=301)
 
 @app.route('/app')
 def index():
@@ -3691,6 +3758,55 @@ def admin_analytics():
 def admin_dashboard():
     """Show the admin dashboard for sharing metrics"""
     return render_template('admin_dashboard.html')
+
+@app.route('/admin/storage')
+def admin_storage():
+    """Admin storage browser for cleanup"""
+    if 'user_id' not in session:
+        return redirect('/auth/login')
+    if not is_super_user(session['user_id']):
+        return render_template('404.html'), 404
+
+    roots = _allowed_storage_roots()
+    data = {}
+    for key, path in roots.items():
+        data[key] = {
+            'root': path,
+            'entries': _list_dir_entries(path, key)
+        }
+
+    return render_template('admin_storage.html', storage_data=data)
+
+@app.route('/api/admin/storage/delete', methods=['POST'])
+@require_super_user
+def admin_storage_delete():
+    """Delete a file or directory from allowed storage roots."""
+    data = request.get_json() or {}
+    rel_path = (data.get('path') or '').strip().lstrip('/')
+    if not rel_path:
+        return jsonify({'success': False, 'error': 'Path required'}), 400
+
+    roots = _allowed_storage_roots()
+    root_key = rel_path.split('/', 1)[0]
+    if root_key not in roots:
+        return jsonify({'success': False, 'error': 'Invalid path'}), 400
+
+    target = os.path.abspath(os.path.join(os.getcwd(), rel_path))
+    allowed_root = os.path.abspath(roots[root_key])
+    if not target.startswith(allowed_root):
+        return jsonify({'success': False, 'error': 'Access denied'}), 403
+
+    if not os.path.exists(target):
+        return jsonify({'success': False, 'error': 'Path not found'}), 404
+
+    try:
+        if os.path.isdir(target):
+            shutil.rmtree(target)
+        else:
+            os.remove(target)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/dashboard')
 def admin_dashboard_data():

@@ -33,9 +33,6 @@
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     
-    <!-- Mobile-First CSS -->
-    <link rel="stylesheet" href="/static/mobile-first.css">
-    
     <style>
         * {
             margin: 0;
@@ -285,7 +282,7 @@
             gap: 1rem;
             margin-bottom: 1rem;
             font-size: 0.9rem;
-            color: var(--text-tertiary);
+            color: #3c4043;
         }
 
         .blog-meta span {
@@ -364,12 +361,12 @@
         }
 
         .featured-badge {
-            background: var(--accent);
-            color: white;
+            background: #c53929;
+            color: #ffffff;
             padding: 0.25rem 0.75rem;
             border-radius: var(--radius-sm);
             font-size: 0.8rem;
-            font-weight: 500;
+            font-weight: 600;
             display: inline-block;
             margin-bottom: 1rem;
         }
@@ -591,6 +588,67 @@
             letter-spacing: 0.5px;
             box-shadow: 0 2px 4px rgba(255, 107, 53, 0.3);
         }
+
+        .pwa-install-banner {
+            position: fixed;
+            left: 16px;
+            right: 16px;
+            bottom: 16px;
+            z-index: 9999;
+            background: #ffffff;
+            border: 1px solid #dadce0;
+            border-radius: 12px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        .pwa-install-banner__icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: #f1f3f4;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+        }
+
+        .pwa-install-banner__icon img {
+            width: 24px;
+            height: 24px;
+        }
+
+        .pwa-install-banner__text {
+            flex: 1 1 auto;
+            font-size: 14px;
+            color: #202124;
+            line-height: 1.35;
+        }
+
+        .pwa-install-banner__actions {
+            display: flex;
+            gap: 8px;
+            flex: 0 0 auto;
+        }
+
+        .pwa-install-banner__btn {
+            border: none;
+            background: #1a73e8;
+            color: #ffffff;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .pwa-install-banner__btn--secondary {
+            background: #f1f3f4;
+            color: #202124;
+        }
     </style>
 
         <!-- Structured Data (JSON-LD) for SEO -->
@@ -614,7 +672,6 @@
         }
         </script>
         
-    <link rel="stylesheet" href="/static/pwa-install.css">
     <script src="/static/pwa-install.js" defer></script>
 </head>
 <body>
@@ -626,7 +683,13 @@
             <div class="container">
                 <div class="header-content">
                     <a href="/" class="logo">
-                        <img src="/static/Cloudface-ai-logo.png" alt="Cloudface AI" style="height:1.3em; width:auto; vertical-align:middle;">
+                        <img src="/static/Cloudface-ai-logo.png"
+                             srcset="/static/Cloudface-ai-logo-80x50.webp 80w, /static/Cloudface-ai-logo-80x50.png 80w, /static/Cloudface-ai-logo.png 156w"
+                             sizes="67px"
+                             width="67"
+                             height="41"
+                             alt="CloudFace AI"
+                             style="height:1.3em; width:auto; vertical-align:middle;">
                         <span style="margin-left:.4em;">Cloudface AI</span>
                     </a>
                     <button class="nav-toggle" onclick="toggleNav()" aria-label="Toggle navigation menu">
@@ -650,7 +713,7 @@
         </div>
     </header>
 
-    <div class="container">
+    <main class="container">
         <div class="page-header">
             <h1>CloudFace AI Blog</h1>
             <p>Insights, updates, and stories from the world of AI-powered face recognition</p>
@@ -678,7 +741,7 @@
                 <p class="blog-excerpt">
                     Comprehensive comparison of face search apps in 2025. CloudFace AI leads with 99.83% accuracy, superior performance in dark/blurry photos, and privacy-first approach. Find the best app for your needs.
                 </p>
-                <a href="/blog/best-face-search-apps-2025" class="read-more">
+                <a href="/blog/best-face-search-apps-2025" class="read-more" aria-label="Read full article: Best Face Search Apps 2025: Complete Comparison Guide">
                     Read Full Article
                     <svg viewBox="0 0 24 24">
                         <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -709,7 +772,7 @@
                 <p class="blog-excerpt">
                     Learn how to process photos with CloudFace AI in 5 simple steps. Complete guide for Google Drive photo processing, face recognition, and photo organization. Perfect for beginners and advanced users.
                 </p>
-                <a href="/blog/step-by-step-photo-processing-guide" class="read-more">
+                <a href="/blog/step-by-step-photo-processing-guide" class="read-more" aria-label="Read full article: How to Process Photos with CloudFace AI: Complete Step-by-Step Guide 2025">
                     Read Full Article
                     <svg viewBox="0 0 24 24">
                         <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -740,7 +803,7 @@
                 <p class="blog-excerpt">
                     Discover how AI photo management is revolutionizing corporate events in 2025. Learn how Fortune 500 companies use AI to organize 100,000+ event photos instantly with 99.83% accuracy and complete privacy protection.
                 </p>
-                <a href="/blog/ai-powered-photo-management-corporate-events-2025" class="read-more">
+                <a href="/blog/ai-powered-photo-management-corporate-events-2025" class="read-more" aria-label="Read full article: AI-Powered Photo Management for Corporate Events: The 2025 Revolution">
                     Read Full Article
                     <svg viewBox="0 0 24 24">
                         <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -771,7 +834,7 @@
                 <p class="blog-excerpt">
                     Discover the latest privacy-first face recognition trends in 2025. Learn how GDPR compliance, local processing, and zero-data storage are revolutionizing biometric technology with complete privacy protection.
                 </p>
-                <a href="/blog/privacy-first-face-recognition-trends-2025" class="read-more">
+                <a href="/blog/privacy-first-face-recognition-trends-2025" class="read-more" aria-label="Read full article: Privacy-First Face Recognition Trends 2025: The GDPR Revolution">
                     Read Full Article
                     <svg viewBox="0 0 24 24">
                         <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -802,7 +865,7 @@
                 <p class="blog-excerpt">
                     Discover how AI transforms hybrid event photo management in 2025. Learn to organize 10,000+ photos from virtual and in-person events with 99.83% accuracy and instant processing across all platforms.
                 </p>
-                <a href="/blog/hybrid-events-photo-organization-ai-2025" class="read-more">
+                <a href="/blog/hybrid-events-photo-organization-ai-2025" class="read-more" aria-label="Read full article: Hybrid Events Photo Organization with AI: Managing 10,000+ Photos in 2025">
                     Read Full Article
                     <svg viewBox="0 0 24 24">
                         <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -842,7 +905,7 @@
                     <p class="blog-excerpt">
                         {{ post.meta_description or 'Read the full article to learn more.' }}
                     </p>
-                    <a href="/blog/{{ post.slug }}" class="read-more">
+                    <a href="/blog/{{ post.slug }}" class="read-more" aria-label="Read more: {{ post.title }}">
                         Read More
                         <svg viewBox="0 0 24 24">
                             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -874,7 +937,7 @@
                     <p class="blog-excerpt">
                         Yes, you can search faces from Google Drive! CloudFace AI is the leading solution that allows you to find specific people in your Google Drive photos without downloading them. Complete step-by-step guide.
                     </p>
-                    <a href="/blog/google-drive-face-search-guide" class="read-more">
+                    <a href="/blog/google-drive-face-search-guide" class="read-more" aria-label="Read more: How to Search Faces from Google Drive: Ultimate Guide 2025">
                         Read More
                         <svg viewBox="0 0 24 24">
                             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -904,7 +967,7 @@
                     <p class="blog-excerpt">
                         Face recognition in challenging conditions represents the ultimate test of AI technology. CloudFace AI achieves 99.83% accuracy while maintaining superior performance in dark and blurry photos.
                     </p>
-                    <a href="/blog/face-recognition-dark-blurry-photos" class="read-more">
+                    <a href="/blog/face-recognition-dark-blurry-photos" class="read-more" aria-label="Read more: Face Recognition in Dark & Blurry Photos: Technical Analysis 2025">
                         Read More
                         <svg viewBox="0 0 24 24">
                             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -934,7 +997,7 @@
                     <p class="blog-excerpt">
                         Shocking expose: How major apps secretly harvest your face data, violate privacy laws, and sell your biometric information to third parties.
                     </p>
-                    <a href="/blog/privacy-destruction-major-apps-facebook-instagram" class="read-more">
+                    <a href="/blog/privacy-destruction-major-apps-facebook-instagram" class="read-more" aria-label="Read more: How Facebook, Instagram & Major Apps Destroy Your Privacy">
                         Read More
                         <svg viewBox="0 0 24 24">
                             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -964,7 +1027,7 @@
                     <p class="blog-excerpt">
                         Complete guide to India's Digital Personal Data Protection Act 2023, international privacy laws, and human rights in biometric data protection.
                     </p>
-                    <a href="/blog/india-privacy-laws-international-human-rights" class="read-more">
+                    <a href="/blog/india-privacy-laws-international-human-rights" class="read-more" aria-label="Read more: India Privacy Laws & International Human Rights Protection">
                         Read More
                         <svg viewBox="0 0 24 24">
                             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -994,7 +1057,7 @@
                     <p class="blog-excerpt">
                         Behind the scenes: Coca-Cola's AI photo organization system that processes 2.3 million photos from global campaigns. Same technology now available to everyone.
                     </p>
-                    <a href="/blog/coca-cola-photo-management" class="read-more">
+                    <a href="/blog/coca-cola-photo-management" class="read-more" aria-label="Read more: How Coca-Cola Organizes 2.3 Million Event Photos Instantly">
                         Read More
                         <svg viewBox="0 0 24 24">
                             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -1024,7 +1087,7 @@
                     <p class="blog-excerpt">
                         Discover Nike's AI photo organization system: How they manage 100,000+ athlete photos per campaign with CloudFace AI. Same technology now free.
                     </p>
-                    <a href="/blog/nike-photo-organization" class="read-more">
+                    <a href="/blog/nike-photo-organization" class="read-more" aria-label="Read more: Nike's Secret Weapon for Managing 100,000 Athlete Photos">
                         Read More
                         <svg viewBox="0 0 24 24">
                             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -1054,7 +1117,7 @@
                     <p class="blog-excerpt">
                         Discover Red Bull's Formula 1 photography secret: AI that organizes 85,000 photos in 45 minutes with 98% accuracy. Same technology now free for families.
                     </p>
-                    <a href="/blog/red-bull-formula1-photography" class="read-more">
+                    <a href="/blog/red-bull-formula1-photography" class="read-more" aria-label="Read more: Red Bull's Formula 1 Photography Secret: How AI Handles 200+ MPH">
                         Read More
                         <svg viewBox="0 0 24 24">
                             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -1084,7 +1147,7 @@
                     <p class="blog-excerpt">
                         How Spotify organizes 60,000+ music festival photos with AI in real-time. Same technology now free for music lovers. 96% accuracy, instant results.
                     </p>
-                    <a href="/blog/spotify-music-events" class="read-more">
+                    <a href="/blog/spotify-music-events" class="read-more" aria-label="Read more: How Spotify Organizes 1,000+ Artist Photos from Music Festivals">
                         Read More
                         <svg viewBox="0 0 24 24">
                             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -1114,7 +1177,7 @@
                     <p class="blog-excerpt">
                         Revolutionary privacy protection: CloudFace AI processes your photos locally, stores nothing, tracks nothing. Complete privacy with Fortune 500 accuracy.
                     </p>
-                    <a href="/blog/worlds-first-privacy-face-recognition" class="read-more">
+                    <a href="/blog/worlds-first-privacy-face-recognition" class="read-more" aria-label="Read more: World's First Privacy-Protecting Face Recognition: Never Stores Data">
                         Read More
                         <svg viewBox="0 0 24 24">
                             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -1144,7 +1207,7 @@
                     <p class="blog-excerpt">
                         The only face recognition app that fully complies with GDPR Article 25. Local processing, no data storage, complete European privacy protection.
                     </p>
-                    <a href="/blog/gdpr-face-recognition-privacy-compliance" class="read-more">
+                    <a href="/blog/gdpr-face-recognition-privacy-compliance" class="read-more" aria-label="Read more: GDPR Compliant Face Recognition: European Privacy Rights">
                         Read More
                         <svg viewBox="0 0 24 24">
                             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -1174,7 +1237,7 @@
                     <p class="blog-excerpt">
                         Discover why the world's best wedding photographers and travel photographers use CloudFace AI. Same Fortune 500 technology for professional workflows.
                     </p>
-                    <a href="/blog/professional-photographers-cloudface-ai" class="read-more">
+                    <a href="/blog/professional-photographers-cloudface-ai" class="read-more" aria-label="Read more: Why Top Wedding & Travel Photographers Choose CloudFace AI">
                         Read More
                         <svg viewBox="0 0 24 24">
                             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -1204,7 +1267,7 @@
                     <p class="blog-excerpt">
                         Inside government transportation: How Indian Railways, London Underground use CloudFace AI for live passenger tracking and public safety.
                     </p>
-                    <a href="/blog/government-transportation-live-tracking" class="read-more">
+                    <a href="/blog/government-transportation-live-tracking" class="read-more" aria-label="Read more: How Government Transportation Uses CloudFace AI: Live Tracking">
                         Read More
                         <svg viewBox="0 0 24 24">
                             <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
@@ -1213,7 +1276,7 @@
                 </div>
             </article>
         </div>
-    </div>
+    </main>
 
     <!-- Footer -->
     <footer class="footer">
@@ -1223,22 +1286,22 @@
                     <h3>About CloudFace AI</h3>
                     <p>We create AI-powered face recognition technology that helps you discover and organize photos across your digital life. Our focus is on privacy, performance, and beautiful user experience.</p>
                     <div class="social-links">
-                        <a href="#" class="social-link">
+                        <a href="#" class="social-link" aria-label="CloudFace AI on X">
                             <svg viewBox="0 0 24 24">
                                 <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                             </svg>
                         </a>
-                        <a href="#" class="social-link">
+                        <a href="#" class="social-link" aria-label="CloudFace AI on Instagram">
                             <svg viewBox="0 0 24 24">
                                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
                             </svg>
                         </a>
-                        <a href="#" class="social-link">
+                        <a href="#" class="social-link" aria-label="CloudFace AI on YouTube">
                             <svg viewBox="0 0 24 24">
                                 <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                             </svg>
                         </a>
-                        <a href="#" class="social-link">
+                        <a href="#" class="social-link" aria-label="CloudFace AI on LinkedIn">
                             <svg viewBox="0 0 24 24">
                                 <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
                             </svg>
