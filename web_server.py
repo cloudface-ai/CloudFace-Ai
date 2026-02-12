@@ -4,7 +4,7 @@ Facetak Web Server
 Connects HTML frontend to existing Python backend with OAuth integration
 """
 
-from flask import Flask, render_template, request, jsonify, send_from_directory, send_file, session, redirect, url_for
+from flask import Flask, render_template, request, jsonify, send_from_directory, send_file, session, redirect, url_for, after_this_request
 from service_account_drive import get_service_account_access_token
 import os
 import tempfile
@@ -15,6 +15,7 @@ import hashlib
 import json
 import shutil
 import csv
+import zipfile
 from io import StringIO
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
@@ -234,6 +235,33 @@ def _list_user_downloads(user_id: str, limit: int = 200) -> List[Dict[str, Any]]
 
     entries.sort(key=lambda x: x.get('modified') or '', reverse=True)
     return entries
+
+def _iter_user_files_for_zip(user_id: str):
+    uploads_dir = os.path.join('storage', 'uploads', user_id)
+    downloads_root = os.path.join('storage', 'downloads')
+
+    if os.path.exists(uploads_dir):
+        for name in os.listdir(uploads_dir):
+            full_path = os.path.join(uploads_dir, name)
+            if os.path.isfile(full_path):
+                arcname = os.path.join('uploads', name)
+                yield full_path, arcname
+
+    if os.path.exists(downloads_root):
+        try:
+            folders = [f for f in os.listdir(downloads_root) if f.startswith(f"{user_id}_")]
+        except OSError:
+            folders = []
+        for folder in folders:
+            folder_path = os.path.join(downloads_root, folder)
+            if not os.path.isdir(folder_path):
+                continue
+            for root, _, files in os.walk(folder_path):
+                for name in files:
+                    full_path = os.path.join(root, name)
+                    rel_path = os.path.relpath(full_path, downloads_root)
+                    arcname = os.path.join('downloads', rel_path)
+                    yield full_path, arcname
 
 def record_user_feedback(user_id: str, photo_reference: str, is_correct: bool, 
                         selfie_path: str = None, similarity_score: float = None) -> bool:
@@ -4229,6 +4257,32 @@ def superadmin_user_file():
         return render_template('404.html'), 404
 
     return send_file(full_path)
+
+@app.route('/api/superadmin/user-export-zip')
+@require_super_user
+def superadmin_user_export_zip():
+    """Download a ZIP of user's uploads and drive cache."""
+    user_id = request.args.get('user_id', '').strip()
+    if not user_id:
+        return jsonify({'success': False, 'error': 'User ID required'}), 400
+
+    temp_dir = tempfile.mkdtemp(prefix='cloudface_user_zip_')
+    zip_path = os.path.join(temp_dir, f"{secure_filename(user_id)}_data.zip")
+
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for full_path, arcname in _iter_user_files_for_zip(user_id):
+            if os.path.isfile(full_path):
+                zf.write(full_path, arcname)
+
+    @after_this_request
+    def cleanup(response):
+        try:
+            shutil.rmtree(temp_dir)
+        except Exception:
+            pass
+        return response
+
+    return send_file(zip_path, as_attachment=True, download_name=os.path.basename(zip_path))
 
 @app.route('/api/admin/dashboard')
 def admin_dashboard_data():
