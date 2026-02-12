@@ -14,6 +14,7 @@ import requests
 import hashlib
 import json
 import shutil
+from typing import List, Dict, Any
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from urllib.parse import urlencode, parse_qs, urlparse
@@ -1541,6 +1542,56 @@ def refresh_token():
             'error': str(e)
         })
 
+@app.route('/api/analytics/pageview', methods=['POST'])
+def analytics_pageview():
+    """Track page view from client."""
+    try:
+        data = request.get_json() or {}
+        page_url = data.get('page_url', '')
+        page_title = data.get('page_title', '')
+        referrer = request.headers.get('Referer', '')
+        user_id = session.get('user_id', 'anonymous')
+        ip_address = request.remote_addr
+        user_agent = request.headers.get('User-Agent', '')
+
+        session_id = session.get('analytics_session_id')
+        if not session_id:
+            session_id = analytics.start_session(user_id, ip_address, user_agent, referrer, page_url)
+            session['analytics_session_id'] = session_id
+
+        analytics.track_page_view(session_id, user_id, page_url, page_title, referrer, time_spent=0)
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/analytics/ping', methods=['POST'])
+def analytics_ping():
+    """Heartbeat to update session time spent."""
+    try:
+        data = request.get_json() or {}
+        seconds = int(data.get('seconds', 0))
+        page_url = data.get('page_url', '')
+        user_id = session.get('user_id', 'anonymous')
+        session_id = session.get('analytics_session_id')
+        if session_id:
+            analytics._update_session_activity(session_id, page_url, max(seconds, 0))
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/analytics/error', methods=['POST'])
+def analytics_error():
+    """Track client-side errors."""
+    try:
+        data = request.get_json() or {}
+        user_id = session.get('user_id', 'anonymous')
+        session_id = session.get('analytics_session_id')
+        if session_id:
+            analytics.track_error(session_id, user_id, data, page_url=data.get('page_url', ''))
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/process_local', methods=['POST'])
 def process_local():
     """Process uploaded files - handles local file uploads"""
@@ -1607,6 +1658,27 @@ def process_local():
             uploaded_files=uploaded_files,
             force_reprocess=force_reprocess
         )
+
+        # Track analytics for local processing
+        if result.get('success'):
+            try:
+                session_id = session.get('analytics_session_id')
+                if session_id:
+                    total_bytes = request.content_length or 0
+                    analytics.track_action(
+                        session_id,
+                        user_id,
+                        'photo_processed_local',
+                        {
+                            'processed_count': result.get('processed_count', 0),
+                            'total_files': result.get('total_files', 0),
+                            'total_bytes': total_bytes,
+                            'source': 'local'
+                        },
+                        '/app'
+                    )
+            except Exception as e:
+                print(f"⚠️ Analytics tracking failed: {e}")
         
         # Track usage if processing was successful
         if result.get('success') and result.get('processed_count', 0) > 0:
@@ -1624,6 +1696,16 @@ def process_local():
         print(f"❌ Error in process_local: {e}")
         import traceback
         traceback.print_exc()
+        try:
+            session_id = session.get('analytics_session_id')
+            user_id = session.get('user_id', 'anonymous')
+            if session_id:
+                analytics.track_error(session_id, user_id, {
+                    'error': str(e),
+                    'endpoint': '/process_local'
+                }, '/app')
+        except Exception:
+            pass
         return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/process_drive', methods=['POST'])
@@ -1961,6 +2043,7 @@ def process_drive_shared():
                     try:
                         session_id = session.get('analytics_session_id')
                         if session_id:
+                            total_bytes = result.get('total_bytes') or result.get('total_size') or 0
                             analytics.track_action(
                                 session_id, 
                                 user_id, 
@@ -1968,6 +2051,8 @@ def process_drive_shared():
                                 {
                                     'processed_count': result.get('processed_count', 0),
                                     'total_files': result.get('total_files', 0),
+                                    'total_bytes': total_bytes,
+                                    'source': 'drive',
                                     'folder_url': drive_url
                                 },
                                 '/app'
@@ -1984,6 +2069,15 @@ def process_drive_shared():
             except Exception as e:
                 stop_progress()
                 print(f"❌ Background processing failed for user {user_id}: {e}")
+                try:
+                    session_id = session.get('analytics_session_id')
+                    if session_id:
+                        analytics.track_error(session_id, user_id, {
+                            'error': str(e),
+                            'endpoint': '/process_drive'
+                        }, '/app')
+                except Exception:
+                    pass
         
         # Start background thread
         thread = threading.Thread(target=background_process, daemon=True)
@@ -2122,6 +2216,25 @@ def search():
             shared_folder_id = session.get('shared_folder_id')
             search_result = search_with_real_recognition_universal(normalized_path, search_user_id, threshold, shared_folder_id)
             print(f"🔧 DEBUG: Universal search result: {search_result.get('total_matches', 0)} matches found")
+
+            # Track search analytics
+            try:
+                session_id = session.get('analytics_session_id')
+                if session_id:
+                    analytics.track_action(
+                        session_id,
+                        user_id,
+                        'search_performed',
+                        {
+                            'matches': search_result.get('total_matches', 0),
+                            'threshold': threshold,
+                            'source': 'shared' if shared_user_id else 'admin',
+                            'shared_folder_id': shared_folder_id
+                        },
+                        '/app'
+                    )
+            except Exception as e:
+                print(f"⚠️ Analytics tracking failed: {e}")
             
             # Cache the search results so they appear in /my-photos
             if search_result.get('total_matches', 0) > 0:
@@ -2290,10 +2403,29 @@ def search():
             
         except Exception as e:
             print(f"❌ Error in V2 pipeline search: {e}")
+            try:
+                session_id = session.get('analytics_session_id')
+                if session_id:
+                    analytics.track_error(session_id, user_id, {
+                        'error': str(e),
+                        'endpoint': '/search'
+                    }, '/app')
+            except Exception:
+                pass
             return jsonify({'success': False, 'error': f'Search failed: {str(e)}'})
         
     except Exception as e:
         print(f"Error in search: {e}")
+        try:
+            session_id = session.get('analytics_session_id')
+            user_id = session.get('user_id', 'anonymous')
+            if session_id:
+                analytics.track_error(session_id, user_id, {
+                    'error': str(e),
+                    'endpoint': '/search'
+                }, '/app')
+        except Exception:
+            pass
         return jsonify({'success': False, 'error': str(e)})
 
 def track_downloader_info(admin_user_id, downloader_user_id, filename, source):
@@ -2554,7 +2686,10 @@ def serve_photo(filename):
                 session_id = session.get('analytics_session_id', 'default_session')
                 analytics.track_action(session_id, photo_user_id, 'photo_downloaded', {
                     'filename': filename,
-                    'source': 'upload'
+                    'source': 'upload',
+                    'download_context': 'shared' if shared_user_id else 'admin',
+                    'owner_user_id': photo_user_id,
+                    'downloader_user_id': user_id
                 })
                 
                 # Track downloader info if from shared link
@@ -2586,7 +2721,10 @@ def serve_photo(filename):
                         analytics.track_action(session_id, photo_user_id, 'photo_downloaded', {
                             'filename': filename,
                             'source': 'cache',
-                            'folder_id': photo_folder_id
+                            'folder_id': photo_folder_id,
+                            'download_context': 'shared' if shared_user_id else 'admin',
+                            'owner_user_id': photo_user_id,
+                            'downloader_user_id': user_id
                         })
                         
                         # Track downloader info if from shared link
@@ -2620,7 +2758,10 @@ def serve_photo(filename):
                                 analytics.track_action(session_id, photo_user_id, 'photo_downloaded', {
                                     'filename': filename,
                                     'source': 'fallback_cache',
-                                    'folder_id': folder_name
+                                    'folder_id': folder_name,
+                                    'download_context': 'shared' if shared_user_id else 'admin',
+                                    'owner_user_id': photo_user_id,
+                                    'downloader_user_id': user_id
                                 })
                                 
                                 # Track downloader info if from shared link
@@ -3602,6 +3743,52 @@ def get_admin_links():
         print(f"❌ Error getting admin links: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
+@app.route('/api/delete-admin-link', methods=['POST'])
+def delete_admin_link():
+    """Delete a shared link for the logged-in admin user"""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+
+        data = request.get_json() or {}
+        link_id = data.get('id')
+        short_code = data.get('short_code')
+
+        if not link_id and not short_code:
+            return jsonify({'success': False, 'error': 'Missing link identifier'}), 400
+
+        links_file = 'storage/admin_links.json'
+        try:
+            with open(links_file, 'r') as f:
+                links = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return jsonify({'success': False, 'error': 'No links found'}), 404
+
+        updated = []
+        removed = False
+        for link in links:
+            if link.get('admin_user_id') != user_id:
+                updated.append(link)
+                continue
+            if link_id and link.get('id') == link_id:
+                removed = True
+                continue
+            if short_code and link.get('short_code') == short_code:
+                removed = True
+                continue
+            updated.append(link)
+
+        if not removed:
+            return jsonify({'success': False, 'error': 'Link not found'}), 404
+
+        with open(links_file, 'w') as f:
+            json.dump(updated, f, indent=2)
+
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 def track_link_click_direct(short_code):
     """Track link click directly (used internally)"""
     try:
@@ -3754,14 +3941,34 @@ def admin_analytics():
     """Show analytics dashboard"""
     return render_template('admin_analytics.html')
 
+@app.route('/superadmin/analytics')
+def superadmin_analytics():
+    """Superadmin analytics dashboard"""
+    if 'user_id' not in session:
+        return redirect('/auth/login')
+    if not is_super_user(session['user_id']):
+        return render_template('404.html'), 404
+    return render_template('superadmin_analytics.html')
+
+@app.route('/api/superadmin/analytics')
+@require_super_user
+def superadmin_analytics_data():
+    """Superadmin analytics data"""
+    try:
+        days = int(request.args.get('days', 365))
+        data = analytics.get_superadmin_analytics(days)
+        return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/admin/dashboard')
 def admin_dashboard():
     """Show the admin dashboard for sharing metrics"""
     return render_template('admin_dashboard.html')
 
-@app.route('/admin/storage')
-def admin_storage():
-    """Admin storage browser for cleanup"""
+@app.route('/superadmin/storage')
+def superadmin_storage():
+    """Superadmin storage browser for cleanup"""
     if 'user_id' not in session:
         return redirect('/auth/login')
     if not is_super_user(session['user_id']):
@@ -3777,9 +3984,9 @@ def admin_storage():
 
     return render_template('admin_storage.html', storage_data=data)
 
-@app.route('/api/admin/storage/delete', methods=['POST'])
+@app.route('/api/superadmin/storage/delete', methods=['POST'])
 @require_super_user
-def admin_storage_delete():
+def superadmin_storage_delete():
     """Delete a file or directory from allowed storage roots."""
     data = request.get_json() or {}
     rel_path = (data.get('path') or '').strip().lstrip('/')

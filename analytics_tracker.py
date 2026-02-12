@@ -21,7 +21,10 @@ class UserSession:
     ip_address: str
     user_agent: str
     country: str
+    region: str
     city: str
+    device_type: str
+    os: str
     start_time: datetime
     last_activity: datetime
     page_views: int
@@ -67,19 +70,22 @@ class ShareEvent:
 class AnalyticsTracker:
     """Main analytics tracking class"""
     
-    def __init__(self, data_dir: str = "storage/analytics"):
+    def __init__(self, data_dir: str = "storage/analytics", retention_days: int = 365):
         self.data_dir = data_dir
+        self.retention_days = retention_days
         self.sessions_file = os.path.join(data_dir, "sessions.json")
         self.pageviews_file = os.path.join(data_dir, "pageviews.json")
         self.actions_file = os.path.join(data_dir, "actions.json")
         self.shares_file = os.path.join(data_dir, "shares.json")
         self.daily_stats_file = os.path.join(data_dir, "daily_stats.json")
+        self.prune_state_file = os.path.join(data_dir, "prune_state.json")
         
         # Create directories
         os.makedirs(data_dir, exist_ok=True)
         
         # Initialize files if they don't exist
         self._init_files()
+        self._maybe_prune_old_data()
     
     def _init_files(self):
         """Initialize JSON files if they don't exist"""
@@ -88,13 +94,14 @@ class AnalyticsTracker:
             self.pageviews_file,
             self.actions_file,
             self.shares_file,
-            self.daily_stats_file
+            self.daily_stats_file,
+            self.prune_state_file
         ]
         
         for file_path in files:
             if not os.path.exists(file_path):
                 with open(file_path, 'w') as f:
-                    json.dump([], f)
+                    json.dump([] if file_path != self.prune_state_file else {}, f)
     
     def _load_data(self, file_path: str) -> List[Dict]:
         """Load data from JSON file"""
@@ -110,38 +117,131 @@ class AnalyticsTracker:
             json.dump(data, f, indent=2, default=str)
     
     def _get_geolocation(self, ip_address: str, user_agent: str = "") -> Dict[str, str]:
-        """Get geolocation data from browser (free, no API limits)"""
+        """Get country and region (state) only."""
         try:
-            # Extract country from browser language (free method)
-            import re
             country = 'Unknown'
-            city = 'Unknown'
             region = 'Unknown'
-            
-            # Try to extract country from user agent or use default
-            if 'en-US' in user_agent or 'en_US' in user_agent:
-                country = 'United States'
-            elif 'en-GB' in user_agent or 'en_GB' in user_agent:
-                country = 'United Kingdom'
-            elif 'en-IN' in user_agent or 'en_IN' in user_agent:
-                country = 'India'
-            elif 'en-CA' in user_agent or 'en_CA' in user_agent:
-                country = 'Canada'
-            elif 'en-AU' in user_agent or 'en_AU' in user_agent:
-                country = 'Australia'
-            else:
-                # Default to browser language detection
-                country = 'Global'
+            city = 'Unknown'
+
+            if ip_address and self._is_public_ip(ip_address):
+                try:
+                    response = requests.get(f"https://ipapi.co/{ip_address}/json/", timeout=2)
+                    if response.ok:
+                        data = response.json()
+                        country = data.get('country_name') or data.get('country') or 'Unknown'
+                        region = data.get('region') or data.get('region_code') or 'Unknown'
+                except Exception:
+                    pass
+
+            if country == 'Unknown':
+                if 'en-US' in user_agent or 'en_US' in user_agent:
+                    country = 'United States'
+                elif 'en-GB' in user_agent or 'en_GB' in user_agent:
+                    country = 'United Kingdom'
+                elif 'en-IN' in user_agent or 'en_IN' in user_agent:
+                    country = 'India'
+                elif 'en-CA' in user_agent or 'en_CA' in user_agent:
+                    country = 'Canada'
+                elif 'en-AU' in user_agent or 'en_AU' in user_agent:
+                    country = 'Australia'
+                else:
+                    country = 'Global'
             
             return {
                 'country': country,
-                'city': city,
-                'region': region
+                'region': region,
+                'city': city
             }
         except Exception as e:
             print(f"Browser geolocation error: {e}")
         
         return {'country': 'Unknown', 'city': 'Unknown', 'region': 'Unknown'}
+
+    def _is_public_ip(self, ip_address: str) -> bool:
+        try:
+            ip_obj = ipaddress.ip_address(ip_address)
+            return not (ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved or ip_obj.is_multicast)
+        except Exception:
+            return False
+
+    def _anonymize_ip(self, ip_address: str) -> str:
+        try:
+            ip_obj = ipaddress.ip_address(ip_address)
+            if ip_obj.version == 4:
+                parts = ip_address.split('.')
+                return '.'.join(parts[:3] + ['0'])
+            if ip_obj.version == 6:
+                return ip_address.split(':', 1)[0] + '::'
+        except Exception:
+            pass
+        return 'anonymized'
+
+    def _parse_user_agent(self, user_agent: str) -> Dict[str, str]:
+        ua = (user_agent or '').lower()
+        device_type = 'desktop'
+        if 'mobile' in ua or 'iphone' in ua or 'android' in ua:
+            device_type = 'mobile'
+        if 'ipad' in ua or 'tablet' in ua:
+            device_type = 'tablet'
+
+        os_name = 'Unknown'
+        if 'android' in ua:
+            os_name = 'Android'
+        elif 'iphone' in ua or 'ipad' in ua or 'ios' in ua:
+            os_name = 'iOS'
+        elif 'windows' in ua:
+            os_name = 'Windows'
+        elif 'mac os' in ua or 'macintosh' in ua:
+            os_name = 'macOS'
+        elif 'linux' in ua:
+            os_name = 'Linux'
+
+        return {'device_type': device_type, 'os': os_name}
+
+    def _maybe_prune_old_data(self):
+        """Prune analytics older than retention window at most once per day."""
+        try:
+            state = self._load_state()
+            last_pruned = state.get('last_pruned')
+            if last_pruned:
+                last_dt = datetime.fromisoformat(last_pruned)
+                if datetime.now() - last_dt < timedelta(hours=24):
+                    return
+            self._prune_old_data(self.retention_days)
+            state['last_pruned'] = datetime.now().isoformat()
+            self._save_state(state)
+        except Exception as e:
+            print(f"⚠️ Analytics prune failed: {e}")
+
+    def _prune_old_data(self, days: int):
+        cutoff_date = datetime.now() - timedelta(days=days)
+        self._save_data(self.sessions_file, [
+            s for s in self._load_data(self.sessions_file)
+            if datetime.fromisoformat(s.get('start_time')) >= cutoff_date
+        ])
+        self._save_data(self.pageviews_file, [
+            p for p in self._load_data(self.pageviews_file)
+            if datetime.fromisoformat(p.get('timestamp')) >= cutoff_date
+        ])
+        self._save_data(self.actions_file, [
+            a for a in self._load_data(self.actions_file)
+            if datetime.fromisoformat(a.get('timestamp')) >= cutoff_date
+        ])
+        self._save_data(self.shares_file, [
+            s for s in self._load_data(self.shares_file)
+            if datetime.fromisoformat(s.get('timestamp')) >= cutoff_date
+        ])
+
+    def _load_state(self) -> Dict[str, Any]:
+        try:
+            with open(self.prune_state_file, 'r') as f:
+                return json.load(f) or {}
+        except Exception:
+            return {}
+
+    def _save_state(self, state: Dict[str, Any]):
+        with open(self.prune_state_file, 'w') as f:
+            json.dump(state, f, indent=2)
     
     def _extract_utm_params(self, referrer: str) -> Dict[str, str]:
         """Extract UTM parameters from referrer"""
@@ -168,6 +268,7 @@ class AnalyticsTracker:
         
         # Get geolocation from browser (free method)
         geo_data = self._get_geolocation(ip_address, user_agent)
+        device_info = self._parse_user_agent(user_agent)
         
         # Extract UTM parameters
         utm_params = self._extract_utm_params(referrer)
@@ -175,10 +276,13 @@ class AnalyticsTracker:
         session = UserSession(
             session_id=session_id,
             user_id=user_id,
-            ip_address=ip_address,
+            ip_address=self._anonymize_ip(ip_address),
             user_agent=user_agent,
             country=geo_data['country'],
+            region=geo_data['region'],
             city=geo_data['city'],
+            device_type=device_info['device_type'],
+            os=device_info['os'],
             start_time=datetime.now(),
             last_activity=datetime.now(),
             page_views=0,
@@ -235,6 +339,10 @@ class AnalyticsTracker:
         actions = self._load_data(self.actions_file)
         actions.append(asdict(action))
         self._save_data(self.actions_file, actions)
+
+    def track_error(self, session_id: str, user_id: str, error_data: Dict[str, Any], page_url: str = ""):
+        """Track an error event"""
+        self.track_action(session_id, user_id, 'error', error_data, page_url)
     
     def track_share(self, session_id: str, user_id: str, share_type: str, 
                    share_data: Dict[str, Any], recipient_count: int = 1):
@@ -375,9 +483,18 @@ class AnalyticsTracker:
         
         # Geographic distribution
         country_stats = {}
+        region_stats = {}
+        device_stats = {}
+        os_stats = {}
         for session in recent_sessions:
             country = session['country']
             country_stats[country] = country_stats.get(country, 0) + 1
+            region = session.get('region', 'Unknown')
+            region_stats[region] = region_stats.get(region, 0) + 1
+            device = session.get('device_type', 'unknown')
+            device_stats[device] = device_stats.get(device, 0) + 1
+            os_name = session.get('os', 'unknown')
+            os_stats[os_name] = os_stats.get(os_name, 0) + 1
         
         # Traffic sources
         source_stats = {}
@@ -428,12 +545,86 @@ class AnalyticsTracker:
             'email_shares': email_shares,
             'qr_downloads': qr_downloads,
             'country_distribution': dict(sorted(country_stats.items(), key=lambda x: x[1], reverse=True)[:10]),
+            'region_distribution': dict(sorted(region_stats.items(), key=lambda x: x[1], reverse=True)[:10]),
+            'device_distribution': dict(sorted(device_stats.items(), key=lambda x: x[1], reverse=True)),
+            'os_distribution': dict(sorted(os_stats.items(), key=lambda x: x[1], reverse=True)),
             'traffic_sources': dict(sorted(source_stats.items(), key=lambda x: x[1], reverse=True)[:10]),
             'popular_pages': popular_pages,
             'photos_this_week': photos_this_week,
             'links_this_week': links_this_week,
             'downloads_this_week': downloads_this_week,
             'views_this_week': views_this_week
+        }
+
+    def get_superadmin_analytics(self, days: int = 365) -> Dict[str, Any]:
+        """Extended analytics for superadmin."""
+        cutoff_date = datetime.now() - timedelta(days=days)
+        sessions = self._load_data(self.sessions_file)
+        actions = self._load_data(self.actions_file)
+        shares = self._load_data(self.shares_file)
+        pageviews = self._load_data(self.pageviews_file)
+
+        recent_sessions = [s for s in sessions if datetime.fromisoformat(s['start_time']) >= cutoff_date]
+        recent_actions = [a for a in actions if datetime.fromisoformat(a['timestamp']) >= cutoff_date]
+        recent_shares = [s for s in shares if datetime.fromisoformat(s['timestamp']) >= cutoff_date]
+        recent_pageviews = [p for p in pageviews if datetime.fromisoformat(p['timestamp']) >= cutoff_date]
+
+        def sum_action(action_type, key):
+            total = 0
+            for a in recent_actions:
+                if a['action_type'] == action_type:
+                    total += a.get('action_data', {}).get(key, 0) or 0
+            return total
+
+        def count_action(action_type, source=None):
+            count = 0
+            for a in recent_actions:
+                if a['action_type'] != action_type:
+                    continue
+                if source and a.get('action_data', {}).get('source') != source:
+                    continue
+                count += 1
+            return count
+
+        errors = [a for a in recent_actions if a['action_type'] == 'error']
+
+        blog_views = len([p for p in recent_pageviews if p.get('page_url', '').startswith('/blog')])
+
+        country_stats = {}
+        region_stats = {}
+        device_stats = {}
+        os_stats = {}
+        for session in recent_sessions:
+            country_stats[session.get('country', 'Unknown')] = country_stats.get(session.get('country', 'Unknown'), 0) + 1
+            region_stats[session.get('region', 'Unknown')] = region_stats.get(session.get('region', 'Unknown'), 0) + 1
+            device_stats[session.get('device_type', 'unknown')] = device_stats.get(session.get('device_type', 'unknown'), 0) + 1
+            os_stats[session.get('os', 'unknown')] = os_stats.get(session.get('os', 'unknown'), 0) + 1
+
+        return {
+            'period_days': days,
+            'unique_users': len(set(s['user_id'] for s in recent_sessions)),
+            'total_sessions': len(recent_sessions),
+            'total_time_spent': sum(s.get('total_time_spent', 0) for s in recent_sessions),
+            'drive_processed_files': sum_action('photo_processed', 'processed_count'),
+            'drive_total_files': sum_action('photo_processed', 'total_files'),
+            'drive_bytes': sum_action('photo_processed', 'total_bytes'),
+            'local_processed_files': sum_action('photo_processed_local', 'processed_count'),
+            'local_total_files': sum_action('photo_processed_local', 'total_files'),
+            'local_bytes': sum_action('photo_processed_local', 'total_bytes'),
+            'searches': count_action('search_performed'),
+            'downloads': count_action('photo_downloaded'),
+            'downloads_shared': count_action('photo_downloaded', 'shared'),
+            'downloads_admin': count_action('photo_downloaded', 'admin'),
+            'shares': len(recent_shares),
+            'watermark_batches': count_action('watermark_batch'),
+            'watermark_images': sum_action('watermark_batch', 'total_files'),
+            'blog_views': blog_views,
+            'errors_count': len(errors),
+            'errors': errors[:20],
+            'country_distribution': dict(sorted(country_stats.items(), key=lambda x: x[1], reverse=True)[:10]),
+            'region_distribution': dict(sorted(region_stats.items(), key=lambda x: x[1], reverse=True)[:10]),
+            'device_distribution': dict(sorted(device_stats.items(), key=lambda x: x[1], reverse=True)),
+            'os_distribution': dict(sorted(os_stats.items(), key=lambda x: x[1], reverse=True))
         }
     
     def get_realtime_stats(self) -> Dict[str, Any]:

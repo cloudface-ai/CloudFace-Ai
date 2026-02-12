@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CloudFace AI - Storage Cleanup</title>
+    <title>CloudFace AI - Superadmin Storage</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
         :root{--primary:#1a73e8;--bg:#fafafa;--surface:#fff;--text:#202124;--muted:#5f6368;--border:#dadce0;--radius:16px;--radius-sm:8px;--shadow:0 1px 3px rgba(0,0,0,.12),0 1px 2px rgba(0,0,0,.24)}
@@ -35,7 +35,7 @@
 <body>
     <header class="header">
         <div class="header-content">
-            <h1>Storage Cleanup</h1>
+            <h1>Superadmin Storage</h1>
             <a href="/admin/dashboard" class="btn">Back to Dashboard</a>
         </div>
     </header>
@@ -94,7 +94,7 @@
             }
             button.disabled = true;
             try {
-                const response = await fetch('/api/admin/storage/delete', {
+                const response = await fetch('/api/superadmin/storage/delete', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ path })

@@ -7,8 +7,9 @@ import os
 from io import BytesIO
 from zipfile import ZipFile, ZIP_DEFLATED
 
-from flask import Blueprint, render_template, request, send_file, jsonify
+from flask import Blueprint, render_template, request, send_file, jsonify, session
 from werkzeug.utils import secure_filename
+from analytics_tracker import analytics
 
 image_tools_bp = Blueprint('image_tools', __name__)
 
@@ -162,6 +163,35 @@ def batch_watermark():
                 zip_file.writestr(output_name, buffer.read())
 
         output.seek(0)
+        try:
+            session_id = session.get('analytics_session_id')
+            if session_id:
+                analytics.track_action(
+                    session_id,
+                    session.get('user_id', 'anonymous'),
+                    'watermark_batch',
+                    {
+                        'total_files': len(files),
+                        'total_bytes': request.content_length or 0,
+                        'position': position,
+                        'size_pct': size_pct,
+                        'opacity': opacity,
+                        'has_logo': bool(logo_image),
+                        'has_text': bool(text)
+                    },
+                    '/image-tools'
+                )
+        except Exception as e:
+            print(f"⚠️ Analytics tracking failed: {e}")
         return send_file(output, as_attachment=True, download_name='watermarked_images.zip', mimetype='application/zip')
     except Exception as e:
+        try:
+            session_id = session.get('analytics_session_id')
+            if session_id:
+                analytics.track_error(session_id, session.get('user_id', 'anonymous'), {
+                    'error': str(e),
+                    'endpoint': '/image-tools/watermark'
+                }, '/image-tools')
+        except Exception:
+            pass
         return jsonify({'success': False, 'error': str(e)}), 500

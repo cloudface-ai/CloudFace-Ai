@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Superadmin Analytics - CloudFace AI</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+        :root{--primary:#1a73e8;--bg:#f8f9fa;--surface:#fff;--text:#202124;--muted:#5f6368;--border:#dadce0;--radius:12px;--shadow:0 1px 3px rgba(0,0,0,.12)}
+        body{font-family:'Google Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);margin:0}
+        .header{background:var(--surface);border-bottom:1px solid var(--border);padding:1rem 1.5rem;position:sticky;top:0;z-index:10}
+        .container{max-width:1200px;margin:0 auto;padding:2rem 1rem}
+        h1{margin:0;font-size:1.6rem}
+        .muted{color:var(--muted);font-size:0.95rem}
+        .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-top:1rem}
+        .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem}
+        .stat{font-size:1.6rem;font-weight:700}
+        table{width:100%;border-collapse:collapse;margin-top:0.75rem}
+        th,td{text-align:left;padding:0.5rem;border-bottom:1px solid var(--border);font-size:0.9rem}
+        th{color:var(--muted)}
+        .section{margin-top:2rem}
+        .pill{display:inline-block;background:#e8f0fe;color:#1a73e8;padding:0.2rem 0.5rem;border-radius:999px;font-size:0.75rem}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Superadmin Analytics</h1>
+        <div class="muted">Last 365 days</div>
+    </div>
+
+    <div class="container">
+        <div class="grid" id="summaryCards"></div>
+
+        <div class="section">
+            <div class="card">
+                <h3>Processing</h3>
+                <div id="processingStats" class="muted">Loading...</div>
+            </div>
+        </div>
+
+        <div class="section grid">
+            <div class="card">
+                <h3>Countries</h3>
+                <div id="countries"></div>
+            </div>
+            <div class="card">
+                <h3>States / Regions</h3>
+                <div id="regions"></div>
+            </div>
+            <div class="card">
+                <h3>Devices</h3>
+                <div id="devices"></div>
+            </div>
+            <div class="card">
+                <h3>OS</h3>
+                <div id="oses"></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="card">
+                <h3>Recent Errors</h3>
+                <div id="errors" class="muted">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function renderKeyValueTable(targetId, data) {
+            const container = document.getElementById(targetId);
+            if (!data || Object.keys(data).length === 0) {
+                container.innerHTML = '<div class="muted">No data</div>';
+                return;
+            }
+            const rows = Object.entries(data).map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+            container.innerHTML = `<table><tbody>${rows}</tbody></table>`;
+        }
+
+        function renderErrors(errors) {
+            const container = document.getElementById('errors');
+            if (!errors || errors.length === 0) {
+                container.innerHTML = '<div class="muted">No errors logged</div>';
+                return;
+            }
+            const rows = errors.map(err => `
+                <tr>
+                    <td>${err.timestamp || ''}</td>
+                    <td>${err.user_id || 'anonymous'}</td>
+                    <td>${(err.action_data && err.action_data.endpoint) || ''}</td>
+                    <td>${(err.action_data && err.action_data.error) || ''}</td>
+                </tr>
+            `).join('');
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr><th>Time</th><th>User</th><th>Endpoint</th><th>Error</th></tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
+        }
+
+        async function loadAnalytics() {
+            const response = await fetch('/api/superadmin/analytics?days=365');
+            const payload = await response.json();
+            if (!payload.success) {
+                document.getElementById('summaryCards').innerHTML = '<div class="card">Failed to load analytics</div>';
+                return;
+            }
+            const data = payload.data;
+
+            const cards = [
+                { label: 'Unique Users', value: data.unique_users },
+                { label: 'Sessions', value: data.total_sessions },
+                { label: 'Searches', value: data.searches },
+                { label: 'Downloads', value: data.downloads },
+                { label: 'Shares', value: data.shares },
+                { label: 'Watermark Batches', value: data.watermark_batches },
+                { label: 'Blog Views', value: data.blog_views },
+                { label: 'Errors', value: data.errors_count }
+            ];
+
+            document.getElementById('summaryCards').innerHTML = cards.map(card => `
+                <div class="card">
+                    <div class="muted">${card.label}</div>
+                    <div class="stat">${card.value || 0}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('processingStats').innerHTML = `
+                <div>Drive: ${data.drive_processed_files || 0} faces / ${data.drive_total_files || 0} files</div>
+                <div>Local: ${data.local_processed_files || 0} faces / ${data.local_total_files || 0} files</div>
+                <div>Watermark images: ${data.watermark_images || 0}</div>
+                <div>Downloads shared: ${data.downloads_shared || 0} <span class="pill">shared</span> / ${data.downloads_admin || 0} <span class="pill">admin</span></div>
+            `;
+
+            renderKeyValueTable('countries', data.country_distribution);
+            renderKeyValueTable('regions', data.region_distribution);
+            renderKeyValueTable('devices', data.device_distribution);
+            renderKeyValueTable('oses', data.os_distribution);
+            renderErrors(data.errors);
+        }
+
+        loadAnalytics();
+    </script>
+</body>
+</html>

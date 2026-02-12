@@ -288,6 +288,12 @@
             border-color: var(--accent);
         }
 
+        .btn-danger {
+            background: var(--error);
+            color: white;
+            border-color: var(--error);
+        }
+
         .btn-copy:hover {
             background: #2d7d32;
             border-color: #2d7d32;
@@ -539,6 +545,8 @@
             }
         }
     </style>
+    <link rel="stylesheet" href="/static/pwa-install.css">
+    <script src="/static/pwa-install.js" defer></script>
 </head>
 <body>
     <div class="dashboard-container">
@@ -1001,6 +1009,9 @@
                         <button class="btn-small" onclick="shareLink('${link.short_url}', '${link.metadata.event_name || 'Event'}')">
                             📤 Share
                         </button>
+                        <button class="btn-small btn-danger" onclick="deleteEvent('${link.id}', '${link.short_code}', '${link.metadata.event_name || 'Event'}')">
+                            🗑️ Delete
+                        </button>
                     </div>
                 </div>
             `).join('');
@@ -1041,6 +1052,32 @@
                 navigator.clipboard.writeText(shareText).then(() => {
                     alert('Share text copied to clipboard!');
                 });
+            }
+        }
+
+        async function deleteEvent(linkId, shortCode, eventName) {
+            const confirmText = `Delete event "${eventName}"? This removes the share link and cannot be undone.`;
+            if (!confirm(confirmText)) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/delete-admin-link', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: Number(linkId) || null,
+                        short_code: shortCode || null
+                    })
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    alert(data.error || 'Delete failed');
+                    return;
+                }
+                loadAdminLinks();
+            } catch (error) {
+                alert('Delete failed');
             }
         }
 

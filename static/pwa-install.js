@@ -217,4 +217,74 @@
             enableLazyLoading();
         });
     }
+
+    function sendAnalytics(url, payload, useBeacon = false) {
+        try {
+            const body = JSON.stringify(payload || {});
+            if (useBeacon && navigator.sendBeacon) {
+                const blob = new Blob([body], { type: 'application/json' });
+                navigator.sendBeacon(url, blob);
+                return;
+            }
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body
+            }).catch(() => {});
+        } catch (error) {
+            // ignore
+        }
+    }
+
+    function initAnalytics() {
+        const pageUrl = window.location.pathname + window.location.search;
+        const pageTitle = document.title || '';
+        const pingIntervalMs = 30000;
+        let lastPingAt = Date.now();
+
+        sendAnalytics('/api/analytics/pageview', {
+            page_url: pageUrl,
+            page_title: pageTitle
+        });
+
+        setInterval(() => {
+            const now = Date.now();
+            const seconds = Math.round((now - lastPingAt) / 1000);
+            lastPingAt = now;
+            sendAnalytics('/api/analytics/ping', {
+                page_url: pageUrl,
+                seconds
+            });
+        }, pingIntervalMs);
+
+        window.addEventListener('beforeunload', () => {
+            const now = Date.now();
+            const seconds = Math.round((now - lastPingAt) / 1000);
+            sendAnalytics('/api/analytics/ping', {
+                page_url: pageUrl,
+                seconds
+            }, true);
+        });
+
+        window.addEventListener('error', (event) => {
+            sendAnalytics('/api/analytics/error', {
+                page_url: pageUrl,
+                message: event.message,
+                source: event.filename,
+                line: event.lineno,
+                col: event.colno,
+                stack: event.error && event.error.stack ? event.error.stack : ''
+            });
+        });
+
+        window.addEventListener('unhandledrejection', (event) => {
+            sendAnalytics('/api/analytics/error', {
+                page_url: pageUrl,
+                message: event.reason && event.reason.message ? event.reason.message : 'Unhandled rejection',
+                stack: event.reason && event.reason.stack ? event.reason.stack : ''
+            });
+        });
+    }
+
+    window.addEventListener('load', initAnalytics);
 })();
