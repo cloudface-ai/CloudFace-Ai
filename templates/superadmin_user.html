@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Superadmin User Detail - CloudFace AI</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+        :root{--primary:#1a73e8;--bg:#f8f9fa;--surface:#fff;--text:#202124;--muted:#5f6368;--border:#dadce0;--radius:12px;--shadow:0 1px 3px rgba(0,0,0,.12)}
+        body{font-family:'Google Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);margin:0}
+        .header{background:var(--surface);border-bottom:1px solid var(--border);padding:1rem 1.5rem;position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+        .container{max-width:1200px;margin:0 auto;padding:2rem 1rem}
+        h1{margin:0;font-size:1.6rem}
+        .muted{color:var(--muted);font-size:0.95rem}
+        .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-top:1rem}
+        .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:1rem}
+        .stat{font-size:1.4rem;font-weight:700}
+        table{width:100%;border-collapse:collapse;margin-top:0.75rem}
+        th,td{text-align:left;padding:0.5rem;border-bottom:1px solid var(--border);font-size:0.9rem}
+        th{color:var(--muted)}
+        .section{margin-top:2rem}
+        .pill{display:inline-block;background:#e8f0fe;color:#1a73e8;padding:0.2rem 0.5rem;border-radius:999px;font-size:0.75rem}
+        .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0.75rem}
+        .thumb{background:#fff;border:1px solid var(--border);border-radius:10px;padding:0.4rem}
+        .thumb img{width:100%;height:120px;object-fit:cover;border-radius:6px}
+        .link{color:#1a73e8;text-decoration:none}
+        .link:hover{text-decoration:underline}
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>User Detail</h1>
+            <div class="muted">{{ user_id }}</div>
+        </div>
+        <a class="link" href="/superadmin/analytics">Back to Analytics</a>
+    </div>
+
+    <div class="container">
+        <div class="grid">
+            <div class="card">
+                <div class="muted">Plan</div>
+                <div class="stat">{{ plan_data.plan_name }}</div>
+                <div class="muted">Type: {{ plan_data.plan_type }}</div>
+            </div>
+            <div class="card">
+                <div class="muted">Images Used</div>
+                <div class="stat">{{ plan_data.usage.images_processed }}</div>
+                <div class="muted">Limit: {{ plan_data.limits.images }}</div>
+            </div>
+            <div class="card">
+                <div class="muted">Sessions</div>
+                <div class="stat">{{ activity_detail.sessions }}</div>
+                <div class="muted">Time Spent: {{ (activity_detail.total_time_spent / 60)|round(1) }} min</div>
+            </div>
+            <div class="card">
+                <div class="muted">Actions</div>
+                <div>Drive: {{ activity_detail.drive_processed }} <span class="pill">processed</span></div>
+                <div>Local: {{ activity_detail.local_processed }} <span class="pill">processed</span></div>
+                <div>Watermark: {{ activity_detail.watermark_images }}</div>
+                <div>Searches: {{ activity_detail.searches }}</div>
+                <div>Downloads: {{ activity_detail.downloads }}</div>
+                <div>Shares: {{ activity_detail.shares }}</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="card">
+                <h3>Sessions Timeline</h3>
+                <table>
+                    <thead>
+                        <tr><th>Start</th><th>Last</th><th>Time (min)</th><th>Views</th><th>Page</th><th>Country</th><th>Region</th><th>Device</th><th>OS</th></tr>
+                    </thead>
+                    <tbody>
+                        {% if activity_detail.timeline and activity_detail.timeline|length > 0 %}
+                            {% for s in activity_detail.timeline %}
+                            <tr>
+                                <td>{{ s.start_time }}</td>
+                                <td>{{ s.last_activity }}</td>
+                                <td>{{ (s.total_time_spent / 60)|round(1) }}</td>
+                                <td>{{ s.page_views }}</td>
+                                <td>{{ s.current_page }}</td>
+                                <td>{{ s.country }}</td>
+                                <td>{{ s.region }}</td>
+                                <td>{{ s.device_type }}</td>
+                                <td>{{ s.os }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="9" class="muted">No sessions</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="card">
+                <h3>Uploaded Images (Local)</h3>
+                {% if uploads and uploads|length > 0 %}
+                    <div class="thumbs">
+                        {% for img in uploads %}
+                        <div class="thumb">
+                            <img src="/superadmin/user-file?path={{ img.path|urlencode }}" alt="{{ img.name }}">
+                            <div class="muted">{{ img.name }}</div>
+                            <div class="muted">{{ img.size }} · {{ img.modified }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="muted">No local uploads found.</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="card">
+                <h3>Drive Downloads (Cache)</h3>
+                {% if downloads and downloads|length > 0 %}
+                    <div class="thumbs">
+                        {% for img in downloads %}
+                        <div class="thumb">
+                            <img src="/superadmin/user-file?path={{ img.path|urlencode }}" alt="{{ img.name }}">
+                            <div class="muted">{{ img.name }}</div>
+                            <div class="muted">{{ img.folder }} · {{ img.size }} · {{ img.modified }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="muted">No drive downloads found.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -146,6 +146,95 @@ def _allowed_storage_roots() -> Dict[str, str]:
         'uploads': os.path.join(base, 'static', 'uploads')
     }
 
+def _safe_user_storage_path(rel_path: str) -> str:
+    """Resolve a storage path safely for superadmin file access."""
+    base = os.path.abspath(os.getcwd())
+    full_path = os.path.abspath(os.path.join(base, rel_path))
+    allowed_roots = [
+        os.path.join(base, 'storage', 'uploads'),
+        os.path.join(base, 'storage', 'downloads')
+    ]
+    for root in allowed_roots:
+        if full_path == root or full_path.startswith(root + os.sep):
+            return full_path
+    return ''
+
+def _is_image_file(filename: str) -> bool:
+    ext = os.path.splitext(filename.lower())[1]
+    return ext in {'.jpg', '.jpeg', '.png', '.webp', '.gif', '.bmp'}
+
+def _list_user_uploads(user_id: str, limit: int = 200) -> List[Dict[str, Any]]:
+    entries = []
+    uploads_dir = os.path.join('storage', 'uploads', user_id)
+    if not os.path.exists(uploads_dir):
+        return entries
+
+    for name in os.listdir(uploads_dir):
+        if len(entries) >= limit:
+            break
+        full_path = os.path.join(uploads_dir, name)
+        if not os.path.isfile(full_path) or not _is_image_file(name):
+            continue
+        try:
+            size_bytes = os.path.getsize(full_path)
+            mtime = datetime.fromtimestamp(os.path.getmtime(full_path)).strftime('%Y-%m-%d %H:%M')
+        except OSError:
+            size_bytes = 0
+            mtime = 'unknown'
+        entries.append({
+            'name': name,
+            'path': os.path.join(uploads_dir, name).replace('\\', '/'),
+            'size': _format_bytes(size_bytes),
+            'modified': mtime
+        })
+
+    entries.sort(key=lambda x: x.get('modified') or '', reverse=True)
+    return entries
+
+def _list_user_downloads(user_id: str, limit: int = 200) -> List[Dict[str, Any]]:
+    entries = []
+    downloads_root = os.path.join('storage', 'downloads')
+    if not os.path.exists(downloads_root):
+        return entries
+
+    try:
+        folders = [f for f in os.listdir(downloads_root) if f.startswith(f"{user_id}_")]
+    except OSError:
+        return entries
+
+    for folder in folders:
+        if len(entries) >= limit:
+            break
+        folder_path = os.path.join(downloads_root, folder)
+        if not os.path.isdir(folder_path):
+            continue
+        for root, _, files in os.walk(folder_path):
+            for name in files:
+                if len(entries) >= limit:
+                    break
+                if not _is_image_file(name):
+                    continue
+                full_path = os.path.join(root, name)
+                try:
+                    size_bytes = os.path.getsize(full_path)
+                    mtime = datetime.fromtimestamp(os.path.getmtime(full_path)).strftime('%Y-%m-%d %H:%M')
+                except OSError:
+                    size_bytes = 0
+                    mtime = 'unknown'
+                rel_path = os.path.relpath(full_path, os.getcwd()).replace('\\', '/')
+                entries.append({
+                    'name': name,
+                    'path': rel_path,
+                    'size': _format_bytes(size_bytes),
+                    'modified': mtime,
+                    'folder': folder
+                })
+            if len(entries) >= limit:
+                break
+
+    entries.sort(key=lambda x: x.get('modified') or '', reverse=True)
+    return entries
+
 def record_user_feedback(user_id: str, photo_reference: str, is_correct: bool, 
                         selfie_path: str = None, similarity_score: float = None) -> bool:
     """
@@ -1645,7 +1734,8 @@ def process_local():
             image_files = temp_processor._filter_uploaded_image_files(uploaded_files)
             estimated_images = len(image_files)
             
-            if not pricing_manager.can_process_images(user_id, estimated_images):
+            usage_check = pricing_manager.can_process_images(user_id, estimated_images)
+            if not usage_check.get('allowed'):
                 user_plan = pricing_manager.get_user_plan(user_id)
                 return jsonify({
                     'success': False, 
@@ -3971,6 +4061,23 @@ def superadmin_analytics_data():
         days = int(request.args.get('days', 365))
         data = analytics.get_superadmin_analytics(days)
         registered_users = pricing_manager.list_registered_users()
+        activity = data.get('user_activity', {})
+        sessions_timeline = data.get('user_sessions', {})
+        for user in registered_users:
+            user_id = user.get('user_id')
+            if not user_id:
+                continue
+            stats = activity.get(user_id, {})
+            user['sessions'] = stats.get('sessions', 0)
+            user['total_time_spent'] = stats.get('total_time_spent', 0)
+            user['drive_processed'] = stats.get('drive_processed', 0)
+            user['local_processed'] = stats.get('local_processed', 0)
+            user['watermark_images'] = stats.get('watermark_images', 0)
+            user['searches'] = stats.get('searches', 0)
+            user['downloads'] = stats.get('downloads', 0)
+            user['shares'] = stats.get('shares', 0)
+            user['errors'] = stats.get('errors', 0)
+            user['sessions_timeline'] = sessions_timeline.get(user_id, [])
         data['registered_users'] = registered_users
         data['registered_users_count'] = len(registered_users)
         return jsonify({'success': True, 'data': data})
@@ -4076,6 +4183,50 @@ def superadmin_storage_delete():
         else:
             os.remove(target)
         return jsonify({'success': True})
+
+@app.route('/superadmin/user')
+def superadmin_user_detail():
+    """Superadmin user detail view."""
+    if 'user_id' not in session:
+        return redirect('/auth/login')
+    if not is_super_user(session['user_id']):
+        return render_template('404.html'), 404
+
+    user_id = request.args.get('user_id', '').strip()
+    if not user_id:
+        return render_template('404.html'), 404
+
+    from pricing_manager import pricing_manager
+    plan_data = pricing_manager.get_user_plan(user_id)
+    user_analytics = analytics.get_user_analytics(user_id, 365)
+    activity_detail = analytics.get_user_activity_detail(user_id, 365, limit_sessions=50)
+
+    uploads = _list_user_uploads(user_id, limit=200)
+    downloads = _list_user_downloads(user_id, limit=200)
+
+    return render_template(
+        'superadmin_user.html',
+        user_id=user_id,
+        plan_data=plan_data,
+        user_analytics=user_analytics,
+        activity_detail=activity_detail,
+        uploads=uploads,
+        downloads=downloads
+    )
+
+@app.route('/superadmin/user-file')
+@require_super_user
+def superadmin_user_file():
+    """Serve a user file for superadmin view."""
+    rel_path = (request.args.get('path') or '').lstrip('/')
+    if not rel_path:
+        return jsonify({'success': False, 'error': 'Path required'}), 400
+
+    full_path = _safe_user_storage_path(rel_path)
+    if not full_path or not os.path.exists(full_path) or not os.path.isfile(full_path):
+        return render_template('404.html'), 404
+
+    return send_file(full_path)
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

@@ -609,6 +609,84 @@ class AnalyticsTracker:
             device_stats[session.get('device_type', 'unknown')] = device_stats.get(session.get('device_type', 'unknown'), 0) + 1
             os_stats[session.get('os', 'unknown')] = os_stats.get(session.get('os', 'unknown'), 0) + 1
 
+        # Per-user activity summary
+        user_activity = {}
+        user_sessions = {}
+        for s in recent_sessions:
+            user_id = s.get('user_id', 'anonymous')
+            stats = user_activity.setdefault(user_id, {
+                'sessions': 0,
+                'total_time_spent': 0,
+                'drive_processed': 0,
+                'local_processed': 0,
+                'watermark_images': 0,
+                'searches': 0,
+                'downloads': 0,
+                'shares': 0,
+                'errors': 0
+            })
+            stats['sessions'] += 1
+            stats['total_time_spent'] += s.get('total_time_spent', 0) or 0
+
+            session_entry = {
+                'start_time': s.get('start_time'),
+                'last_activity': s.get('last_activity'),
+                'total_time_spent': s.get('total_time_spent', 0) or 0,
+                'current_page': s.get('current_page', ''),
+                'page_views': s.get('page_views', 0),
+                'country': s.get('country', 'Unknown'),
+                'region': s.get('region', 'Unknown'),
+                'device_type': s.get('device_type', 'unknown'),
+                'os': s.get('os', 'unknown')
+            }
+            user_sessions.setdefault(user_id, []).append(session_entry)
+
+        for a in recent_actions:
+            user_id = a.get('user_id', 'anonymous')
+            stats = user_activity.setdefault(user_id, {
+                'sessions': 0,
+                'total_time_spent': 0,
+                'drive_processed': 0,
+                'local_processed': 0,
+                'watermark_images': 0,
+                'searches': 0,
+                'downloads': 0,
+                'shares': 0,
+                'errors': 0
+            })
+            if a['action_type'] == 'photo_processed':
+                stats['drive_processed'] += a.get('action_data', {}).get('processed_count', 0) or 0
+            elif a['action_type'] == 'photo_processed_local':
+                stats['local_processed'] += a.get('action_data', {}).get('processed_count', 0) or 0
+            elif a['action_type'] == 'watermark_batch':
+                stats['watermark_images'] += a.get('action_data', {}).get('total_files', 0) or 0
+            elif a['action_type'] == 'search_performed':
+                stats['searches'] += 1
+            elif a['action_type'] == 'photo_downloaded':
+                stats['downloads'] += 1
+            elif a['action_type'] == 'error':
+                stats['errors'] += 1
+
+        for sh in recent_shares:
+            user_id = sh.get('user_id', 'anonymous')
+            stats = user_activity.setdefault(user_id, {
+                'sessions': 0,
+                'total_time_spent': 0,
+                'drive_processed': 0,
+                'local_processed': 0,
+                'watermark_images': 0,
+                'searches': 0,
+                'downloads': 0,
+                'shares': 0,
+                'errors': 0
+            })
+            stats['shares'] += 1
+
+        # Sort and trim session timelines
+        for user_id, sessions_list in user_sessions.items():
+            sessions_list.sort(key=lambda x: x.get('start_time') or '', reverse=True)
+            user_sessions[user_id] = sessions_list[:20]
+
         return {
             'period_days': days,
             'unique_users': len(set(s['user_id'] for s in recent_sessions)),
@@ -633,7 +711,61 @@ class AnalyticsTracker:
             'country_distribution': dict(sorted(country_stats.items(), key=lambda x: x[1], reverse=True)[:10]),
             'region_distribution': dict(sorted(region_stats.items(), key=lambda x: x[1], reverse=True)[:10]),
             'device_distribution': dict(sorted(device_stats.items(), key=lambda x: x[1], reverse=True)),
-            'os_distribution': dict(sorted(os_stats.items(), key=lambda x: x[1], reverse=True))
+            'os_distribution': dict(sorted(os_stats.items(), key=lambda x: x[1], reverse=True)),
+            'user_activity': user_activity,
+            'user_sessions': user_sessions
+        }
+
+    def get_user_activity_detail(self, user_id: str, days: int = 365, limit_sessions: int = 50) -> Dict[str, Any]:
+        """Get detailed activity for a single user."""
+        cutoff_date = datetime.now() - timedelta(days=days)
+        sessions = self._load_data(self.sessions_file)
+        actions = self._load_data(self.actions_file)
+        shares = self._load_data(self.shares_file)
+
+        user_sessions = [s for s in sessions if s.get('user_id') == user_id and
+                         datetime.fromisoformat(s['start_time']) >= cutoff_date]
+        user_actions = [a for a in actions if a.get('user_id') == user_id and
+                        datetime.fromisoformat(a['timestamp']) >= cutoff_date]
+        user_shares = [s for s in shares if s.get('user_id') == user_id and
+                       datetime.fromisoformat(s['timestamp']) >= cutoff_date]
+
+        drive_processed = sum([a.get('action_data', {}).get('processed_count', 0)
+                               for a in user_actions if a.get('action_type') == 'photo_processed'])
+        local_processed = sum([a.get('action_data', {}).get('processed_count', 0)
+                               for a in user_actions if a.get('action_type') == 'photo_processed_local'])
+        watermark_images = sum([a.get('action_data', {}).get('total_files', 0)
+                                for a in user_actions if a.get('action_type') == 'watermark_batch'])
+        searches = len([a for a in user_actions if a.get('action_type') == 'search_performed'])
+        downloads = len([a for a in user_actions if a.get('action_type') == 'photo_downloaded'])
+        errors = len([a for a in user_actions if a.get('action_type') == 'error'])
+        total_time_spent = sum(s.get('total_time_spent', 0) for s in user_sessions)
+
+        timeline = []
+        for s in sorted(user_sessions, key=lambda x: x.get('start_time') or '', reverse=True)[:limit_sessions]:
+            timeline.append({
+                'start_time': s.get('start_time'),
+                'last_activity': s.get('last_activity'),
+                'total_time_spent': s.get('total_time_spent', 0),
+                'current_page': s.get('current_page', ''),
+                'page_views': s.get('page_views', 0),
+                'country': s.get('country', 'Unknown'),
+                'region': s.get('region', 'Unknown'),
+                'device_type': s.get('device_type', 'unknown'),
+                'os': s.get('os', 'unknown')
+            })
+
+        return {
+            'sessions': len(user_sessions),
+            'total_time_spent': total_time_spent,
+            'drive_processed': drive_processed,
+            'local_processed': local_processed,
+            'watermark_images': watermark_images,
+            'searches': searches,
+            'downloads': downloads,
+            'shares': len(user_shares),
+            'errors': errors,
+            'timeline': timeline
         }
     
     def get_realtime_stats(self) -> Dict[str, Any]:

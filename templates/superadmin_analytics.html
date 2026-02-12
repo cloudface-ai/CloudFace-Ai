@@ -24,6 +24,14 @@
         .btn{background:#1a73e8;color:#fff;border:none;padding:0.5rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.9rem}
         .btn-secondary{background:#5f6368}
         .btn-danger{background:#d93025}
+        .link{color:#1a73e8;text-decoration:none}
+        .link:hover{text-decoration:underline}
+        .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.35);display:none;align-items:center;justify-content:center;z-index:50}
+        .modal{background:#fff;border-radius:12px;max-width:900px;width:95%;max-height:85vh;overflow:auto;box-shadow:0 8px 24px rgba(0,0,0,0.25);padding:1rem}
+        .modal-header{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-bottom:0.5rem}
+        .modal-close{background:#dadce0;border:none;border-radius:6px;padding:0.3rem 0.6rem;cursor:pointer}
+        .row-click{cursor:pointer}
+        .nowrap{white-space:nowrap}
     </style>
 </head>
 <body>
@@ -81,6 +89,16 @@
                 <h3>Recent Errors</h3>
                 <div id="errors" class="muted">Loading...</div>
             </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="userModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">User Detail</h3>
+                <button class="modal-close" onclick="closeUserModal()">Close</button>
+            </div>
+            <div id="modalBody" class="muted">Loading...</div>
         </div>
     </div>
 
@@ -165,6 +183,11 @@
                 .filter(email => email && email.includes('@'));
         }
 
+        function formatMinutes(seconds) {
+            const mins = (Number(seconds || 0) / 60);
+            return mins.toFixed(1);
+        }
+
         function renderRegisteredUsers(users) {
             const container = document.getElementById('registeredUsers');
             if (!users || users.length === 0) {
@@ -172,21 +195,41 @@
                 return;
             }
             const rows = users.map(user => `
-                <tr>
-                    <td>${user.user_id}</td>
+                <tr class="row-click" data-user="${user.user_id}">
+                    <td class="nowrap">${user.user_id}</td>
                     <td>${user.plan_name || ''}</td>
                     <td>${user.last_activity || ''}</td>
                     <td>${user.images_processed || 0}</td>
+                    <td>${user.drive_processed || 0}</td>
+                    <td>${user.local_processed || 0}</td>
+                    <td>${user.watermark_images || 0}</td>
+                    <td>${user.searches || 0}</td>
+                    <td>${user.downloads || 0}</td>
+                    <td>${user.shares || 0}</td>
+                    <td>${user.sessions || 0}</td>
+                    <td>${formatMinutes(user.total_time_spent)}</td>
+                    <td><a class="link" href="/superadmin/user?user_id=${encodeURIComponent(user.user_id)}">View</a></td>
                 </tr>
             `).join('');
             container.innerHTML = `
                 <table>
                     <thead>
-                        <tr><th>User</th><th>Plan</th><th>Last Activity</th><th>Images</th></tr>
+                        <tr><th>User</th><th>Plan</th><th>Last Activity</th><th>Images</th><th>Drive</th><th>Local</th><th>Watermark</th><th>Searches</th><th>Downloads</th><th>Shares</th><th>Sessions</th><th>Time (min)</th><th>Details</th></tr>
                     </thead>
                     <tbody>${rows}</tbody>
                 </table>
             `;
+            users.forEach(user => {
+                const row = container.querySelector(`tr[data-user="${CSS.escape(user.user_id)}"]`);
+                if (row) {
+                    row.addEventListener('click', (event) => {
+                        if (event.target && event.target.tagName === 'A') {
+                            return;
+                        }
+                        openUserModal(user);
+                    });
+                }
+            });
         }
 
         function exportAnalytics() {
@@ -224,6 +267,61 @@
             }
             loadAnalytics();
         }
+
+        function openUserModal(user) {
+            const modal = document.getElementById('userModal');
+            const title = document.getElementById('modalTitle');
+            const body = document.getElementById('modalBody');
+            title.textContent = `User Detail: ${user.user_id}`;
+
+            const timeline = (user.sessions_timeline || []).map(s => `
+                <tr>
+                    <td>${s.start_time || ''}</td>
+                    <td>${s.last_activity || ''}</td>
+                    <td>${formatMinutes(s.total_time_spent)}</td>
+                    <td>${s.page_views || 0}</td>
+                    <td>${s.current_page || ''}</td>
+                    <td>${s.country || ''}</td>
+                    <td>${s.region || ''}</td>
+                    <td>${s.device_type || ''}</td>
+                    <td>${s.os || ''}</td>
+                </tr>
+            `).join('');
+
+            body.innerHTML = `
+                <div class="section">
+                    <div><strong>Plan:</strong> ${user.plan_name || ''}</div>
+                    <div><strong>Sessions:</strong> ${user.sessions || 0}</div>
+                    <div><strong>Time Spent:</strong> ${formatMinutes(user.total_time_spent)} min</div>
+                    <div><strong>Drive / Local / Watermark:</strong> ${user.drive_processed || 0} / ${user.local_processed || 0} / ${user.watermark_images || 0}</div>
+                    <div><strong>Searches / Downloads / Shares:</strong> ${user.searches || 0} / ${user.downloads || 0} / ${user.shares || 0}</div>
+                </div>
+                <div class="section">
+                    <h4>Sessions Timeline (latest 20)</h4>
+                    <table>
+                        <thead>
+                            <tr><th>Start</th><th>Last</th><th>Time (min)</th><th>Views</th><th>Page</th><th>Country</th><th>Region</th><th>Device</th><th>OS</th></tr>
+                        </thead>
+                        <tbody>
+                            ${timeline || '<tr><td colspan="9">No sessions</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            modal.style.display = 'flex';
+        }
+
+        function closeUserModal() {
+            const modal = document.getElementById('userModal');
+            modal.style.display = 'none';
+        }
+
+        document.getElementById('userModal').addEventListener('click', (event) => {
+            if (event.target && event.target.id === 'userModal') {
+                closeUserModal();
+            }
+        });
 
         loadAnalytics();
     </script>
