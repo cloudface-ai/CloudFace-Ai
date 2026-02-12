@@ -242,6 +242,15 @@ class AnalyticsTracker:
     def _save_state(self, state: Dict[str, Any]):
         with open(self.prune_state_file, 'w') as f:
             json.dump(state, f, indent=2)
+
+    def reset_data(self):
+        """Reset all analytics data."""
+        self._save_data(self.sessions_file, [])
+        self._save_data(self.pageviews_file, [])
+        self._save_data(self.actions_file, [])
+        self._save_data(self.shares_file, [])
+        self._save_data(self.daily_stats_file, [])
+        self._save_state({})
     
     def _extract_utm_params(self, referrer: str) -> Dict[str, str]:
         """Extract UTM parameters from referrer"""

@@ -182,6 +182,8 @@
             color: #b3261e;
         }
     </style>
+    <link rel="stylesheet" href="/static/pwa-install.css">
+    <script src="/static/pwa-install.js" defer></script>
 </head>
 <body>
     <div class="container">
@@ -566,7 +568,7 @@
             if (authPassword) {
                 document.getElementById('passwordCard').classList.add('hidden');
                 showList();
-            }
+                    }
         });
 
         function execCommand(command) {
@@ -639,7 +641,7 @@
                 range.collapse(true);
                 selection.removeAllRanges();
                 selection.addRange(range);
-            }
+                }
         }
 
         function getCleanContent() {
@@ -672,8 +674,8 @@
                 method: 'POST',
                 body: formData
             })
-                .then(res => res.json())
-                .then(data => {
+            .then(res => res.json())
+            .then(data => {
                     if (!data.success) {
                         throw new Error(data.error || 'Upload failed');
                     }

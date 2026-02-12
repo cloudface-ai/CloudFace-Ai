@@ -385,5 +385,33 @@ class PricingManager:
             print(f"❌ Failed to upgrade user {user_id} to Enterprise: {e}")
             return False
 
+    def list_registered_users(self) -> list:
+        """List registered users from pricing storage."""
+        users = []
+        if not os.path.exists(self.data_dir):
+            return users
+
+        for filename in os.listdir(self.data_dir):
+            if not filename.endswith('_plan.json'):
+                continue
+            path = os.path.join(self.data_dir, filename)
+            try:
+                with open(path, 'r') as f:
+                    data = json.load(f)
+                users.append({
+                    'user_id': data.get('user_id', filename.replace('_plan.json', '')),
+                    'plan_name': data.get('plan_name', ''),
+                    'plan_type': data.get('plan_type', ''),
+                    'created_at': data.get('created_at', ''),
+                    'last_activity': data.get('usage', {}).get('last_activity', data.get('usage', {}).get('last_reset', '')),
+                    'images_processed': data.get('usage', {}).get('images_processed', 0),
+                    'videos_processed': data.get('usage', {}).get('videos_processed', 0)
+                })
+            except Exception:
+                continue
+
+        users.sort(key=lambda x: x.get('last_activity') or '', reverse=True)
+        return users
+
 # Global pricing manager instance
 pricing_manager = PricingManager()

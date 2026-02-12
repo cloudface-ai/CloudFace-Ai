@@ -8,7 +8,7 @@
     <style>
         :root{--primary:#1a73e8;--bg:#f8f9fa;--surface:#fff;--text:#202124;--muted:#5f6368;--border:#dadce0;--radius:12px;--shadow:0 1px 3px rgba(0,0,0,.12)}
         body{font-family:'Google Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);margin:0}
-        .header{background:var(--surface);border-bottom:1px solid var(--border);padding:1rem 1.5rem;position:sticky;top:0;z-index:10}
+        .header{background:var(--surface);border-bottom:1px solid var(--border);padding:1rem 1.5rem;position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
         .container{max-width:1200px;margin:0 auto;padding:2rem 1rem}
         h1{margin:0;font-size:1.6rem}
         .muted{color:var(--muted);font-size:0.95rem}
@@ -20,12 +20,24 @@
         th{color:var(--muted)}
         .section{margin-top:2rem}
         .pill{display:inline-block;background:#e8f0fe;color:#1a73e8;padding:0.2rem 0.5rem;border-radius:999px;font-size:0.75rem}
+        .actions{display:flex;gap:0.5rem;flex-wrap:wrap}
+        .btn{background:#1a73e8;color:#fff;border:none;padding:0.5rem 0.9rem;border-radius:8px;cursor:pointer;font-size:0.9rem}
+        .btn-secondary{background:#5f6368}
+        .btn-danger{background:#d93025}
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>Superadmin Analytics</h1>
-        <div class="muted">Last 365 days</div>
+        <div>
+            <h1>Superadmin Analytics</h1>
+            <div class="muted">Last 365 days</div>
+        </div>
+        <div class="actions">
+            <button class="btn" onclick="exportAnalytics()">Export Summary</button>
+            <button class="btn" onclick="exportUsers()">Export Users CSV</button>
+            <button class="btn btn-secondary" onclick="openEmailDraft()">Email All</button>
+            <button class="btn btn-danger" onclick="resetAnalytics()">Reset Analytics</button>
+        </div>
     </div>
 
     <div class="container">
@@ -54,6 +66,13 @@
             <div class="card">
                 <h3>OS</h3>
                 <div id="oses"></div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="card">
+                <h3>Registered Users</h3>
+                <div id="registeredUsers" class="muted">Loading...</div>
             </div>
         </div>
 
@@ -111,6 +130,7 @@
 
             const cards = [
                 { label: 'Unique Users', value: data.unique_users },
+                { label: 'Registered Users', value: data.registered_users_count || 0 },
                 { label: 'Sessions', value: data.total_sessions },
                 { label: 'Searches', value: data.searches },
                 { label: 'Downloads', value: data.downloads },
@@ -139,6 +159,70 @@
             renderKeyValueTable('devices', data.device_distribution);
             renderKeyValueTable('oses', data.os_distribution);
             renderErrors(data.errors);
+            renderRegisteredUsers(data.registered_users || []);
+            window._registeredEmails = (data.registered_users || [])
+                .map(u => u.user_id)
+                .filter(email => email && email.includes('@'));
+        }
+
+        function renderRegisteredUsers(users) {
+            const container = document.getElementById('registeredUsers');
+            if (!users || users.length === 0) {
+                container.innerHTML = '<div class="muted">No registered users</div>';
+                return;
+            }
+            const rows = users.map(user => `
+                <tr>
+                    <td>${user.user_id}</td>
+                    <td>${user.plan_name || ''}</td>
+                    <td>${user.last_activity || ''}</td>
+                    <td>${user.images_processed || 0}</td>
+                </tr>
+            `).join('');
+            container.innerHTML = `
+                <table>
+                    <thead>
+                        <tr><th>User</th><th>Plan</th><th>Last Activity</th><th>Images</th></tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
+        }
+
+        function exportAnalytics() {
+            window.open('/api/superadmin/analytics/export?days=365', '_blank');
+        }
+
+        function exportUsers() {
+            window.open('/api/superadmin/analytics/export-users', '_blank');
+        }
+
+        function openEmailDraft() {
+            if (!window._registeredEmails || window._registeredEmails.length === 0) {
+                alert('No registered emails found');
+                return;
+            }
+            const maxRecipients = 80;
+            const recipients = window._registeredEmails.slice(0, maxRecipients).join(',');
+            const subject = encodeURIComponent('CloudFace AI - New updates for you');
+            const body = encodeURIComponent('Hi!\\n\\nWe have new updates in CloudFace AI. Check it out here: https://cloudface-ai.com\\n\\nThanks!');
+            window.location.href = `mailto:?bcc=${recipients}&subject=${subject}&body=${body}`;
+            if (window._registeredEmails.length > maxRecipients) {
+                alert(`Only ${maxRecipients} emails added due to mail client limits. Use Export Users CSV for full list.`);
+            }
+        }
+
+        async function resetAnalytics() {
+            if (!confirm('Reset all analytics data? This cannot be undone.')) {
+                return;
+            }
+            const response = await fetch('/api/superadmin/analytics/reset', { method: 'POST' });
+            const result = await response.json();
+            if (!result.success) {
+                alert(result.error || 'Reset failed');
+                return;
+            }
+            loadAnalytics();
         }
 
         loadAnalytics();

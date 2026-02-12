@@ -8,6 +8,7 @@ Following CORE_MVP_ROADMAP.md
 import cv2
 import numpy as np
 import os
+import re
 from typing import List, Dict, Any, Optional, Tuple
 import logging
 
@@ -349,14 +350,9 @@ class RealFaceRecognitionEngine:
                                 parts = temp.split('_', 1)
                                 if len(parts) >= 2:
                                     filename_part = parts[1]
-                                    photo_name = (
-                                        filename_part
-                                        .replace('_face_0', '')
-                                        .replace('_face_1', '')
-                                        .replace('_face_2', '')
-                                    )
+                                    photo_name = re.sub(r'_face_\d+$', '', filename_part)
                                 else:
-                                    photo_name = temp
+                                    photo_name = re.sub(r'_face_\d+$', '', temp)
                             else:
                                 file_id = person_id.split('_', 1)[1] if '_' in person_id else person_id
                                 # Find photo filename using file_id and mapping
@@ -439,11 +435,11 @@ class RealFaceRecognitionEngine:
                                 if len(parts) >= 2:
                                     # parts[1] contains: "1111/ABN10404.jpg_face_0"
                                     filename_part = parts[1]
-                                    # Remove face suffix
-                                    photo_name = filename_part.replace('_face_0', '').replace('_face_1', '').replace('_face_2', '')
+                                    # Remove any face suffix
+                                    photo_name = re.sub(r'_face_\d+$', '', filename_part)
                                     print(f"🔧 DEBUG: Final photo_name: {photo_name}")
                                 else:
-                                    photo_name = temp
+                                    photo_name = re.sub(r'_face_\d+$', '', temp)
                                     print(f"🔧 DEBUG: Fallback photo_name: {photo_name}")
                                     
                                 source = "Uploaded Files"

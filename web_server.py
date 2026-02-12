@@ -14,6 +14,8 @@ import requests
 import hashlib
 import json
 import shutil
+import csv
+from io import StringIO
 from typing import List, Dict, Any
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
@@ -77,6 +79,16 @@ def require_super_user(func):
         return func(*args, **kwargs)
     wrapper.__name__ = func.__name__
     return wrapper
+
+def _get_client_ip() -> str:
+    """Get client IP respecting reverse proxy headers."""
+    xff = request.headers.get('X-Forwarded-For', '')
+    if xff:
+        return xff.split(',')[0].strip()
+    x_real = request.headers.get('X-Real-IP')
+    if x_real:
+        return x_real.strip()
+    return request.remote_addr or ''
 
 def _format_bytes(num_bytes: int) -> str:
     """Format bytes into human-readable units."""
@@ -848,7 +860,7 @@ def index():
     """Show the main app interface"""
     # Track page view
     user_id = session.get('user_id', 'anonymous')
-    ip_address = request.remote_addr
+    ip_address = _get_client_ip()
     user_agent = request.headers.get('User-Agent', '')
     referrer = request.headers.get('Referer', '')
     
@@ -1551,7 +1563,7 @@ def analytics_pageview():
         page_title = data.get('page_title', '')
         referrer = request.headers.get('Referer', '')
         user_id = session.get('user_id', 'anonymous')
-        ip_address = request.remote_addr
+        ip_address = _get_client_ip()
         user_agent = request.headers.get('User-Agent', '')
 
         session_id = session.get('analytics_session_id')
@@ -3553,7 +3565,7 @@ def admin_link_generator():
     """Admin page to generate shareable auto-process links"""
     # Track page view
     user_id = session.get('user_id', 'anonymous')
-    ip_address = request.remote_addr
+    ip_address = _get_client_ip()
     user_agent = request.headers.get('User-Agent', '')
     referrer = request.headers.get('Referer', '')
     
@@ -3955,9 +3967,61 @@ def superadmin_analytics():
 def superadmin_analytics_data():
     """Superadmin analytics data"""
     try:
+        from pricing_manager import pricing_manager
+        days = int(request.args.get('days', 365))
+        data = analytics.get_superadmin_analytics(days)
+        registered_users = pricing_manager.list_registered_users()
+        data['registered_users'] = registered_users
+        data['registered_users_count'] = len(registered_users)
+        return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/superadmin/analytics/reset', methods=['POST'])
+@require_super_user
+def superadmin_analytics_reset():
+    """Reset all analytics data."""
+    try:
+        analytics.reset_data()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/superadmin/analytics/export')
+@require_super_user
+def superadmin_analytics_export():
+    """Export analytics summary as JSON."""
+    try:
         days = int(request.args.get('days', 365))
         data = analytics.get_superadmin_analytics(days)
         return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/superadmin/analytics/export-users')
+@require_super_user
+def superadmin_analytics_export_users():
+    """Export registered users as CSV."""
+    try:
+        from pricing_manager import pricing_manager
+        users = pricing_manager.list_registered_users()
+        output = StringIO()
+        writer = csv.writer(output)
+        writer.writerow(['user_id', 'plan_name', 'plan_type', 'created_at', 'last_activity', 'images_processed', 'videos_processed'])
+        for user in users:
+            writer.writerow([
+                user.get('user_id', ''),
+                user.get('plan_name', ''),
+                user.get('plan_type', ''),
+                user.get('created_at', ''),
+                user.get('last_activity', ''),
+                user.get('images_processed', 0),
+                user.get('videos_processed', 0)
+            ])
+        output.seek(0)
+        return Response(output.getvalue(), mimetype='text/csv', headers={
+            'Content-Disposition': 'attachment; filename="registered_users.csv"'
+        })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
