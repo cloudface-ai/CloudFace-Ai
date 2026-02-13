@@ -134,9 +134,15 @@ class PricingManager:
         if user_data.get('plan_type') != PlanType.FREE.value:
             return user_data
         if user_data.get('trial_start'):
+            # Normalize free plan limits for legacy users
+            if user_data.get('limits', {}).get('images', 0) != self.plans[PlanType.FREE]['images']:
+                user_data['limits'] = self.plans[PlanType.FREE].copy()
+                user_data['plan_name'] = self.plans[PlanType.FREE]['name']
             return user_data
         created_at = user_data.get('created_at') or datetime.now().isoformat()
         user_data['trial_start'] = created_at
+        user_data['limits'] = self.plans[PlanType.FREE].copy()
+        user_data['plan_name'] = self.plans[PlanType.FREE]['name']
         return user_data
 
     def is_trial_expired(self, user_data: Dict[str, Any]) -> bool:

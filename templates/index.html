@@ -1385,7 +1385,10 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
             <p style="margin-top: 0.6rem; color: var(--text-secondary);">
                 Your free trial or plan limit has ended. Upgrade to keep processing photos.
             </p>
-            <button class="btn" onclick="window.location.href='/pricing'" style="margin-top: 1rem;">Upgrade Now</button>
+            <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:1rem;">
+                <button class="btn" onclick="window.location.href='/pricing'">Upgrade Now</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/auth/logout'">Sign Out</button>
+            </div>
         </div>
     </div>
 
@@ -1420,6 +1423,7 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                 </select>
             </div>
             <button class="btn" onclick="saveProfileDetails()" style="margin-top: 1rem;">Save</button>
+            <button class="btn btn-secondary" onclick="window.location.href='/auth/logout'" style="margin-top: 0.6rem;">Sign Out</button>
         </div>
     </div>
 

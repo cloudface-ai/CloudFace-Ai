@@ -68,7 +68,7 @@ SUPER_USERS = ['spvinodmandan@gmail.com']
 
 def is_super_user(user_id):
     """Check if user is a super user/admin"""
-    return user_id in SUPER_USERS
+    return (user_id or '').lower() in {u.lower() for u in SUPER_USERS}
 
 def require_super_user(func):
     """Decorator to require super user authentication"""
@@ -1564,7 +1564,22 @@ def get_usage_stats():
             return jsonify({'error': 'Not authenticated'}), 401
         
         from pricing_manager import pricing_manager
-        stats = pricing_manager.get_usage_stats(session['user_id'])
+        user_id = session['user_id']
+        if is_super_user(user_id):
+            stats = pricing_manager.get_usage_stats(user_id)
+            stats['plan_name'] = 'Enterprise'
+            stats['plan_type'] = 'enterprise'
+            stats['trial'] = {
+                'trial_start': None,
+                'trial_end': None,
+                'days_left': None,
+                'expired': False
+            }
+            stats['images']['limit'] = 10000000
+            stats['images']['remaining'] = max(0, 10000000 - stats['images']['used'])
+            stats['images']['percentage'] = round((stats['images']['used'] / 10000000) * 100, 1) if stats['images']['used'] else 0
+        else:
+            stats = pricing_manager.get_usage_stats(user_id)
         
         return jsonify({'success': True, 'stats': stats})
         
@@ -1579,6 +1594,20 @@ def get_trial_status():
             return jsonify({'error': 'Not authenticated'}), 401
         from pricing_manager import pricing_manager
         user_id = session['user_id']
+        if is_super_user(user_id):
+            return jsonify({
+                'success': True,
+                'trial': {
+                    'trial_start': None,
+                    'trial_end': None,
+                    'days_left': None,
+                    'expired': False
+                },
+                'plan': {
+                    'plan_type': 'enterprise',
+                    'plan_name': 'Enterprise'
+                }
+            })
         trial_info = pricing_manager.get_trial_info(user_id)
         plan = pricing_manager.get_user_plan(user_id)
         profile = _load_user_profile(user_id)
@@ -1947,16 +1976,17 @@ def process_local():
         user_id = session.get('user_id')
         print(f"👤 User ID: {user_id}")
         
-        # Check trial expiry
-        trial_check = _check_trial_access(user_id)
-        if not trial_check['allowed']:
-            return jsonify({
-                'success': False,
-                'error': 'trial_expired',
-                'message': 'Your 7-day free trial has ended. Please upgrade to continue.',
-                'upgrade_required': True,
-                'trial': trial_check['trial']
-            })
+        # Check trial expiry (skip for super users)
+        if not is_super_user(user_id):
+            trial_check = _check_trial_access(user_id)
+            if not trial_check['allowed']:
+                return jsonify({
+                    'success': False,
+                    'error': 'trial_expired',
+                    'message': 'Your 7-day free trial has ended. Please upgrade to continue.',
+                    'upgrade_required': True,
+                    'trial': trial_check['trial']
+                })
         
         # Get uploaded files
         uploaded_files = request.files.getlist('files')
@@ -1981,16 +2011,17 @@ def process_local():
             image_files = temp_processor._filter_uploaded_image_files(uploaded_files)
             estimated_images = len(image_files)
             
-            usage_check = pricing_manager.can_process_images(user_id, estimated_images)
-            if not usage_check.get('allowed'):
-                user_plan = pricing_manager.get_user_plan(user_id)
-                return jsonify({
-                    'success': False, 
-                    'error': f'Plan limit exceeded. Found {estimated_images} images, but your {user_plan["plan_name"]} plan allows {user_plan["limits"]["images"]} images.',
-                    'upgrade_needed': True,
-                    'current_plan': user_plan["plan_name"],
-                    'estimated_images': estimated_images
-                })
+            if not is_super_user(user_id):
+                usage_check = pricing_manager.can_process_images(user_id, estimated_images)
+                if not usage_check.get('allowed'):
+                    user_plan = pricing_manager.get_user_plan(user_id)
+                    return jsonify({
+                        'success': False, 
+                        'error': f'Plan limit exceeded. Found {estimated_images} images, but your {user_plan["plan_name"]} plan allows {user_plan["limits"]["images"]} images.',
+                        'upgrade_needed': True,
+                        'current_plan': user_plan["plan_name"],
+                        'estimated_images': estimated_images
+                    })
         except ImportError:
             print("⚠️  Pricing manager not available, proceeding without limits")
         
@@ -2098,16 +2129,17 @@ def process_drive():
         if not access_token:
             return jsonify({'success': False, 'error': 'Authentication failed. Please sign in again.'})
 
-        # Check trial expiry
-        trial_check = _check_trial_access(user_id)
-        if not trial_check['allowed']:
-            return jsonify({
-                'success': False,
-                'error': 'trial_expired',
-                'message': 'Your 7-day free trial has ended. Please upgrade to continue.',
-                'upgrade_required': True,
-                'trial': trial_check['trial']
-            })
+        # Check trial expiry (skip for super users)
+        if not is_super_user(user_id):
+            trial_check = _check_trial_access(user_id)
+            if not trial_check['allowed']:
+                return jsonify({
+                    'success': False,
+                    'error': 'trial_expired',
+                    'message': 'Your 7-day free trial has ended. Please upgrade to continue.',
+                    'upgrade_required': True,
+                    'trial': trial_check['trial']
+                })
         
         # Extract folder_id from drive URL for folder isolation
         from google_drive_handler import extract_file_id_from_url
