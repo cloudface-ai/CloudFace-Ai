@@ -3,8 +3,8 @@
  * Enables offline functionality and caching
  */
 
-const CACHE_NAME = 'cloudface-ai-v2';
-const STATIC_CACHE = 'cloudface-static-v2';
+const CACHE_NAME = 'cloudface-ai-v3';
+const STATIC_CACHE = 'cloudface-static-v3';
 
 // Files to cache for offline functionality
 const STATIC_FILES = [
@@ -15,6 +15,8 @@ const STATIC_FILES = [
     '/favicon-32x32.png',
     '/favicon-16x16.png',
     '/static/Cloudface-ai-logo.png',
+    '/static/pwa-install.css',
+    '/static/pwa-install.js',
     '/static/pwa-192.png',
     '/static/pwa-512.png'
 ];

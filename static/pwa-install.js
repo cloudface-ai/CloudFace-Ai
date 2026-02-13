@@ -321,6 +321,25 @@
         }
     }
 
+    function openDiscountModal() {
+        const modal = document.getElementById('discountModal');
+        if (modal) {
+            modal.style.display = 'flex';
+        }
+    }
+
+    function closeDiscountModal() {
+        const modal = document.getElementById('discountModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+        try {
+            localStorage.setItem('cf_discount_popup_dismissed', '1');
+        } catch (e) {
+            // ignore
+        }
+    }
+
     async function saveProfileDetails() {
         const nameField = document.getElementById('profileName');
         const cityField = document.getElementById('profileCity');
@@ -393,9 +412,24 @@
                 usageFill.style.width = `${images.percentage || 0}%`;
             }
             widget.style.display = 'block';
+            scheduleDiscountPopup(stats);
         } catch (e) {
             // ignore
         }
+    }
+
+    function scheduleDiscountPopup(stats) {
+        const planType = (stats.plan_type || '').toLowerCase();
+        if (planType !== 'free') {
+            return;
+        }
+        const key = 'cf_discount_popup_dismissed';
+        if (localStorage.getItem(key) === '1') {
+            return;
+        }
+        setTimeout(() => {
+            openDiscountModal();
+        }, 10000);
     }
 
     async function loadUserProfile() {
@@ -417,12 +451,22 @@
         loadTrialStatus();
         loadUsageStats();
         loadUserProfile();
+
+        const discountBackdrop = document.getElementById('discountModal');
+        if (discountBackdrop) {
+            discountBackdrop.addEventListener('click', (event) => {
+                if (event.target && event.target.id === 'discountModal') {
+                    closeDiscountModal();
+                }
+            });
+        }
     }
 
     window.openUpgradeModal = openUpgradeModal;
     window.closeUpgradeModal = closeUpgradeModal;
     window.closeProfileModal = closeProfileModal;
     window.saveProfileDetails = saveProfileDetails;
+    window.closeDiscountModal = closeDiscountModal;
 
     window.addEventListener('load', () => {
         initAnalytics();
