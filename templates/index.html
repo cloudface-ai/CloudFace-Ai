@@ -1019,10 +1019,10 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
         .usage-fill { height: 100%; background: var(--primary); width: 0%; }
         .upgrade-btn { background: var(--primary); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; }
 
-        .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 50; }
-        .modal { background: #fff; border-radius: 12px; width: 95%; max-width: 520px; padding: 1rem; box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-        .modal-close { background: #dadce0; border: none; border-radius: 6px; padding: 0.3rem 0.6rem; cursor: pointer; }
+        .cf-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 50; }
+        .cf-modal { background: #fff; border-radius: 12px; width: 95%; max-width: 520px; padding: 1rem; box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
+        .cf-modal-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+        .cf-modal-close { background: #dadce0; border: none; border-radius: 6px; padding: 0.3rem 0.6rem; cursor: pointer; }
         .form-group { margin-top: 0.8rem; }
         .form-group label { display: block; font-weight: 500; margin-bottom: 0.3rem; }
         .form-group input, .form-group select { width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 8px; }
@@ -1376,11 +1376,11 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
         {% include 'testimonials-section.html' %}
     </div>
 
-    <div class="modal-backdrop" id="upgradeModal">
-        <div class="modal">
-            <div class="modal-header">
+    <div class="cf-modal-backdrop" id="upgradeModal">
+        <div class="cf-modal">
+            <div class="cf-modal-header">
                 <h3>Upgrade to Continue</h3>
-                <button class="modal-close" onclick="closeUpgradeModal()">Close</button>
+                <button class="cf-modal-close" onclick="closeUpgradeModal()">Close</button>
             </div>
             <p style="margin-top: 0.6rem; color: var(--text-secondary);">
                 Your free trial or plan limit has ended. Upgrade to keep processing photos.
@@ -1389,11 +1389,11 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
         </div>
     </div>
 
-    <div class="modal-backdrop" id="profileModal">
-        <div class="modal">
-            <div class="modal-header">
+    <div class="cf-modal-backdrop" id="profileModal">
+        <div class="cf-modal">
+            <div class="cf-modal-header">
                 <h3>Complete Your Profile</h3>
-                <button class="modal-close" onclick="closeProfileModal()">Close</button>
+                <button class="cf-modal-close" onclick="closeProfileModal()">Close</button>
             </div>
             <p style="margin-top: 0.4rem; color: var(--text-secondary);">Please add your details so we can support you better.</p>
             <div class="form-group">
