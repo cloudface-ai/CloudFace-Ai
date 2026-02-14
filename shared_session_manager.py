@@ -17,7 +17,8 @@ class SharedSessionManager:
     def __init__(self):
         self.db = db
     
-    def create_session(self, admin_user_id: str, folder_id: str, metadata: Dict[str, Any]) -> Optional[str]:
+    def create_session(self, admin_user_id: str, folder_id: str, metadata: Dict[str, Any],
+                       photo_paths: Optional[List[str]] = None) -> Optional[str]:
         """
         Create a new shared session after admin processes photos
         
@@ -25,6 +26,7 @@ class SharedSessionManager:
             admin_user_id: The admin who processed the photos
             folder_id: The Google Drive folder ID that was processed
             metadata: Additional info (event name, date, company, etc.)
+            photo_paths: For folder_id 'uploaded', list of relative file paths in this event (so count is per-event)
         
         Returns:
             session_id: Unique session ID for sharing
@@ -35,12 +37,15 @@ class SharedSessionManager:
             
             if self.db is None:
                 print("⚠️  No Firebase client; using local file storage for sessions")
-                return self._create_local_session(admin_user_id, folder_id, metadata)
+                return self._create_local_session(admin_user_id, folder_id, metadata, photo_paths=photo_paths)
             
             # Generate unique session ID
             session_id = str(uuid.uuid4())[:12]  # Short ID like: a1b2c3d4e5f6
             print(f"🔍 Generated session ID: {session_id}")
-            
+            # For local (uploaded) events, folder_id = session_id so files go to storage/uploads/admin_id/session_id/
+            if folder_id == 'uploaded':
+                folder_id = session_id
+                print(f"🔍 Local event: folder_id set to session_id for per-event storage")
             # Create session document
             session_data = {
                 'session_id': session_id,
@@ -52,6 +57,8 @@ class SharedSessionManager:
                 'access_count': 0,
                 'status': 'active'
             }
+            if photo_paths is not None:
+                session_data['photo_paths'] = photo_paths
             print(f"🔍 Session data prepared: {session_data}")
             
             # Save to Firestore
@@ -63,7 +70,7 @@ class SharedSessionManager:
             except Exception as firebase_error:
                 print(f"❌ Firebase save failed: {firebase_error}")
                 print("🔄 Falling back to local storage")
-                return self._create_local_session(admin_user_id, folder_id, metadata)
+                return self._create_local_session(admin_user_id, folder_id, metadata, photo_paths=photo_paths)
             
             print(f"✅ Created shared session: {session_id}")
             print(f"   Admin: {admin_user_id}")
@@ -78,7 +85,8 @@ class SharedSessionManager:
             traceback.print_exc()
             return None
     
-    def _create_local_session(self, admin_user_id: str, folder_id: str, metadata: Dict[str, Any]) -> Optional[str]:
+    def _create_local_session(self, admin_user_id: str, folder_id: str, metadata: Dict[str, Any],
+                              photo_paths: Optional[List[str]] = None) -> Optional[str]:
         """Create session using local file storage when Firebase is not available"""
         try:
             import os
@@ -89,7 +97,8 @@ class SharedSessionManager:
             
             # Generate unique session ID
             session_id = str(uuid.uuid4())[:12]
-            
+            if folder_id == 'uploaded':
+                folder_id = session_id
             # Create session data
             session_data = {
                 'session_id': session_id,
@@ -101,6 +110,8 @@ class SharedSessionManager:
                 'access_count': 0,
                 'status': 'active'
             }
+            if photo_paths is not None:
+                session_data['photo_paths'] = photo_paths
             
             # Save to local file
             session_file = os.path.join(sessions_dir, f"{session_id}.json")
@@ -112,6 +123,100 @@ class SharedSessionManager:
             
         except Exception as e:
             print(f"❌ Error creating local session: {e}")
+            return None
+    
+    def find_session_for_admin_and_folder(self, admin_user_id: str, folder_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Find an existing active, non‑expired session for a given admin + folder.
+        Returns the session data dict if found, otherwise None.
+        """
+        try:
+            if not admin_user_id or not folder_id:
+                return None
+            
+            if self.db is None:
+                # Fallback to local file lookup
+                return self._find_local_session_for_admin_and_folder(admin_user_id, folder_id)
+            
+            # Query Firestore for matching sessions
+            query = (
+                self.db.collection(SESSIONS_COLLECTION)
+                .where('admin_user_id', '==', admin_user_id)
+                .where('folder_id', '==', folder_id)
+            )
+            docs = list(query.stream())
+            
+            for doc in docs:
+                session_data = doc.to_dict()
+                # Skip inactive sessions
+                if session_data.get('status') != 'active':
+                    continue
+                
+                # Skip expired sessions
+                expires_at_str = session_data.get('expires_at')
+                if expires_at_str:
+                    try:
+                        expires_at = datetime.fromisoformat(expires_at_str)
+                        if datetime.utcnow() > expires_at:
+                            continue
+                    except Exception:
+                        # If parsing fails, be safe and skip this record
+                        continue
+                
+                # Attach Firestore document ID for convenience
+                session_data.setdefault('id', doc.id)
+                print(f"✅ Found existing shared session for admin={admin_user_id}, folder={folder_id}: {session_data.get('session_id') or doc.id}")
+                return session_data
+            
+            # Nothing found
+            return None
+        
+        except Exception as e:
+            print(f"❌ Error finding session for admin/folder: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+    
+    def _find_local_session_for_admin_and_folder(self, admin_user_id: str, folder_id: str) -> Optional[Dict[str, Any]]:
+        """Local‑file equivalent of find_session_for_admin_and_folder."""
+        try:
+            sessions_dir = 'storage/sessions'
+            if not os.path.isdir(sessions_dir):
+                return None
+            
+            for filename in os.listdir(sessions_dir):
+                if not filename.endswith('.json'):
+                    continue
+                session_file = os.path.join(sessions_dir, filename)
+                try:
+                    with open(session_file, 'r') as f:
+                        data = json.load(f)
+                except Exception:
+                    continue
+                
+                if data.get('admin_user_id') != admin_user_id:
+                    continue
+                if data.get('folder_id') != folder_id:
+                    continue
+                if data.get('status') != 'active':
+                    continue
+                
+                expires_at_str = data.get('expires_at')
+                if expires_at_str:
+                    try:
+                        expires_at = datetime.fromisoformat(expires_at_str)
+                        if datetime.utcnow() > expires_at:
+                            continue
+                    except Exception:
+                        continue
+                
+                print(f"✅ Found local shared session for admin={admin_user_id}, folder={folder_id}: {data.get('session_id')}")
+                return data
+            
+            return None
+        
+        except Exception as e:
+            print(f"❌ Error finding local session for admin/folder: {e}")
             return None
     
     def get_session(self, session_id: str) -> Optional[Dict[str, Any]]:
@@ -137,7 +242,8 @@ class SharedSessionManager:
             
                 if not doc.exists:
                     print(f"❌ Session not found in Firebase: {session_id}")
-                    return None
+                    # Fallback to local session storage if Firebase record is missing.
+                    return self._get_local_session(session_id)
             
                 session_data = doc.to_dict()
             
@@ -235,6 +341,38 @@ class SharedSessionManager:
             print(f"❌ Error deactivating session: {e}")
             return False
     
+    def append_photo_paths_to_session(self, session_id: str, new_relative_paths: List[str]) -> bool:
+        """Append photo paths to an existing session (for event-add-photos). Returns True if updated."""
+        if not new_relative_paths:
+            return True
+        try:
+            session_data = self.get_session(session_id)
+            if not session_data:
+                return False
+            current = list(session_data.get('photo_paths') or [])
+            seen = set(current)
+            for p in new_relative_paths:
+                if p and p not in seen:
+                    current.append(p)
+                    seen.add(p)
+            updated_paths = current
+            if self.db is not None:
+                doc_ref = self.db.collection(SESSIONS_COLLECTION).document(session_id)
+                doc_ref.update({'photo_paths': updated_paths})
+                print(f"✅ Updated session {session_id} photo_paths: +{len(new_relative_paths)} total {len(updated_paths)}")
+                return True
+            session_file = os.path.join('storage', 'sessions', f"{session_id}.json")
+            if os.path.isfile(session_file):
+                session_data['photo_paths'] = updated_paths
+                with open(session_file, 'w') as f:
+                    json.dump(session_data, f, indent=2)
+                print(f"✅ Updated local session {session_id} photo_paths: +{len(new_relative_paths)} total {len(updated_paths)}")
+                return True
+            return False
+        except Exception as e:
+            print(f"❌ Error appending photo paths to session: {e}")
+            return False
+
     def get_admin_sessions(self, admin_user_id: str) -> List[Dict[str, Any]]:
         """
         Get all sessions created by an admin

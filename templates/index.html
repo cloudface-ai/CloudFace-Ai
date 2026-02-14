@@ -1251,26 +1251,30 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                     <span>or</span>
                 </div>
                 
-                <!-- Local Folder Option -->
+                <!-- Local folder or individual photos -->
                 <div class="folder-selector">
                     <button type="button" class="btn btn-outline" onclick="selectLocalFolder()">
-                        📂 Select local folder
+                        📂 Select folder
+                    </button>
+                    <span style="margin: 0 0.5rem; color: var(--text-secondary);">or</span>
+                    <button type="button" class="btn btn-outline" onclick="selectLocalFiles()">
+                        📷 Select photos
                     </button>
                     <input type="file" id="localFolderInput" webkitdirectory directory multiple style="display: none;" onchange="handleLocalFolderSelection(this)">
+                    <input type="file" id="localFilesInput" multiple accept="image/*" style="display: none;" onchange="handleLocalFilesSelection(this)">
                     <div class="help-guide">
                         <details>
                             <summary>📖 How to select local photos</summary>
                             <ol>
-                                <li>Click "Select local folder" above</li>
-                                <li>Choose a folder containing your photos</li>
-                                <li>Make sure the folder has image files (JPG, PNG, etc.)</li>
-                                <li>Click "Process Photos" when ready</li>
+                                <li><strong>Select folder</strong> – choose a folder; all images inside will be used.</li>
+                                <li><strong>Select photos</strong> – pick specific image files (you can select multiple).</li>
+                                <li>Click "Process Photos" when ready.</li>
                             </ol>
                         </details>
                     </div>
                     <div id="selectedFolderPath" class="selected-folder-path"></div>
                     <button type="button" class="btn btn-secondary" onclick="clearLocalFolder()" style="display: none; margin-top: 0.5rem; font-size: 0.8rem;" id="clearFolderBtn">
-                        🧹 Clear Folder
+                        🧹 Clear selection
                     </button>
                 </div>
                 
@@ -2106,9 +2110,6 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
         
         // Check authentication status when page loads
         document.addEventListener('DOMContentLoaded', function() {
-            checkAuthStatus();
-            
-            // Check for session ID (shared/pre-processed photos)
             const urlParams = new URLSearchParams(window.location.search);
             const sessionId = urlParams.get('session');
             const autoDriveUrl = urlParams.get('auto_drive');
@@ -2118,22 +2119,23 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
             
             if (sessionId) {
                 console.log('🔗 Shared session detected:', sessionId);
-                
-                // Load pre-processed session data
-                setTimeout(() => {
-                    const authSection = document.getElementById('authenticated');
-                    if (authSection && authSection.style.display === 'block') {
-                        console.log('✅ User authenticated, loading shared session');
-                        loadSharedSession(sessionId);
-                    } else {
-                        console.log('⚠️ User not authenticated, will load session after login');
-                        // Store session ID to load after authentication
-                        sessionStorage.setItem('pendingSessionId', sessionId);
-                    }
-                }, 2000);
+                sessionStorage.setItem('pendingSessionId', sessionId);
+            } else {
+                // Critical: plain /app should create a new event, never reuse stale browser session IDs.
+                sessionStorage.removeItem('uploadSessionId');
             }
+            
+            checkAuthStatus().then(function(authenticated) {
+                const pendingId = sessionStorage.getItem('pendingSessionId') || sessionId;
+                if (pendingId && authenticated) {
+                    console.log('✅ Loading shared session:', pendingId);
+                    loadSharedSession(pendingId);
+                    sessionStorage.removeItem('pendingSessionId');
+                }
+            });
+            
             // Auto-process feature: Check for auto_drive URL parameter
-            else if (autoDriveUrl) {
+            if (autoDriveUrl) {
                 console.log('🚀 Auto-process mode detected:', autoDriveUrl);
                 
                 // Auto-fill the Drive URL field
@@ -2158,7 +2160,7 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
         });
         
         function checkAuthStatus() {
-            fetch('/auth/status', { credentials: 'same-origin' })
+            return fetch('/auth/status', { credentials: 'same-origin' })
                 .then(response => response.json())
                 .then(data => {
                     if (data.authenticated) {
@@ -2166,20 +2168,20 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                         document.getElementById('notAuthenticated').style.display = 'none';
                         document.getElementById('mainContent').style.display = 'grid';
                         document.getElementById('userEmail').textContent = data.user.email;
-                        // Show My Photos button when authenticated
-                        document.getElementById('myPhotosBtn').style.display = 'block';
+                        if (document.getElementById('myPhotosBtn')) document.getElementById('myPhotosBtn').style.display = 'block';
                     } else {
                         document.getElementById('authenticated').style.display = 'none';
                         document.getElementById('notAuthenticated').style.display = 'block';
                         document.getElementById('mainContent').style.display = 'none';
-                        // Hide My Photos button when not authenticated
-                        document.getElementById('myPhotosBtn').style.display = 'none';
+                        if (document.getElementById('myPhotosBtn')) document.getElementById('myPhotosBtn').style.display = 'none';
                     }
+                    return !!data.authenticated;
                 })
                 .catch(error => {
                     console.error('Error checking auth status:', error);
                     document.getElementById('notAuthenticated').style.display = 'block';
-                    document.getElementById('mainContent').style.display = 'none';
+                    if (document.getElementById('mainContent')) document.getElementById('mainContent').style.display = 'none';
+                    return false;
                 });
         }
 
@@ -2263,15 +2265,47 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
         }
 
         function selectLocalFolder() {
+            document.getElementById('localFilesInput').value = '';
             const folderInput = document.getElementById('localFolderInput');
             folderInput.click();
         }
+
+        function selectLocalFiles() {
+            document.getElementById('localFolderInput').value = '';
+            document.getElementById('localFilesInput').click();
+        }
+        
+        function handleLocalFilesSelection(input) {
+            const files = Array.from(input.files || []);
+            const imageFiles = files.filter(function(file) {
+                var t = (file.type || '').toLowerCase();
+                return t === 'image/jpeg' || t === 'image/jpg' || t === 'image/png' || t === 'image/gif' || t === 'image/bmp' || t === 'image/webp';
+            });
+            selectedLocalFiles = imageFiles;
+            if (selectedLocalFiles.length === 0) {
+                clearLocalFolder();
+                return;
+            }
+            document.getElementById('selectedFolderPath').textContent = '📷 Selected: ' + selectedLocalFiles.length + ' photo' + (selectedLocalFiles.length !== 1 ? 's' : '');
+            document.getElementById('photoCount').textContent = selectedLocalFiles.length;
+            document.getElementById('folderCount').textContent = '—';
+            var folderInfo = document.getElementById('folderInfo');
+            folderInfo.style.display = 'block';
+            var depthWarning = document.getElementById('depthWarning');
+            if (depthWarning) depthWarning.remove();
+            document.getElementById('searchBtn').disabled = false;
+            document.getElementById('searchBtn').textContent = '🔍 Search ' + selectedLocalFiles.length + ' Photos';
+            lockDriveUrl(true);
+            document.getElementById('clearFolderBtn').style.display = 'inline-block';
+            console.log('📷 Selected ' + selectedLocalFiles.length + ' photo(s)');
+        }
         
         function clearLocalFolder() {
-            // Clear local folder selection
+            // Clear local folder / files selection
             selectedLocalFiles = [];
             clearLocalShareReady();
             document.getElementById('localFolderInput').value = '';
+            document.getElementById('localFilesInput').value = '';
             document.getElementById('selectedFolderPath').textContent = '';
             document.getElementById('folderInfo').style.display = 'none';
             document.getElementById('clearFolderBtn').style.display = 'none';
@@ -2469,6 +2503,10 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
 
             // Show local progress bar
             const fileCount = selectedLocalFiles.length;
+            if (fileCount > 500) {
+                showStatus('processStatus', 'Max 500 images per upload. Please split into smaller batches.', 'error');
+                return;
+            }
             clearLocalShareReady();
             showLocalProgressBar(fileCount);
 
@@ -2482,6 +2520,13 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
             
             // Add other parameters
             formData.append('force_reprocess', forceReprocess);
+            // Per-event append is allowed only when event_id is explicitly present in URL.
+            // Plain /app uploads must create a new event and must NOT reuse stale browser state.
+            const uploadSessionId = new URLSearchParams(window.location.search).get('session') || '';
+            if (uploadSessionId) {
+                formData.append('session_id', uploadSessionId);
+                console.log('📁 Uploading to event/session:', uploadSessionId);
+            }
 
             // Debug: Log what we're sending
             console.log(`📤 Uploading ${selectedLocalFiles.length} files to /process_local`);
@@ -2489,57 +2534,66 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                 key === 'files' ? `${key}: ${value.name} (${value.size} bytes)` : `${key}: ${value}`
             ));
 
-            // Send files to backend
-            fetch('/process_local', {
-                method: 'POST',
-                body: formData,
-                credentials: 'same-origin'
-            })
-            .then(response => {
-                console.log('📡 Response status:', response.status);
-                console.log('📡 Response headers:', response.headers);
-                return response.json();
-            })
-            .then(data => {
-                    if (data.success) {
-                    if (data.status === 'processing') {
-                        // Update progress to show processing
-                        updateLocalProgress(50, 'Processing photos...', `Analyzing ${fileCount} photos`);
-                        
-                        // Start polling for completion
-                        startLocalProgressPolling();
-                    } else {
-                        // Immediate completion
-                        updateLocalProgress(100, 'Complete!', `Processed ${data.processed_count} faces`);
-                            const message = data.cached_result ? 
-                                `✅ ${data.message} (using cache)` : 
-                                `✅ Successfully processed ${data.processed_count} faces from ${data.total_files} uploaded images`;
-                            showStatus('processStatus', message, 'success');
-                            document.getElementById('searchBtn').disabled = false;
-                            setLocalShareReady({
-                                totalFiles: data.total_files || fileCount,
-                                processedCount: data.processed_count || 0
-                            });
-                    }
-                } else {
-                    hideLocalProgressBar();
-                    let errorMessage = data.error || 'Unknown error occurred';
-                    
-                    if (data.upgrade_needed || data.upgrade_required || data.error === 'trial_expired') {
-                        if (typeof openUpgradeModal === 'function') {
-                            openUpgradeModal();
-                        }
-                        errorMessage += ` <a href="/pricing" style="color: var(--primary); text-decoration: underline;">Upgrade your plan</a>`;
-                    }
-                    
-                    showStatus('processStatus', `❌ ${errorMessage}`, 'error');
+            // Send files to backend with upload progress
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '/process_local', true);
+            xhr.withCredentials = true;
+
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) {
+                    const percent = Math.min(60, Math.round((event.loaded / event.total) * 60));
+                    updateLocalProgress(percent, 'Uploading files...', `Uploaded ${Math.round(event.loaded / 1024 / 1024)} MB`);
                 }
-            })
-            .catch(error => {
+            };
+
+            xhr.onreadystatechange = () => {
+                if (xhr.readyState !== 4) {
+                    return;
+                }
+                try {
+                    const data = JSON.parse(xhr.responseText || '{}');
+                    if (data.success) {
+                        updateLocalProgress(100, 'Complete!', `Processed ${data.processed_count} faces`);
+                        if (data.session_id) {
+                            console.log('📁 New event session created:', data.session_id);
+                        }
+                        const message = data.cached_result ?
+                            `✅ ${data.message} (using cache)` :
+                            `✅ Successfully processed ${data.processed_count} faces from ${data.total_files} uploaded images`;
+                        if (data.session_id) {
+                            showStatus('processStatus', message + ' Event saved. Go to Dashboard to get your share link.', 'success');
+                        } else {
+                            showStatus('processStatus', message, 'success');
+                        }
+                        document.getElementById('searchBtn').disabled = false;
+                        setLocalShareReady({
+                            totalFiles: data.total_files || fileCount,
+                            processedCount: data.processed_count || 0,
+                            sessionId: data.session_id || null
+                        });
+                    } else {
+                        hideLocalProgressBar();
+                        let errorMessage = data.error || 'Unknown error occurred';
+                        if (data.upgrade_needed || data.upgrade_required || data.error === 'trial_expired') {
+                            if (typeof openUpgradeModal === 'function') {
+                                openUpgradeModal();
+                            }
+                            errorMessage += ` <a href="/pricing" style="color: var(--primary); text-decoration: underline;">Upgrade your plan</a>`;
+                        }
+                        showStatus('processStatus', `❌ ${errorMessage}`, 'error');
+                    }
+                } catch (error) {
+                    hideLocalProgressBar();
+                    showStatus('processStatus', '❌ Network error: Failed to parse response', 'error');
+                }
+            };
+
+            xhr.onerror = () => {
                 hideLocalProgressBar();
-                console.error('Error:', error);
-                showStatus('processStatus', `❌ Network error: ${error.message}`, 'error');
-            });
+                showStatus('processStatus', '❌ Network error: Failed to upload files', 'error');
+            };
+
+            xhr.send(formData);
         }
 
 
@@ -2645,24 +2699,9 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                 return;
             }
             
-            createLocalShareLink();
-        }
-
-        function createLocalShareLink() {
-            const shareBtn = document.getElementById('localShareBtn');
-            const originalText = shareBtn ? shareBtn.textContent : '';
-            if (shareBtn) {
-                shareBtn.disabled = true;
-                shareBtn.textContent = '⏳ Opening share generator...';
-            }
-            
+            // When sharing local uploads, send the admin to the link generator in local mode.
             const generatorUrl = '/admin/link-generator?local=1';
             window.open(generatorUrl, '_blank');
-            
-            if (shareBtn) {
-                shareBtn.disabled = false;
-                shareBtn.textContent = originalText || '📤 Share Now - Create Link for Others';
-            }
         }
 
         // NEW: Load pre-processed shared session
@@ -2678,8 +2717,8 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                 .then(data => {
                     if (data.success) {
                         console.log('✅ Session data loaded:', data);
-                        
-                        // Lock entire Step 1 section for shared sessions
+                        sessionStorage.setItem('uploadSessionId', sessionId);
+                        // Lock entire Step 1 section for shared sessions (end users; owner can still upload to this event)
                         const step1Section = document.querySelector('.section:first-of-type');
                         const processBtn = document.querySelector('.btn[onclick="processPhotos()"]');
                         const driveInput = document.getElementById('driveUrl');
@@ -2933,8 +2972,12 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                 const photoCard = document.createElement('div');
                 photoCard.className = 'photo-card';
                 
-                // Use the full photo_path for the photo source to get original files
-                const photoPath = match.photo_path || match.photo_reference || 'unknown.jpg';
+                // Use the actual file path for serving; never use full uploaded_..._face_N as path
+                let photoPath = match.photo_path || '';
+                if (!photoPath && match.photo_reference && match.photo_reference.indexOf('uploaded_') !== 0)
+                    photoPath = match.photo_reference;
+                if (!photoPath || photoPath.indexOf('uploaded_') === 0 || photoPath.indexOf('_face_') !== -1)
+                    photoPath = match.photo_name || match.photo_path || 'unknown.jpg';
                 const encodedPhotoPath = encodeURIComponent(photoPath);
                 console.log(`📁 Photo path: ${photoPath}`);
                 console.log(`📁 Photo path type:`, typeof photoPath);
@@ -2979,16 +3022,38 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
         }
 
         function downloadPhoto(photoPath) {
-            // Create download link for original file
-            const link = document.createElement('a');
-            link.href = `/photo/${encodeURIComponent(photoPath)}?download=1`;
-            link.download = photoPath.split('/').pop() || 'photo.jpg';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
-            // Record download as positive feedback for learning
-            recordDownloadFeedback(photoPath);
+            const url = `/photo/${encodeURIComponent(photoPath)}?download=1`;
+            fetch(url, { credentials: 'same-origin' })
+                .then(function(response) {
+                    const contentType = (response.headers.get('Content-Type') || '').toLowerCase();
+                    if (!response.ok) {
+                        return response.text().then(function(text) {
+                            console.error('Download failed:', response.status, text);
+                            alert('Could not download photo. The file may not be available.');
+                        });
+                    }
+                    if (contentType.indexOf('image/') !== 0) {
+                        console.error('Response is not an image:', contentType);
+                        alert('Could not download photo. Server did not return an image.');
+                        return;
+                    }
+                    return response.blob();
+                })
+                .then(function(blob) {
+                    if (!blob) return;
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = photoPath.split('/').pop() || 'photo.jpg';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(link.href);
+                    recordDownloadFeedback(photoPath);
+                })
+                .catch(function(err) {
+                    console.error('Download error:', err);
+                    alert('Could not download photo.');
+                });
         }
         
         function recordDownloadFeedback(photoPath) {

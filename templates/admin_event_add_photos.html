@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Photos to Event - CloudFace AI</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #1557b0;
+            --success: #34a853;
+            --bg: #f8f9fa;
+            --surface: #ffffff;
+            --text: #202124;
+            --text-secondary: #5f6368;
+            --border: #e8eaed;
+            --radius: 8px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+        .page { max-width: 640px; margin: 0 auto; padding: 1.5rem 1rem; }
+        .header {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        .back-link:hover { text-decoration: underline; }
+        .header h1 { font-size: 1.35rem; margin-bottom: 0.25rem; }
+        .header p { color: var(--text-secondary); font-size: 0.9rem; }
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        .card h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+        .file-area {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            background: var(--bg);
+        }
+        .file-area.dragover { border-color: var(--primary); background: #e8f0fe; }
+        .file-area input[type="file"] { display: none; }
+        .file-area label {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .file-area label:hover { background: var(--primary-dark); }
+        .file-list { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.75rem; }
+        .btn-upload {
+            width: 100%;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--success), #0d8f3f);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+        .btn-upload:hover { opacity: 0.95; }
+        .btn-upload:disabled { opacity: 0.6; cursor: not-allowed; }
+        .progress { margin-top: 1rem; display: none; }
+        .progress.visible { display: block; }
+        .progress-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+        .progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.2s; }
+        .progress-text { font-size: 0.9rem; color: var(--text-secondary); }
+        .result { margin-top: 1rem; padding: 1rem; border-radius: 6px; display: none; }
+        .result.visible { display: block; }
+        .result.success { background: #e6f4ea; border: 1px solid var(--success); color: #137333; }
+        .result.error { background: #fce8e6; border: 1px solid #ea4335; color: #c5221f; }
+        .result a { color: var(--primary); }
+        .divider { margin: 1.5rem 0; border-top: 1px solid var(--border); padding-top: 1.5rem; }
+        .drive-input { width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 0.75rem; font-size: 0.95rem; }
+        .btn-drive { width: 100%; padding: 12px 24px; background: linear-gradient(135deg, #1a73e8, #1557b0); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 0.25rem; }
+        .btn-drive:hover { opacity: 0.95; }
+        .btn-drive:disabled { opacity: 0.6; cursor: not-allowed; }
+        .drive-hint { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <a class="back-link" href="/admin/dashboard">← Back to Dashboard</a>
+            <h1>Add Photos to Event</h1>
+            <p>{{ session_data.metadata.event_name or 'Untitled Event' }} · Same link will show all photos</p>
+        </div>
+        <div class="card">
+            <h2>Select photos to add</h2>
+            <div class="file-area" id="fileArea">
+                <input type="file" id="fileInput" name="files" multiple accept="image/*">
+                <label for="fileInput">Choose files</label>
+                <div class="file-list" id="fileList">No files selected</div>
+            </div>
+            <button type="button" class="btn-upload" id="uploadBtn" disabled>Upload and add to event</button>
+            <div class="progress" id="progressSection">
+                <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                <div class="progress-text" id="progressText">Uploading...</div>
+            </div>
+            <div class="result" id="result"></div>
+
+            <div class="divider">
+                <h2>Or add from Google Drive</h2>
+                <p class="drive-hint">Paste a Google Drive folder link. The folder must be shared with the CloudFace AI service account (or shared publicly with “Anyone with the link”).</p>
+                <input type="url" class="drive-input" id="driveUrl" placeholder="https://drive.google.com/drive/folders/...">
+                <button type="button" class="btn-drive" id="addFromDriveBtn">Add from Drive</button>
+                <div class="progress" id="driveProgressSection" style="display: none;">
+                    <div class="progress-bar"><div class="progress-fill" id="driveProgressFill" style="width: 0%;"></div></div>
+                    <div class="progress-text" id="driveProgressText">Fetching from Drive...</div>
+                </div>
+                <div class="result" id="driveResult"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const sessionId = '{{ event_session_id or session_data.session_id or "" }}';
+        const fileInput = document.getElementById('fileInput');
+        const fileArea = document.getElementById('fileArea');
+        const fileList = document.getElementById('fileList');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const progressSection = document.getElementById('progressSection');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const resultEl = document.getElementById('result');
+
+        function updateFileList() {
+            const files = fileInput.files;
+            if (!files.length) {
+                fileList.textContent = 'No files selected';
+                uploadBtn.disabled = true;
+                return;
+            }
+            fileList.textContent = files.length + ' file(s) selected';
+            uploadBtn.disabled = false;
+        }
+        fileInput.addEventListener('change', updateFileList);
+
+        fileArea.addEventListener('dragover', e => { e.preventDefault(); fileArea.classList.add('dragover'); });
+        fileArea.addEventListener('dragleave', () => fileArea.classList.remove('dragover'));
+        fileArea.addEventListener('drop', e => {
+            e.preventDefault();
+            fileArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                updateFileList();
+            }
+        });
+
+        uploadBtn.addEventListener('click', function() {
+            if (!sessionId) {
+                resultEl.className = 'result visible error';
+                resultEl.textContent = 'Missing event_id. Please open Add Photos from Dashboard on an existing event.';
+                return;
+            }
+            const files = fileInput.files;
+            if (!files.length) return;
+            uploadBtn.disabled = true;
+            resultEl.classList.remove('visible');
+            progressSection.classList.add('visible');
+            progressFill.style.width = '10%';
+            progressText.textContent = 'Uploading...';
+
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) formData.append('files', files[i]);
+
+            const xhr = new XMLHttpRequest();
+            xhr.upload.onprogress = function(e) {
+                if (e.lengthComputable) {
+                    const pct = Math.min(90, Math.round((e.loaded / e.total) * 90));
+                    progressFill.style.width = pct + '%';
+                }
+            };
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState !== 4) return;
+                progressSection.classList.remove('visible');
+                progressFill.style.width = '100%';
+                try {
+                    const data = JSON.parse(xhr.responseText || '{}');
+                    resultEl.classList.add('visible');
+                    if (data.success) {
+                        resultEl.className = 'result visible success';
+                        resultEl.innerHTML = 'Added ' + (data.processed_count || 0) + ' faces from ' + (data.total_files || 0) + ' images. <a href="/admin/dashboard">Back to Dashboard</a> · <a href="/admin/event-photos/' + sessionId + '">View event photos</a>';
+                        fileInput.value = '';
+                        updateFileList();
+                    } else {
+                        resultEl.className = 'result visible error';
+                        resultEl.textContent = data.error || data.message || 'Upload failed';
+                    }
+                } catch (e) {
+                    resultEl.classList.add('visible', 'error');
+                    resultEl.textContent = 'Request failed';
+                }
+                uploadBtn.disabled = false;
+            };
+            xhr.open('POST', '/api/admin/append-event-photos/' + sessionId);
+            xhr.send(formData);
+        });
+
+        const driveUrlInput = document.getElementById('driveUrl');
+        const addFromDriveBtn = document.getElementById('addFromDriveBtn');
+        const driveProgressSection = document.getElementById('driveProgressSection');
+        const driveProgressFill = document.getElementById('driveProgressFill');
+        const driveProgressText = document.getElementById('driveProgressText');
+        const driveResultEl = document.getElementById('driveResult');
+
+        addFromDriveBtn.addEventListener('click', function() {
+            if (!sessionId) {
+                driveResultEl.className = 'result visible error';
+                driveResultEl.textContent = 'Missing event_id. Please open Add Photos from Dashboard on an existing event.';
+                return;
+            }
+            const driveUrl = (driveUrlInput.value || '').trim();
+            if (!driveUrl || driveUrl.indexOf('drive.google.com') === -1) {
+                driveResultEl.className = 'result visible error';
+                driveResultEl.textContent = 'Please enter a valid Google Drive folder URL.';
+                return;
+            }
+            addFromDriveBtn.disabled = true;
+            driveResultEl.classList.remove('visible');
+            driveProgressSection.style.display = 'block';
+            driveProgressFill.style.width = '30%';
+            driveProgressText.textContent = 'Downloading and processing from Drive...';
+
+            fetch('/api/admin/append-event-photos-from-drive/' + sessionId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ drive_url: driveUrl, max_depth: 10 })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                driveProgressSection.style.display = 'none';
+                driveProgressFill.style.width = '0%';
+                addFromDriveBtn.disabled = false;
+                driveResultEl.classList.add('visible');
+                if (data.success) {
+                    driveResultEl.className = 'result visible success';
+                    driveResultEl.innerHTML = 'Added ' + (data.processed_count || 0) + ' faces from ' + (data.total_files || 0) + ' images from Drive. <a href="/admin/dashboard">Back to Dashboard</a> · <a href="/admin/event-photos/' + sessionId + '">View event photos</a>';
+                    driveUrlInput.value = '';
+                } else {
+                    driveResultEl.className = 'result visible error';
+                    driveResultEl.textContent = data.error || data.message || 'Failed to add from Drive';
+                }
+            })
+            .catch(function(err) {
+                driveProgressSection.style.display = 'none';
+                addFromDriveBtn.disabled = false;
+                driveResultEl.className = 'result visible error';
+                driveResultEl.textContent = 'Request failed: ' + (err.message || 'Network error');
+            });
+        });
+    </script>
+</body>
+</html>

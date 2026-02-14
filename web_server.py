@@ -4,7 +4,7 @@ Facetak Web Server
 Connects HTML frontend to existing Python backend with OAuth integration
 """
 
-from flask import Flask, render_template, request, jsonify, send_from_directory, send_file, session, redirect, url_for, after_this_request
+from flask import Flask, render_template, request, jsonify, send_from_directory, send_file, session, redirect, url_for, after_this_request, Response
 from service_account_drive import get_service_account_access_token
 import os
 import tempfile
@@ -17,7 +17,7 @@ import shutil
 import csv
 import zipfile
 from io import StringIO
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from urllib.parse import urlencode, parse_qs, urlparse
@@ -347,6 +347,160 @@ def _list_user_uploads(user_id: str, limit: int = 200) -> List[Dict[str, Any]]:
 
     entries.sort(key=lambda x: x.get('modified') or '', reverse=True)
     return entries
+
+
+def _find_single_non_empty_upload_subfolder(admin_id: str) -> Optional[str]:
+    """If there is exactly one subfolder under uploads that has images (e.g. legacy '100'), return it; else None."""
+    base = os.path.join('storage', 'uploads', admin_id)
+    if not os.path.isdir(base):
+        return None
+    non_empty = []
+    for name in os.listdir(base):
+        path = os.path.join(base, name)
+        if not os.path.isdir(path):
+            continue
+        for _root, _dirs, files in os.walk(path):
+            if any(_is_image_file(f) for f in files):
+                non_empty.append(name)
+                break
+            break
+    return non_empty[0] if len(non_empty) == 1 else None
+
+
+def _event_photos_dir(event_id: str) -> str:
+    """Canonical event photo storage path: storage/events/{event_id}/photos/"""
+    return os.path.join('storage', 'events', event_id, 'photos')
+
+
+def _lookup_event_link_by_session(event_id: str, admin_user_id: str) -> Optional[Dict[str, Any]]:
+    """Fallback event identity lookup from admin_links when session store is unavailable."""
+    if not event_id or not admin_user_id:
+        return None
+    links_file = 'storage/admin_links.json'
+    try:
+        with open(links_file, 'r') as f:
+            links = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+    for link in links:
+        if link.get('admin_user_id') != admin_user_id:
+            continue
+        sid = (link.get('session_id') or '').strip()
+        if sid == event_id:
+            return link
+        try:
+            parsed = urlparse(link.get('full_url', ''))
+            qs = parse_qs(parsed.query)
+            sid2 = (qs.get('session', [''])[0] or '').strip()
+            if sid2 == event_id:
+                return link
+        except Exception:
+            pass
+    return None
+
+
+def _find_admin_link_by_session(session_id: str) -> Optional[Dict[str, Any]]:
+    """Find admin link record by session_id (or full_url session query)."""
+    if not session_id:
+        return None
+    links_file = 'storage/admin_links.json'
+    try:
+        with open(links_file, 'r') as f:
+            links = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return None
+    for link in links:
+        sid = (link.get('session_id') or '').strip()
+        if sid == session_id:
+            return link
+        try:
+            parsed = urlparse(link.get('full_url', ''))
+            qs = parse_qs(parsed.query)
+            sid2 = (qs.get('session', [''])[0] or '').strip()
+            if sid2 == session_id:
+                return link
+        except Exception:
+            pass
+    return None
+
+
+def _list_session_uploads(admin_id: str, folder_id: str, limit: int = 5000) -> List[Dict[str, Any]]:
+    """List image files for one event from canonical path, fallback to legacy path."""
+    if folder_id and folder_id != 'uploaded':
+        uploads_dir = _event_photos_dir(folder_id)
+        legacy_uploads_dir = os.path.join('storage', 'uploads', admin_id, folder_id)
+    else:
+        uploads_dir = os.path.join('storage', 'uploads', admin_id)
+        legacy_uploads_dir = uploads_dir
+    if not os.path.exists(uploads_dir) and os.path.exists(legacy_uploads_dir):
+        uploads_dir = legacy_uploads_dir
+    entries = []
+    if not os.path.exists(uploads_dir):
+        return entries
+    for root, _dirs, files in os.walk(uploads_dir):
+        for name in files:
+            if len(entries) >= limit:
+                break
+            if not _is_image_file(name):
+                continue
+            full_path = os.path.join(root, name)
+            if not os.path.isfile(full_path):
+                continue
+            try:
+                size_bytes = os.path.getsize(full_path)
+                mtime = datetime.fromtimestamp(os.path.getmtime(full_path)).strftime('%Y-%m-%d %H:%M')
+            except OSError:
+                size_bytes = 0
+                mtime = 'unknown'
+            rel_path = os.path.relpath(full_path, uploads_dir).replace('\\', '/')
+            if folder_id and folder_id != 'uploaded':
+                path_for_url = os.path.join('storage', 'events', folder_id, 'photos', rel_path).replace('\\', '/').replace('//', '/')
+            else:
+                path_for_url = os.path.join('storage', 'uploads', admin_id, rel_path).replace('\\', '/').replace('//', '/')
+            entries.append({
+                'name': name,
+                'relative_path': rel_path,
+                'path': path_for_url,
+                'size': _format_bytes(size_bytes),
+                'modified': mtime
+            })
+    entries.sort(key=lambda x: x.get('modified') or '', reverse=True)
+    return entries
+
+
+def _list_user_uploads_recursive(user_id: str, limit: int = 5000) -> List[Dict[str, Any]]:
+    """List all image files under storage/uploads/user_id with relative paths (for per-session filtering)."""
+    entries = []
+    uploads_dir = os.path.join('storage', 'uploads', user_id)
+    if not os.path.exists(uploads_dir):
+        return entries
+    for root, _dirs, files in os.walk(uploads_dir):
+        for name in files:
+            if len(entries) >= limit:
+                break
+            if not _is_image_file(name):
+                continue
+            full_path = os.path.join(root, name)
+            if not os.path.isfile(full_path):
+                continue
+            try:
+                size_bytes = os.path.getsize(full_path)
+                mtime = datetime.fromtimestamp(os.path.getmtime(full_path)).strftime('%Y-%m-%d %H:%M')
+            except OSError:
+                size_bytes = 0
+                mtime = 'unknown'
+            rel_path = os.path.relpath(full_path, uploads_dir).replace('\\', '/')
+            path_for_url = os.path.join('storage', 'uploads', user_id, rel_path).replace('\\', '/')
+            entries.append({
+                'name': name,
+                'relative_path': rel_path,
+                'path': path_for_url,
+                'size': _format_bytes(size_bytes),
+                'modified': mtime
+            })
+    entries.sort(key=lambda x: x.get('modified') or '', reverse=True)
+    return entries
+
 
 def _list_user_downloads(user_id: str, limit: int = 200) -> List[Dict[str, Any]]:
     entries = []
@@ -918,6 +1072,50 @@ def create_short_link(full_url, event_name=None, expires_days=30):
     
     save_short_links(links)
     return f"https://cloudface-ai.com/s/{short_code}"
+
+
+def _upsert_admin_link(links: List[Dict[str, Any]], link_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Upsert admin link by stable identity:
+    - same admin_user_id + session_id, or
+    - same admin_user_id + short_code, or
+    - same admin_user_id + full_url
+    Returns the stored link object.
+    """
+    admin_user_id = link_data.get('admin_user_id')
+    session_id = link_data.get('session_id')
+    short_code = link_data.get('short_code')
+    full_url = link_data.get('full_url')
+
+    for existing in links:
+        if existing.get('admin_user_id') != admin_user_id:
+            continue
+        if (
+            (session_id and existing.get('session_id') == session_id) or
+            (short_code and existing.get('short_code') == short_code) or
+            (full_url and existing.get('full_url') == full_url)
+        ):
+            # Preserve stable identity fields
+            existing['session_id'] = session_id or existing.get('session_id')
+            existing['short_code'] = short_code or existing.get('short_code')
+            existing['full_url'] = full_url or existing.get('full_url')
+            existing['short_url'] = link_data.get('short_url') or existing.get('short_url')
+            # Prefer richer/newer metadata while keeping existing fallback
+            merged_metadata = dict(existing.get('metadata') or {})
+            merged_metadata.update(link_data.get('metadata') or {})
+            existing['metadata'] = merged_metadata
+            # Keep original created_at/id; update mutable stats only when provided
+            if 'click_count' in link_data:
+                existing['click_count'] = link_data.get('click_count', existing.get('click_count', 0))
+            if 'last_used' in link_data:
+                existing['last_used'] = link_data.get('last_used', existing.get('last_used'))
+            return existing
+
+    # Insert new link
+    link_data = dict(link_data)
+    link_data['id'] = len(links) + 1
+    links.append(link_data)
+    return link_data
 
 # Google OAuth Configuration
 from dotenv import load_dotenv
@@ -1988,11 +2186,82 @@ def process_local():
                     'trial': trial_check['trial']
                 })
         
-        # Get uploaded files
+        # Get uploaded files and optional event/session (canonical per-event storage: storage/events/{event_id}/photos/)
         uploaded_files = request.files.getlist('files')
         force_reprocess = request.form.get('force_reprocess', 'false').lower() == 'true'
+        session_id = (request.form.get('session_id') or '').strip() or None
+        created_new_event = False
+        
+        # First-time upload from /app (no session_id): create a new event ONCE and add to dashboard
+        metadata = {}
+        if not session_id:
+            try:
+                from shared_session_manager import get_session_manager
+                manager = get_session_manager()
+                metadata = {
+                    'event_name': (request.form.get('event_name') or '').strip() or 'Upload from App',
+                    'event_date': (request.form.get('event_date') or '').strip() or '',
+                    'company_name': (request.form.get('company_name') or '').strip() or '',
+                }
+                session_id = manager.create_session(user_id, 'uploaded', metadata)
+                if session_id:
+                    created_new_event = True
+                    print(f"📁 Created new event session for /app upload: {session_id}")
+                    # Register on dashboard so event shows and photos are visible (same session folder)
+                    try:
+                        base = request.host_url.rstrip('/')
+                        full_url = f"{base}/auto-process?session={session_id}"
+                        short_url = create_short_link(full_url, metadata.get('event_name'))
+                        short_code = short_url.rstrip('/').split('/s/')[-1].split('?')[0]
+                        links_file = 'storage/admin_links.json'
+                        try:
+                            with open(links_file, 'r') as f:
+                                links = json.load(f)
+                        except (FileNotFoundError, json.JSONDecodeError):
+                            links = []
+                        link_data = {
+                            'admin_user_id': user_id,
+                            'session_id': session_id,
+                            'short_code': short_code,
+                            'full_url': full_url,
+                            'short_url': f"{base}/s/{short_code}" if short_code else full_url,
+                            'metadata': metadata,
+                            'created_at': datetime.now().isoformat(),
+                            'click_count': 0,
+                            'last_used': None
+                        }
+                        _upsert_admin_link(links, link_data)
+                        os.makedirs(os.path.dirname(links_file), exist_ok=True)
+                        with open(links_file, 'w') as f:
+                            json.dump(links, f, indent=2)
+                        print(f"📁 Registered event on dashboard: {session_id}")
+                    except Exception as reg_err:
+                        print(f"⚠️ Could not register event on dashboard: {reg_err}")
+            except Exception as e:
+                print(f"⚠️ Could not create session for first-time upload: {e}")
+        else:
+            # Strict append behavior: provided event_id must exist and belong to user.
+            try:
+                from shared_session_manager import get_session_manager
+                manager = get_session_manager()
+                existing_session = manager.get_session(session_id)
+                if not existing_session:
+                    # Fallback identity validation by admin links (same event link identity)
+                    link_event = _lookup_event_link_by_session(session_id, user_id)
+                    if not link_event:
+                        return jsonify({'success': False, 'error': 'event_id_not_found', 'message': 'Event not found for append upload'}), 404
+                session_admin = existing_session.get('admin_user_id')
+                if existing_session and session_admin != user_id and not is_super_user(user_id):
+                    return jsonify({'success': False, 'error': 'event_id_forbidden', 'message': 'You are not allowed to append to this event'}), 403
+            except Exception as e:
+                print(f"⚠️ Event validation failed for session_id={session_id}: {e}")
+                return jsonify({'success': False, 'error': 'event_validation_failed'}), 400
         
         print(f"📁 Received {len(uploaded_files)} uploaded files")
+        if session_id:
+            print(f"📌 Upload event_id: {session_id}")
+            print(f"📁 Canonical storage path: {_event_photos_dir(session_id)}")
+            print(f"🆕 Event newly created in this request: {created_new_event}")
         for i, file_obj in enumerate(uploaded_files[:3]):  # Log first 3 files
             print(f"  📄 File {i+1}: {file_obj.filename} ({file_obj.content_length} bytes)")
         
@@ -2004,17 +2273,25 @@ def process_local():
         # Check user plan limits before processing
         try:
             from pricing_manager import pricing_manager
+            user_plan = pricing_manager.get_user_plan(user_id)
             
             # Estimate number of images (quick count)
             from local_folder_processor import LocalFolderProcessor
             temp_processor = LocalFolderProcessor()
             image_files = temp_processor._filter_uploaded_image_files(uploaded_files)
             estimated_images = len(image_files)
+
+            if not is_super_user(user_id) and user_plan.get('plan_type') != 'free':
+                if estimated_images > 500:
+                    return jsonify({
+                        'success': False,
+                        'error': 'batch_limit_exceeded',
+                        'message': 'Max 500 images per upload. Please split into smaller batches.'
+                    })
             
             if not is_super_user(user_id):
                 usage_check = pricing_manager.can_process_images(user_id, estimated_images)
                 if not usage_check.get('allowed'):
-                    user_plan = pricing_manager.get_user_plan(user_id)
                     return jsonify({
                         'success': False, 
                         'error': f'Plan limit exceeded. Found {estimated_images} images, but your {user_plan["plan_name"]} plan allows {user_plan["limits"]["images"]} images.',
@@ -2032,11 +2309,12 @@ def process_local():
         print(f"👤 User: {user_id}")
         print(f"🔄 Force reprocess: {force_reprocess}")
         
-        # Process the uploaded files
+        # Process uploaded files (session_id = append to storage/events/{event_id}/photos/ and FAISS scope)
         result = process_uploaded_files_and_store(
             user_id=user_id,
             uploaded_files=uploaded_files,
-            force_reprocess=force_reprocess
+            force_reprocess=force_reprocess,
+            session_id=session_id
         )
 
         # Track analytics for local processing
@@ -2070,7 +2348,10 @@ def process_local():
                 print(f"⚠️ Usage tracking failed: {e}")
         
         print(f"✅ Upload processing result: {result}")
-        return jsonify(result)
+        out = dict(result)
+        if session_id and result.get('success'):
+            out['session_id'] = session_id
+        return jsonify(out)
         
     except Exception as e:
         print(f"❌ Error in process_local: {e}")
@@ -2911,10 +3192,19 @@ def _get_shared_watermark_settings():
         from shared_session_manager import get_session_manager
         manager = get_session_manager()
         session_data = manager.get_session(shared_session_id)
-        if not session_data:
-            return None
-        metadata = session_data.get('metadata', {})
-        if not metadata.get('watermark_enabled'):
+        metadata = {}
+        if session_data:
+            metadata = dict(session_data.get('metadata') or {})
+        # Fallback: if session store has no metadata, read event metadata from admin_links.
+        if not metadata:
+            link = _find_admin_link_by_session(shared_session_id)
+            metadata = dict((link or {}).get('metadata') or {})
+        enabled_raw = metadata.get('watermark_enabled')
+        if isinstance(enabled_raw, str):
+            enabled = enabled_raw.strip().lower() in {'1', 'true', 'yes', 'on'}
+        else:
+            enabled = bool(enabled_raw)
+        if not enabled:
             return None
         return metadata
     except Exception as e:
@@ -3063,7 +3353,7 @@ def serve_photo(filename):
         # Get user ID from session - must be authenticated
         if 'user_id' not in session:
             print(f"   ❌ Not authenticated")
-            return jsonify({'error': 'Not authenticated'}), 401
+            return Response('Not authenticated', status=401, mimetype='text/plain')
         
         user_id = session['user_id']
         current_folder_id = session.get('current_folder_id')
@@ -3077,12 +3367,14 @@ def serve_photo(filename):
         shared_folder_id = session.get('shared_folder_id')
         watermark_settings = _get_shared_watermark_settings()
         download_requested = request.args.get('download') == '1'
+        photo_owner_user_id = shared_user_id if shared_user_id else user_id
         if not watermark_settings and download_requested:
             try:
                 from pricing_manager import pricing_manager
-                user_plan = pricing_manager.get_user_plan(user_id)
-                if user_plan.get('plan_type') == 'free' and not is_super_user(user_id):
-                    watermark_settings = _get_free_user_watermark_settings(user_id)
+                owner_plan = pricing_manager.get_user_plan(photo_owner_user_id)
+                # CloudFace default watermark is only for free owner accounts.
+                if owner_plan.get('plan_type') == 'free' and not is_super_user(photo_owner_user_id):
+                    watermark_settings = _get_free_user_watermark_settings(photo_owner_user_id)
             except Exception:
                 pass
         
@@ -3097,8 +3389,15 @@ def serve_photo(filename):
         print(f"   🔗 Shared folder ID: {shared_folder_id}")
         print(f"   📸 Photo Folder ID (using): {photo_folder_id}")
         
-        # First, try uploaded files folder (universal search includes uploaded files)
-        upload_folder = os.path.join('storage', 'uploads', photo_user_id)
+        # First, try canonical event folder: storage/events/{event_id}/photos/
+        if photo_folder_id and photo_folder_id != 'uploaded':
+            upload_folder = _event_photos_dir(photo_folder_id)
+            legacy_upload_folder = os.path.join('storage', 'uploads', photo_user_id, photo_folder_id)
+        else:
+            upload_folder = os.path.join('storage', 'uploads', photo_user_id)
+            legacy_upload_folder = upload_folder
+        if not os.path.exists(upload_folder) and os.path.exists(legacy_upload_folder):
+            upload_folder = legacy_upload_folder
         upload_file_path = os.path.join(upload_folder, filename)
         print(f"   📁 Checking uploads: {upload_file_path}")
         print(f"   📁 Upload folder exists: {os.path.exists(upload_folder)}")
@@ -3126,6 +3425,44 @@ def serve_photo(filename):
             # For nested paths like "1111/ABN10404.jpg", we need to serve from the base upload folder
             return _send_photo_with_optional_watermark(upload_file_path, filename, upload_folder, watermark_settings)
         
+        # Fallback: try by basename only (e.g. index has "subdir/name.jpg" but file is at "name.jpg", or vice versa)
+        if os.path.exists(upload_folder):
+            base_name = os.path.basename(filename)
+            if base_name != filename:
+                alt_path = os.path.join(upload_folder, base_name)
+                if os.path.exists(alt_path):
+                    print(f"   ✅ Found uploaded file by basename: {alt_path}")
+                    try:
+                        from analytics_tracker import analytics
+                        session_id = session.get('analytics_session_id', 'default_session')
+                        analytics.track_action(session_id, photo_user_id, 'photo_downloaded', {
+                            'filename': base_name, 'source': 'upload',
+                            'download_context': 'shared' if shared_user_id else 'admin',
+                            'owner_user_id': photo_user_id, 'downloader_user_id': user_id
+                        })
+                        if shared_user_id:
+                            track_downloader_info(shared_user_id, user_id, base_name, 'upload')
+                    except Exception as e:
+                        print(f"⚠️ Failed to track download: {e}")
+                    return _send_photo_with_optional_watermark(alt_path, base_name, upload_folder, watermark_settings)
+            for root, _dirs, files in os.walk(upload_folder):
+                if base_name in files:
+                    found_path = os.path.join(root, base_name)
+                    print(f"   ✅ Found uploaded file under folder: {found_path}")
+                    try:
+                        from analytics_tracker import analytics
+                        session_id = session.get('analytics_session_id', 'default_session')
+                        analytics.track_action(session_id, photo_user_id, 'photo_downloaded', {
+                            'filename': base_name, 'source': 'upload',
+                            'download_context': 'shared' if shared_user_id else 'admin',
+                            'owner_user_id': photo_user_id, 'downloader_user_id': user_id
+                        })
+                        if shared_user_id:
+                            track_downloader_info(shared_user_id, user_id, base_name, 'upload')
+                    except Exception as e:
+                        print(f"⚠️ Failed to track download: {e}")
+                    return _send_photo_with_optional_watermark(found_path, base_name, os.path.dirname(found_path), watermark_settings)
+        
         # Second, try Google Drive cache folder (if folder session exists)
         if photo_folder_id:
             cache_folder = os.path.join('storage', 'downloads', f"{photo_user_id}_{photo_folder_id}")
@@ -3135,8 +3472,6 @@ def serve_photo(filename):
             if os.path.exists(cache_file_path):
                 print(f"   ✅ Found cached file: {cache_file_path}")
                 
-                # Check if file was modified (to avoid counting cache hits as downloads)
-                from flask import request
                 response = _send_photo_with_optional_watermark(cache_file_path, filename, cache_folder, watermark_settings)
                 
                 # Track download only if it's not a 304 (cached response)
@@ -3211,7 +3546,7 @@ def serve_photo(filename):
                 for file in files:
                     print(f"       {os.path.relpath(os.path.join(root, file), upload_folder)}")
         
-        return jsonify({'error': 'Photo not found'}), 404
+        return Response('Photo not found', status=404, mimetype='text/plain')
         
     except Exception as e:
         print(f"Error serving photo: {e}")
@@ -3935,7 +4270,7 @@ def auto_process():
     company_name = ''
     logo_filename = ''
     
-    # If session_id provided, load metadata from Firebase
+    # If session_id provided, load metadata from session store/admin link fallback
     if session_id:
         try:
             from shared_session_manager import get_session_manager
@@ -3962,6 +4297,20 @@ def auto_process():
                 print(f"   Logo: {logo_filename}")
                 print(f"   Admin User ID: {session_data.get('admin_user_id')}")
                 print(f"   Folder ID: {session_data.get('folder_id')}")
+            else:
+                # Fallback for local-only scenarios where shared_session_manager has no record.
+                link = _find_admin_link_by_session(session_id)
+                if link:
+                    metadata = dict(link.get('metadata') or {})
+                    event_name = metadata.get('event_name', event_name)
+                    event_date = metadata.get('event_date', event_date)
+                    company_name = metadata.get('company_name', '')
+                    logo_filename = metadata.get('logo_filename', '')
+                    drive_url = metadata.get('drive_url', drive_url)
+                    session['shared_user_id'] = link.get('admin_user_id')
+                    session['shared_folder_id'] = session_id
+                    session['shared_session_id'] = session_id
+                    print(f"📋 Loaded metadata for session {session_id} via admin_links fallback")
         except Exception as e:
             print(f"❌ Error loading session metadata: {e}")
     
@@ -4025,7 +4374,78 @@ def create_share_session():
         manager = get_session_manager()
         print(f"🔍 Manager created: {manager}")
         
-        session_id = manager.create_session(admin_user_id, folder_id, metadata)
+        # IMPORTANT:
+        # - For local uploads (folder_id='uploaded'), dashboard operations should reuse an existing /app event session
+        #   instead of creating a new event unexpectedly.
+        # - For Drive folders, reuse by admin+folder unless force_new_session is explicitly requested.
+        force_new = bool(data.get('force_new_session', False))
+        existing_session = None
+
+        # 1) Reuse explicitly requested session when provided
+        requested_session_id = (data.get('session_id') or data.get('existing_session_id') or '').strip() or None
+        if requested_session_id:
+            try:
+                requested = manager.get_session(requested_session_id)
+                if requested and requested.get('admin_user_id') == admin_user_id:
+                    existing_session = requested
+                    existing_session.setdefault('session_id', requested_session_id)
+                    print(f"🔁 Reusing requested session: {requested_session_id}")
+            except Exception as requested_lookup_error:
+                print(f"⚠️ Error loading requested session: {requested_lookup_error}")
+
+        # 2) For local uploads, try to reuse most recent existing event link session for this admin
+        if not existing_session and folder_id == 'uploaded' and not force_new:
+            try:
+                links_file = 'storage/admin_links.json'
+                try:
+                    with open(links_file, 'r') as f:
+                        all_links = json.load(f)
+                except (FileNotFoundError, json.JSONDecodeError):
+                    all_links = []
+
+                user_links = [l for l in all_links if l.get('admin_user_id') == admin_user_id]
+                user_links.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+
+                for lnk in user_links:
+                    sid = (lnk.get('session_id') or '').strip()
+                    if not sid:
+                        try:
+                            parsed = urlparse(lnk.get('full_url', ''))
+                            qs = parse_qs(parsed.query)
+                            if qs.get('session'):
+                                sid = (qs['session'][0] or '').strip()
+                        except Exception:
+                            sid = ''
+                    if not sid:
+                        continue
+                    sdata = manager.get_session(sid)
+                    if not sdata:
+                        continue
+                    if sdata.get('admin_user_id') != admin_user_id:
+                        continue
+                    s_folder_id = sdata.get('folder_id', '')
+                    if s_folder_id == 'uploaded' or s_folder_id == sid:
+                        existing_session = sdata
+                        existing_session.setdefault('session_id', sid)
+                        print(f"🔁 Reusing most recent local event session: {sid}")
+                        break
+            except Exception as local_reuse_error:
+                print(f"⚠️ Error reusing local event session: {local_reuse_error}")
+
+        # 3) For non-local (Drive) folders, reuse by admin+folder unless explicitly forced new
+        if not existing_session and admin_user_id and folder_id and folder_id != 'uploaded' and not force_new:
+            try:
+                existing_session = manager.find_session_for_admin_and_folder(admin_user_id, folder_id)
+            except Exception as lookup_error:
+                print(f"⚠️ Error checking for existing shared session: {lookup_error}")
+        
+        if existing_session:
+            session_id = existing_session.get('session_id') or existing_session.get('id')
+            print(f"🔁 Reusing existing shared session: {session_id}")
+        else:
+            # For local (uploaded), session created with folder_id=session_id; no snapshot (files go to storage/uploads/admin_id/session_id/)
+            session_id = manager.create_session(admin_user_id, folder_id, metadata)
+        
         print(f"🔍 Session ID result: {session_id}")
         
         if session_id:
@@ -4111,9 +4531,8 @@ def save_admin_link():
         except (FileNotFoundError, json.JSONDecodeError):
             links = []
         
-        # Add new link
+        # Add or update link (dedupe by admin+event identity)
         link_data = {
-            'id': len(links) + 1,
             'admin_user_id': admin_user_id,
             'session_id': session_id,
             'short_code': short_code,
@@ -4124,16 +4543,15 @@ def save_admin_link():
             'click_count': 0,
             'last_used': None
         }
-        
-        links.append(link_data)
+        stored = _upsert_admin_link(links, link_data)
         
         # Save back to file
         os.makedirs(os.path.dirname(links_file), exist_ok=True)
         with open(links_file, 'w') as f:
             json.dump(links, f, indent=2)
         
-        print(f"✅ Saved admin link: {link_data['short_url']}")
-        return jsonify({'success': True, 'link_id': link_data['id']})
+        print(f"✅ Saved admin link: {stored.get('short_url')}")
+        return jsonify({'success': True, 'link_id': stored.get('id')})
         
     except Exception as e:
         print(f"❌ Error saving admin link: {e}")
@@ -4160,6 +4578,63 @@ def get_admin_links():
         # Filter links by user_id
         user_links = [link for link in all_links if link.get('admin_user_id') == user_id]
         
+        # Ensure every link has session_id (required for "Add more photos" → same folder as /app).
+        def _session_from_url(url):
+            if not url:
+                return None
+            try:
+                parsed = urlparse(url)
+                qs = parse_qs(parsed.query)
+                if 'session' in qs and qs['session']:
+                    return qs['session'][0].strip()
+            except Exception:
+                pass
+            return None
+
+        def _short_code_from_url(url):
+            if not url:
+                return None
+            try:
+                if '/s/' in url:
+                    return url.rstrip('/').split('/s/')[-1].split('?')[0].strip()
+            except Exception:
+                pass
+            return None
+
+        for link in user_links:
+            # Use existing or camelCase fallback
+            sid = link.get('session_id') or link.get('sessionId')
+            if sid:
+                link['session_id'] = sid
+                continue
+            # Try full_url first (e.g. .../auto-process?session=xxx).
+            sid = _session_from_url(link.get('full_url'))
+            if not sid:
+                # full_url may be short URL; resolve from short_links. Use short_code or extract from short_url.
+                code = link.get('short_code') or _short_code_from_url(link.get('full_url')) or _short_code_from_url(link.get('short_url'))
+                if code:
+                    try:
+                        short_links = load_short_links()
+                        target = short_links.get(code, {}).get('full_url')
+                        sid = _session_from_url(target)
+                    except Exception:
+                        pass
+            if sid:
+                link['session_id'] = sid
+
+        # Persist resolved session_id back so "Add more photos" always has it (same folder as /app).
+        try:
+            for la in all_links:
+                if la.get('admin_user_id') != user_id or la.get('session_id'):
+                    continue
+                match = next((l for l in user_links if (l.get('id') == la.get('id') or l.get('short_code') == la.get('short_code')) and l.get('session_id')), None)
+                if match:
+                    la['session_id'] = match['session_id']
+            with open(links_file, 'w') as f:
+                json.dump(all_links, f, indent=2)
+        except Exception:
+            pass
+
         # Sort by creation date (newest first)
         user_links.sort(key=lambda x: x.get('created_at', ''), reverse=True)
         
@@ -4168,6 +4643,39 @@ def get_admin_links():
     except Exception as e:
         print(f"❌ Error getting admin links: {e}")
         return jsonify({'success': False, 'error': str(e)})
+
+
+@app.route('/api/admin/resolve-session-id')
+def resolve_link_session_id():
+    """Resolve session_id for a link by short_code or full_url (so Add more photos uses same folder as /app)."""
+    if not is_authenticated():
+        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+    short_code = request.args.get('short_code', '').strip()
+    full_url = request.args.get('full_url', '').strip()
+    sid = None
+    if full_url and 'session=' in full_url:
+        try:
+            parsed = urlparse(full_url)
+            qs = parse_qs(parsed.query)
+            if qs.get('session'):
+                sid = qs['session'][0].strip()
+        except Exception:
+            pass
+    if not sid and short_code:
+        try:
+            short_links = load_short_links()
+            target = short_links.get(short_code, {}).get('full_url')
+            if target and 'session=' in target:
+                parsed = urlparse(target)
+                qs = parse_qs(parsed.query)
+                if qs.get('session'):
+                    sid = qs['session'][0].strip()
+        except Exception:
+            pass
+    if sid:
+        return jsonify({'success': True, 'session_id': sid})
+    return jsonify({'success': False, 'error': 'Could not resolve session for this link'})
+
 
 @app.route('/api/delete-admin-link', methods=['POST'])
 def delete_admin_link():
@@ -4213,6 +4721,107 @@ def delete_admin_link():
 
         return jsonify({'success': True})
     except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/update-admin-link', methods=['POST'])
+def update_admin_link():
+    """Update editable event metadata (name/company/date) for a user's link/event."""
+    try:
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+
+        data = request.get_json() or {}
+        link_id = data.get('id')
+        short_code = data.get('short_code')
+        metadata_patch = data.get('metadata') or {}
+
+        if not link_id and not short_code:
+            return jsonify({'success': False, 'error': 'Missing link identifier'}), 400
+
+        allowed_text_keys = {'event_name', 'company_name', 'event_date', 'watermark_text', 'watermark_logo_filename', 'watermark_position'}
+        clean_patch = {k: (metadata_patch.get(k) or '').strip() for k in allowed_text_keys if k in metadata_patch}
+        if 'watermark_enabled' in metadata_patch:
+            raw_enabled = metadata_patch.get('watermark_enabled')
+            if isinstance(raw_enabled, str):
+                clean_patch['watermark_enabled'] = raw_enabled.strip().lower() in {'1', 'true', 'yes', 'on'}
+            else:
+                clean_patch['watermark_enabled'] = bool(raw_enabled)
+        if 'watermark_opacity' in metadata_patch:
+            try:
+                clean_patch['watermark_opacity'] = max(20, min(100, int(metadata_patch.get('watermark_opacity'))))
+            except Exception:
+                return jsonify({'success': False, 'error': 'Invalid watermark_opacity'}), 400
+        if 'watermark_size' in metadata_patch:
+            try:
+                clean_patch['watermark_size'] = max(5, min(40, int(metadata_patch.get('watermark_size'))))
+            except Exception:
+                return jsonify({'success': False, 'error': 'Invalid watermark_size'}), 400
+        if 'watermark_margin' in metadata_patch:
+            try:
+                clean_patch['watermark_margin'] = max(0, min(40, int(metadata_patch.get('watermark_margin'))))
+            except Exception:
+                return jsonify({'success': False, 'error': 'Invalid watermark_margin'}), 400
+        if 'preview_position_y' in metadata_patch:
+            try:
+                py = float(metadata_patch.get('preview_position_y'))
+                py = max(0.0, min(100.0, py))
+                clean_patch['preview_position_y'] = py
+            except Exception:
+                return jsonify({'success': False, 'error': 'Invalid preview_position_y'}), 400
+
+        links_file = 'storage/admin_links.json'
+        try:
+            with open(links_file, 'r') as f:
+                links = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return jsonify({'success': False, 'error': 'No links found'}), 404
+
+        updated = False
+        target_session_id = None
+        for link in links:
+            if link.get('admin_user_id') != user_id:
+                continue
+            matches = (link_id and link.get('id') == link_id) or (short_code and link.get('short_code') == short_code)
+            if not matches:
+                continue
+            md = dict(link.get('metadata') or {})
+            md.update(clean_patch)
+            link['metadata'] = md
+            updated = True
+            target_session_id = link.get('session_id')
+            break
+
+        if not updated:
+            return jsonify({'success': False, 'error': 'Link not found'}), 404
+
+        with open(links_file, 'w') as f:
+            json.dump(links, f, indent=2)
+
+        # Best-effort sync to shared session metadata for consistency.
+        if target_session_id:
+            try:
+                from shared_session_manager import get_session_manager
+                manager = get_session_manager()
+                sdata = manager.get_session(target_session_id)
+                if sdata:
+                    merged = dict(sdata.get('metadata') or {})
+                    merged.update(clean_patch)
+                    if manager.db is not None:
+                        manager.db.collection('shared_sessions').document(target_session_id).update({'metadata': merged})
+                    else:
+                        session_file = os.path.join('storage', 'sessions', f"{target_session_id}.json")
+                        if os.path.isfile(session_file):
+                            sdata['metadata'] = merged
+                            with open(session_file, 'w') as sf:
+                                json.dump(sdata, sf, indent=2)
+            except Exception as sync_err:
+                print(f"⚠️ Could not sync session metadata: {sync_err}")
+
+        return jsonify({'success': True})
+    except Exception as e:
+        print(f"❌ Error updating admin link: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 def track_link_click_direct(short_code):
@@ -4531,6 +5140,391 @@ def superadmin_analytics_export_unpaid():
 def admin_dashboard():
     """Show the admin dashboard for sharing metrics"""
     return render_template('admin_dashboard.html')
+
+@app.route('/admin/event-photos/<session_id>')
+def admin_event_photos(session_id):
+    """Simple event photos page for a specific shared session."""
+    # Require login
+    if 'user_id' not in session:
+        return redirect('/auth/login')
+    
+    user_id = session.get('user_id')
+    
+    try:
+        from shared_session_manager import get_session_manager
+        manager = get_session_manager()
+        session_data = manager.get_session(session_id)
+    except Exception as e:
+        print(f"❌ Error loading shared session for event photos: {e}")
+        session_data = None
+    
+    # Not found
+    if not session_data:
+        return render_template('404.html'), 404
+    
+    # Only the admin who owns the session (or superadmin) can view this page
+    admin_user_id = session_data.get('admin_user_id')
+    if user_id != admin_user_id and not is_super_user(user_id):
+        return render_template('404.html'), 404
+    
+    # List photos for this event: per-event folder = storage/uploads/admin_id/folder_id/ (folder_id is session_id for local events)
+    folder_id = session_data.get('folder_id', 'uploaded')
+    uploads = _list_session_uploads(admin_user_id, folder_id, limit=5000)
+    actual_folder_used = folder_id
+    # If event folder is empty but exactly one other subfolder has images (e.g. legacy "100"), use it so photos show
+    if not uploads:
+        fallback_folder = _find_single_non_empty_upload_subfolder(admin_user_id)
+        if fallback_folder:
+            uploads = _list_session_uploads(admin_user_id, fallback_folder, limit=5000)
+            actual_folder_used = fallback_folder
+    
+    # Prefer event details from admin link (what admin entered when generating the link)
+    display_metadata = dict(session_data.get('metadata') or {})
+    links_file = 'storage/admin_links.json'
+    try:
+        with open(links_file, 'r') as f:
+            all_links = json.load(f)
+        for link in all_links:
+            if link.get('admin_user_id') == admin_user_id and link.get('session_id') == session_id:
+                lm = link.get('metadata') or {}
+                if lm.get('event_name'):
+                    display_metadata['event_name'] = lm['event_name']
+                if lm.get('event_date'):
+                    display_metadata['event_date'] = lm['event_date']
+                if lm.get('company_name'):
+                    display_metadata['company_name'] = lm['company_name']
+                break
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass
+    
+    return render_template('admin_event_photos.html',
+                          session_data=session_data,
+                          uploads=uploads,
+                          display_metadata=display_metadata,
+                          photo_count=len(uploads),
+                          actual_folder_used=actual_folder_used if actual_folder_used else folder_id)
+
+
+@app.route('/admin/event-add-photos/<session_id>')
+def admin_event_add_photos_page(session_id):
+    """Dedicated page to upload more photos to an existing (local) event."""
+    if 'user_id' not in session:
+        return redirect('/auth/login')
+    user_id = session.get('user_id')
+    try:
+        from shared_session_manager import get_session_manager
+        manager = get_session_manager()
+        session_data = manager.get_session(session_id)
+    except Exception as e:
+        print(f"Error loading session for add-photos: {e}")
+        session_data = None
+    if not session_data:
+        return render_template('404.html'), 404
+    admin_user_id = session_data.get('admin_user_id')
+    folder_id = session_data.get('folder_id', '')
+    if user_id != admin_user_id and not is_super_user(user_id):
+        return render_template('404.html'), 404
+    # Only allow append for local events: legacy folder_id 'uploaded' or per-event folder_id == session_id
+    if folder_id != 'uploaded' and folder_id != session_id:
+        return render_template('404.html'), 404
+    # Pass URL session_id explicitly so form always posts to THIS event folder (same as created from /app)
+    return render_template('admin_event_add_photos.html', session_data=session_data, event_session_id=session_id)
+
+
+@app.route('/admin/event-add-photos-link/<link_id>')
+def admin_event_add_photos_by_link(link_id):
+    """Open add-photos page by dashboard link id (server-resolved session_id)."""
+    if 'user_id' not in session:
+        return redirect('/auth/login')
+    user_id = session.get('user_id')
+    links_file = 'storage/admin_links.json'
+    try:
+        with open(links_file, 'r') as f:
+            all_links = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        all_links = []
+
+    selected = None
+    for link in all_links:
+        if str(link.get('id')) == str(link_id) and link.get('admin_user_id') == user_id:
+            selected = link
+            break
+    if not selected:
+        return render_template('404.html'), 404
+
+    sid = (selected.get('session_id') or selected.get('sessionId') or '').strip()
+    if not sid:
+        try:
+            parsed = urlparse(selected.get('full_url', ''))
+            qs = parse_qs(parsed.query)
+            if qs.get('session'):
+                sid = (qs['session'][0] or '').strip()
+        except Exception:
+            sid = ''
+
+    if not sid:
+        code = (selected.get('short_code') or '').strip()
+        if not code:
+            try:
+                surl = selected.get('short_url', '')
+                if '/s/' in surl:
+                    code = surl.rstrip('/').split('/s/')[-1].split('?')[0].strip()
+            except Exception:
+                code = ''
+        if code:
+            try:
+                short_links = load_short_links()
+                target = short_links.get(code, {}).get('full_url', '')
+                parsed = urlparse(target)
+                qs = parse_qs(parsed.query)
+                if qs.get('session'):
+                    sid = (qs['session'][0] or '').strip()
+            except Exception:
+                sid = ''
+
+    if not sid:
+        return render_template('404.html'), 404
+
+    return redirect(url_for('admin_event_add_photos_page', session_id=sid))
+
+
+@app.route('/api/admin/append-event-photos/<session_id>', methods=['POST'])
+def api_admin_append_event_photos(session_id):
+    """Append uploaded files to an existing event (same admin + uploaded scope)."""
+    if not (session_id or '').strip():
+        return jsonify({'success': False, 'error': 'missing_event_id', 'message': 'event_id is required'}), 400
+    if not is_authenticated():
+        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+    user_id = session.get('user_id')
+    try:
+        from shared_session_manager import get_session_manager
+        manager = get_session_manager()
+        session_data = manager.get_session(session_id)
+    except Exception as e:
+        print(f"Error loading session for append: {e}")
+        return jsonify({'success': False, 'error': 'Session not found'}), 404
+    if not session_data:
+        return jsonify({'success': False, 'error': 'Session not found'}), 404
+    admin_user_id = session_data.get('admin_user_id')
+    folder_id = session_data.get('folder_id', '')
+    if user_id != admin_user_id and not is_super_user(user_id):
+        return jsonify({'success': False, 'error': 'Not authorized for this event'}), 403
+    # Allow append for local events: legacy folder_id 'uploaded' or per-event folder_id == session_id (event created from /app)
+    if folder_id != 'uploaded' and folder_id != session_id:
+        return jsonify({'success': False, 'error': 'Append only supported for local (uploaded) events'}), 400
+    # Save to same event folder as /app: storage/uploads/admin_id/session_id/
+    print(f"📌 Dashboard append upload event_id: {session_id}")
+    print(f"📁 Canonical storage path: {_event_photos_dir(session_id)}")
+    print("🆕 Event newly created in this request: False")
+    uploaded_files = request.files.getlist('files')
+    if not uploaded_files:
+        return jsonify({'success': False, 'error': 'No files uploaded'}), 400
+    from local_folder_processor import LocalFolderProcessor, process_uploaded_files_and_store
+    temp_processor = LocalFolderProcessor()
+    image_files = temp_processor._filter_uploaded_image_files(uploaded_files)
+    # Plan/usage check for admin_user_id (event owner)
+    try:
+        from pricing_manager import pricing_manager
+        estimated = len(image_files)
+        if not is_super_user(admin_user_id):
+            plan = pricing_manager.get_user_plan(admin_user_id)
+            if plan.get('plan_type') != 'free' and estimated > 500:
+                return jsonify({
+                    'success': False,
+                    'error': 'batch_limit_exceeded',
+                    'message': 'Max 500 images per batch.'
+                })
+            usage_check = pricing_manager.can_process_images(admin_user_id, estimated)
+            if not usage_check.get('allowed'):
+                return jsonify({
+                    'success': False,
+                    'error': 'Plan limit exceeded for this event.',
+                    'upgrade_needed': True
+                })
+    except ImportError:
+        pass
+    # Save and process into this event's folder: storage/uploads/admin_id/session_id/
+    result = process_uploaded_files_and_store(
+        user_id=admin_user_id,
+        uploaded_files=uploaded_files,
+        force_reprocess=False,
+        session_id=session_id
+    )
+    if result.get('success') and result.get('processed_count', 0) > 0:
+        try:
+            from pricing_manager import pricing_manager
+            pricing_manager.track_image_usage(admin_user_id, result['processed_count'])
+        except Exception:
+            pass
+    return jsonify(result)
+
+
+@app.route('/api/admin/append-event-photos-from-drive/<session_id>', methods=['POST'])
+def api_admin_append_event_photos_from_drive(session_id):
+    """Append photos from a Google Drive folder to an existing (local) event."""
+    if not (session_id or '').strip():
+        return jsonify({'success': False, 'error': 'missing_event_id', 'message': 'event_id is required'}), 400
+    if not is_authenticated():
+        return jsonify({'success': False, 'error': 'Not authenticated'}), 401
+    user_id = session.get('user_id')
+    try:
+        from shared_session_manager import get_session_manager
+        session_data = get_session_manager().get_session(session_id)
+    except Exception:
+        session_data = None
+    if not session_data:
+        return jsonify({'success': False, 'error': 'Session not found'}), 404
+    admin_user_id = session_data.get('admin_user_id')
+    folder_id = session_data.get('folder_id', '')
+    if user_id != admin_user_id and not is_super_user(user_id):
+        return jsonify({'success': False, 'error': 'Not authorized for this event'}), 403
+    # Allow append for local events: legacy folder_id 'uploaded' or per-event folder_id == session_id (same folder as /app)
+    if folder_id != 'uploaded' and folder_id != session_id:
+        return jsonify({'success': False, 'error': 'Append from Drive only for local events'}), 400
+    data = request.get_json() or {}
+    drive_url = (data.get('drive_url') or '').strip()
+    if not drive_url or 'drive.google.com' not in drive_url:
+        return jsonify({'success': False, 'error': 'Valid Google Drive folder URL required'}), 400
+    max_depth = min(20, max(1, int(data.get('max_depth', 10))))
+    try:
+        access_token = get_service_account_access_token()
+    except Exception as e:
+        print(f"Append from drive token error: {e}")
+        return jsonify({'success': False, 'error': 'Could not get Drive access'}), 500
+    from google_drive_handler import extract_file_id_from_url
+    from real_drive_processor import RealDriveProcessor
+    drive_folder_id = extract_file_id_from_url(drive_url)
+    if not drive_folder_id:
+        return jsonify({'success': False, 'error': 'Could not extract folder ID from URL'}), 400
+    processor = RealDriveProcessor()
+    all_files = processor._get_folder_contents_recursive(drive_folder_id, access_token, max_depth)
+    image_files = processor._filter_image_files(all_files) if all_files else []
+    if not image_files:
+        return jsonify({'success': False, 'error': 'No images found in that Drive folder'}), 400
+    try:
+        from pricing_manager import pricing_manager
+        if not is_super_user(admin_user_id):
+            usage_check = pricing_manager.can_process_images(admin_user_id, len(image_files))
+            if not usage_check.get('allowed'):
+                return jsonify({'success': False, 'error': 'Plan limit exceeded', 'upgrade_needed': True})
+    except Exception:
+        pass
+    target_dir = os.path.abspath(_event_photos_dir(session_id))
+    print(f"📌 Dashboard append-from-drive event_id: {session_id}")
+    print(f"📁 Canonical storage path: {target_dir}")
+    print("🆕 Event newly created in this request: False")
+    os.makedirs(target_dir, exist_ok=True)
+    downloaded_paths = []
+    for i, file_info in enumerate(image_files):
+        safe = "".join(c for c in file_info.get('name', '') if c.isalnum() or c in (' ', '-', '_', '.')).rstrip() or f"image_{i}"
+        if not safe.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp')):
+            safe += '.jpg'
+        local_name = f"drive_{drive_folder_id[:8]}_{i}_{safe}"[:200]
+        local_path = os.path.join(target_dir, local_name)
+        try:
+            content = processor._download_image(file_info, access_token)
+            if content:
+                with open(local_path, 'wb') as f:
+                    f.write(content)
+                downloaded_paths.append(local_path)
+        except Exception as e:
+            print(f"Download failed {file_info.get('name')}: {e}")
+    if not downloaded_paths:
+        return jsonify({'success': False, 'error': 'Could not download any images from Drive'}), 400
+    from local_folder_processor import local_processor
+    result = local_processor.process_uploaded_files_from_paths(admin_user_id, downloaded_paths, session_id=session_id)
+    if result.get('success') and result.get('processed_count', 0) > 0:
+        try:
+            from pricing_manager import pricing_manager
+            pricing_manager.track_image_usage(admin_user_id, result['processed_count'])
+        except Exception:
+            pass
+    return jsonify(result)
+
+
+@app.route('/admin/event-photo')
+def admin_event_photo():
+    """Serve an event photo for the event owner (so Event Photos page thumbnails work)."""
+    if 'user_id' not in session:
+        return redirect('/auth/login')
+    path_arg = (request.args.get('path') or '').lstrip('/')
+    session_id = request.args.get('session_id', '')
+    if not path_arg or not session_id:
+        return '', 400
+    try:
+        from shared_session_manager import get_session_manager
+        session_data = get_session_manager().get_session(session_id)
+    except Exception:
+        session_data = None
+    link_data = None
+    if not session_data:
+        link_data = _find_admin_link_by_session(session_id)
+        if not link_data:
+            return '', 404
+        admin_user_id = link_data.get('admin_user_id')
+    else:
+        admin_user_id = session_data.get('admin_user_id')
+    if session.get('user_id') != admin_user_id and not is_super_user(session.get('user_id')):
+        return '', 403
+    # Path must be under canonical event path OR legacy uploads path for this owner.
+    norm_path = path_arg.replace('\\', '/')
+    event_prefix = ('storage/events/' + session_id + '/photos').replace('\\', '/')
+    legacy_prefix = ('storage/uploads/' + admin_user_id).replace('\\', '/')
+    if not (norm_path.startswith(event_prefix) or norm_path.startswith(legacy_prefix)):
+        return '', 403
+    full_path = os.path.abspath(os.path.join(os.getcwd(), path_arg))
+    allowed_event_root = os.path.abspath(os.path.join(os.getcwd(), 'storage', 'events', session_id, 'photos'))
+    allowed_legacy_root = os.path.abspath(os.path.join(os.getcwd(), 'storage', 'uploads', admin_user_id))
+    if not (full_path.startswith(allowed_event_root) or full_path.startswith(allowed_legacy_root)) or not os.path.isfile(full_path):
+        return '', 404
+    metadata = {}
+    if session_data:
+        metadata = dict(session_data.get('metadata') or {})
+    if not metadata and link_data:
+        metadata = dict(link_data.get('metadata') or {})
+    enabled_raw = metadata.get('watermark_enabled')
+    if isinstance(enabled_raw, str):
+        watermark_enabled = enabled_raw.strip().lower() in {'1', 'true', 'yes', 'on'}
+    else:
+        watermark_enabled = bool(enabled_raw)
+    watermark_settings = metadata if watermark_enabled else None
+    return _send_photo_with_optional_watermark(
+        full_path,
+        os.path.basename(full_path),
+        os.path.dirname(full_path),
+        watermark_settings
+    )
+
+
+@app.route('/api/admin/event-preview-image/<session_id>')
+def api_admin_event_preview_image(session_id):
+    """Serve one preview image for an event card in dashboard."""
+    if 'user_id' not in session:
+        return '', 401
+    user_id = session.get('user_id')
+    try:
+        from shared_session_manager import get_session_manager
+        manager = get_session_manager()
+        session_data = manager.get_session(session_id)
+    except Exception:
+        session_data = None
+    if not session_data:
+        return '', 404
+    admin_user_id = session_data.get('admin_user_id')
+    if user_id != admin_user_id and not is_super_user(user_id):
+        return '', 403
+
+    folder_id = session_data.get('folder_id') or session_id
+    uploads = _list_session_uploads(admin_user_id, folder_id, limit=1)
+    if not uploads:
+        return '', 404
+
+    rel = uploads[0].get('path') or ''
+    full_path = os.path.abspath(os.path.join(os.getcwd(), rel))
+    if not os.path.isfile(full_path):
+        return '', 404
+    return send_file(full_path)
+
 
 @app.route('/superadmin/storage')
 def superadmin_storage():

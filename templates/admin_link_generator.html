@@ -411,66 +411,7 @@
             <p class="help-text">Optional - helps users identify the event</p>
         </div>
 
-        <div class="form-group">
-            <label>Watermark for Shared Results</label>
-            <p class="help-text">Applies only to processed/filtered results for this share session.</p>
-            <div class="watermark-grid">
-                <div class="full-row">
-                    <label style="display:flex; align-items:center; gap:8px; font-weight:600;">
-                        <input type="checkbox" id="watermarkEnabled" checked>
-                        Enable watermark on processed results
-                    </label>
-                </div>
-                <div class="full-row">
-                    <label for="watermarkText">Watermark Text (optional)</label>
-                    <input type="text" id="watermarkText" placeholder="Leave empty for logo-only watermark">
-                </div>
-                <div>
-                    <label for="watermarkLogo">Watermark Logo</label>
-                    <input type="file" id="watermarkLogo" accept="image/*" onchange="handleWatermarkLogoUpload(event)">
-                    <div id="watermarkLogoPreview" style="display: none; margin-top: 8px;">
-                        <img id="watermarkLogoPreviewImg" style="max-width: 120px; max-height: 60px; border-radius: 4px; border: 1px solid var(--border);">
-                        <button type="button" onclick="removeWatermarkLogo()" style="margin-left: 10px; padding: 4px 8px; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer;">Remove</button>
-                    </div>
-                </div>
-                <div>
-                    <label for="watermarkSize">Size <span id="watermarkSizeValue">15%</span></label>
-                    <input type="range" id="watermarkSize" min="5" max="40" value="15">
-                </div>
-                <div>
-                    <label for="watermarkOpacity">Opacity <span id="watermarkOpacityValue">70%</span></label>
-                    <input type="range" id="watermarkOpacity" min="20" max="100" value="70">
-                </div>
-                <div>
-                    <label for="watermarkMargin">Margin <span id="watermarkMarginValue">12px</span></label>
-                    <input type="range" id="watermarkMargin" min="0" max="40" value="12">
-                </div>
-                <div class="full-row">
-                    <label>Position</label>
-                    <div class="position-grid" id="watermarkPositionGrid">
-                        <button type="button" class="position-btn" data-position="top-left">Top Left</button>
-                        <button type="button" class="position-btn" data-position="top-center">Top Center</button>
-                        <button type="button" class="position-btn" data-position="top-right">Top Right</button>
-                        <button type="button" class="position-btn" data-position="bottom-left">Bottom Left</button>
-                        <button type="button" class="position-btn" data-position="bottom-center">Bottom Center</button>
-                        <button type="button" class="position-btn active" data-position="bottom-right">Bottom Right</button>
-                        <button type="button" class="position-btn" data-position="custom">Custom (Drag)</button>
-                    </div>
-                </div>
-            </div>
-            <div class="watermark-preview">
-                <div class="preview-area" id="watermarkPreviewArea">
-                    <div class="preview-caption">Preview</div>
-                    <div class="watermark-overlay" id="watermarkOverlay">
-                        <img id="watermarkOverlayLogo" alt="Logo">
-                        <span class="watermark-text-preview" id="watermarkOverlayText">CloudFace AI</span>
-                    </div>
-                </div>
-                <p class="help-text" id="watermarkCustomHint" style="display:none; margin-top:8px;">
-                    Drag the watermark in the preview to set a custom position.
-                </p>
-            </div>
-        </div>
+        
 
         <div class="form-group" id="driveUrlGroup">
             <label for="driveUrl">Google Drive Folder URL</label>
@@ -821,7 +762,8 @@
         }
 
         function getWatermarkTextValue() {
-            const text = document.getElementById('watermarkText').value.trim();
+            const el = document.getElementById('watermarkText');
+            const text = el ? el.value.trim() : '';
             return text;
         }
 
@@ -918,6 +860,10 @@
         }
 
         function setupWatermarkControls() {
+            // Watermark controls moved to dashboard event edit modal.
+            if (!document.getElementById('watermarkEnabled')) {
+                return;
+            }
             document.getElementById('watermarkEnabled').addEventListener('change', updateWatermarkPreview);
             document.getElementById('watermarkText').addEventListener('input', updateWatermarkPreview);
             document.getElementById('companyName').addEventListener('input', updateWatermarkPreview);
@@ -969,6 +915,20 @@
         }
 
         function getWatermarkSettings() {
+            // Watermark controls moved to dashboard event edit modal.
+            if (!document.getElementById('watermarkEnabled')) {
+                return {
+                    watermark_enabled: true,
+                    watermark_text: '',
+                    watermark_logo_filename: null,
+                    watermark_position: 'bottom-right',
+                    watermark_opacity: 70,
+                    watermark_size: 15,
+                    watermark_margin: 12,
+                    watermark_offset_x: null,
+                    watermark_offset_y: null
+                };
+            }
             const enabled = document.getElementById('watermarkEnabled').checked;
             const text = getWatermarkTextValue();
             const opacity = parseInt(document.getElementById('watermarkOpacity').value, 10);
@@ -1153,7 +1113,14 @@
         function saveLinkToAdminDashboard(sessionId, shortCode, fullUrl, eventName) {
             const companyName = document.getElementById('companyName').value.trim();
             const eventDate = document.getElementById('eventDate').value.trim();
-            const driveUrl = document.getElementById('driveUrl').value.trim();
+            const driveUrlInput = document.getElementById('driveUrl');
+            const rawDriveUrl = driveUrlInput ? driveUrlInput.value.trim() : '';
+            
+            // For local uploads, we don't have a real Drive URL
+            const driveUrl = localShareMode ? '' : rawDriveUrl;
+
+            // Always get fresh watermark settings at save time
+            const wm = getWatermarkSettings();
             
             // Get logged-in user email
             fetch('/auth/status', { credentials: 'same-origin' })
@@ -1166,10 +1133,12 @@
                     
                     const adminUserId = authData.user_email;
                     
-                    // Extract folder_id from drive_url
+                    // Extract folder_id from drive_url when present
                     let folderId = '';
-                    if (driveUrl.includes('/folders/')) {
+                    if (driveUrl && driveUrl.includes('/folders/')) {
                         folderId = driveUrl.split('/folders/')[1].split('/')[0].split('?')[0];
+                    } else if (localShareMode) {
+                        folderId = 'uploaded';
                     }
                     
                     fetch('/api/save-admin-link', {
@@ -1186,16 +1155,17 @@
                                 event_name: eventName,
                                 company_name: companyName,
                                 event_date: eventDate,
-                                watermark_enabled: watermarkSettings.watermark_enabled,
-                                watermark_text: watermarkSettings.watermark_text,
-                                watermark_logo_filename: watermarkSettings.watermark_logo_filename,
-                                watermark_position: watermarkSettings.watermark_position,
-                                watermark_opacity: watermarkSettings.watermark_opacity,
-                                watermark_size: watermarkSettings.watermark_size,
-                                watermark_margin: watermarkSettings.watermark_margin,
-                                watermark_offset_x: watermarkSettings.watermark_offset_x,
-                                watermark_offset_y: watermarkSettings.watermark_offset_y,
-                                created_via: 'admin_link_generator'
+                                watermark_enabled: wm.watermark_enabled,
+                                watermark_text: wm.watermark_text,
+                                watermark_logo_filename: wm.watermark_logo_filename,
+                                watermark_position: wm.watermark_position,
+                                watermark_opacity: wm.watermark_opacity,
+                                watermark_size: wm.watermark_size,
+                                watermark_margin: wm.watermark_margin,
+                                watermark_offset_x: wm.watermark_offset_x,
+                                watermark_offset_y: wm.watermark_offset_y,
+                                created_via: localShareMode ? 'local_upload' : 'admin_link_generator',
+                                local_upload: localShareMode
                             }
                         })
                     })
