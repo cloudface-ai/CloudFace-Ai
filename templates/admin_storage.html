@@ -48,10 +48,21 @@
             </p>
         </div>
 
+        {% set section_titles = {
+            'downloads': 'Drive Downloads Cache',
+            'uploads': 'Legacy Uploads',
+            'events': 'Canonical Events (Protected)',
+            'models': 'Face Models / Indexes',
+            'static_uploads': 'Static Uploads'
+        } %}
+
         {% for key, section in storage_data.items() %}
         <div class="card">
-            <h2>{{ key|capitalize }} <span class="badge">{{ section.entries|length }} items</span></h2>
+            <h2>{{ section_titles.get(key, key|capitalize) }} <span class="badge">{{ section.entries|length }} items</span></h2>
             <p class="muted">{{ section.root }}</p>
+            {% if not section.can_delete %}
+            <p class="muted">Deletion is disabled for this section.</p>
+            {% endif %}
 
             {% if section.entries %}
             <table>
@@ -73,7 +84,11 @@
                         <td>{{ entry.modified }}</td>
                         <td>
                             <div class="row-actions">
+                                {% if section.can_delete %}
                                 <button class="btn btn-danger" onclick="deletePath('{{ entry.path }}', this)">Delete</button>
+                                {% else %}
+                                <button class="btn" disabled>Protected</button>
+                                {% endif %}
                             </div>
                         </td>
                     </tr>

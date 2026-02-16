@@ -5188,6 +5188,17 @@ def superadmin_analytics_data():
         sessions_timeline = data.get('user_sessions', {})
         trial_ending_soon = []
         unpaid_active = []
+        unregistered_users = []
+
+        def _parse_dt(value):
+            if not value:
+                return datetime.min
+            try:
+                v = str(value).replace('Z', '+00:00')
+                return datetime.fromisoformat(v)
+            except Exception:
+                return datetime.min
+
         for user in registered_users:
             user_id = user.get('user_id')
             if not user_id:
@@ -5203,12 +5214,16 @@ def superadmin_analytics_data():
             user['shares'] = stats.get('shares', 0)
             user['errors'] = stats.get('errors', 0)
             user['sessions_timeline'] = sessions_timeline.get(user_id, [])
+            latest_session = user['sessions_timeline'][0] if user['sessions_timeline'] else {}
 
             profile = _load_user_profile(user_id)
             user['name'] = profile.get('name', '')
-            user['city'] = profile.get('city', '')
+            user['city'] = profile.get('city', '') or latest_session.get('city', '')
+            user['country'] = latest_session.get('country', '')
             user['phone'] = profile.get('phone', '')
             user['use_case'] = profile.get('use_case', '')
+            user['last_activity'] = user.get('last_activity') or latest_session.get('last_activity') or latest_session.get('start_time') or ''
+            user['_sort_ts'] = user['last_activity']
 
             if user.get('plan_type') == 'free':
                 days_left = user.get('trial_days_left')
@@ -5216,8 +5231,46 @@ def superadmin_analytics_data():
                     trial_ending_soon.append(user)
                 if (user.get('images_processed', 0) > 0 or user.get('sessions', 0) > 0):
                     unpaid_active.append(user)
+
+        registered_ids = {u.get('user_id') for u in registered_users if u.get('user_id')}
+        for user_id, stats in activity.items():
+            if not user_id or user_id in registered_ids:
+                continue
+            timeline = sessions_timeline.get(user_id, [])
+            latest_session = timeline[0] if timeline else {}
+            unregistered_users.append({
+                'user_id': user_id,
+                'city': latest_session.get('city', ''),
+                'country': latest_session.get('country', ''),
+                'region': latest_session.get('region', ''),
+                'last_activity': latest_session.get('last_activity') or latest_session.get('start_time') or '',
+                '_sort_ts': latest_session.get('last_activity') or latest_session.get('start_time') or '',
+                'sessions': stats.get('sessions', 0),
+                'total_time_spent': stats.get('total_time_spent', 0),
+                'drive_processed': stats.get('drive_processed', 0),
+                'local_processed': stats.get('local_processed', 0),
+                'watermark_images': stats.get('watermark_images', 0),
+                'searches': stats.get('searches', 0),
+                'downloads': stats.get('downloads', 0),
+                'shares': stats.get('shares', 0),
+                'errors': stats.get('errors', 0),
+                'sessions_timeline': timeline
+            })
+
+        registered_users.sort(key=lambda u: _parse_dt(u.get('_sort_ts')), reverse=True)
+        unregistered_users.sort(key=lambda u: _parse_dt(u.get('_sort_ts')), reverse=True)
+        trial_ending_soon.sort(key=lambda u: _parse_dt(u.get('_sort_ts')), reverse=True)
+        unpaid_active.sort(key=lambda u: _parse_dt(u.get('_sort_ts')), reverse=True)
+
+        for u in registered_users:
+            u.pop('_sort_ts', None)
+        for u in unregistered_users:
+            u.pop('_sort_ts', None)
+
         data['registered_users'] = registered_users
         data['registered_users_count'] = len(registered_users)
+        data['unregistered_users'] = unregistered_users
+        data['unregistered_users_count'] = len(unregistered_users)
         data['trial_ending_soon'] = trial_ending_soon
         data['unpaid_active'] = unpaid_active
         return jsonify({'success': True, 'data': data})
@@ -5747,11 +5800,19 @@ def superadmin_storage():
         return render_template('404.html'), 404
 
     roots = _allowed_storage_roots()
+    sections = [
+        ('downloads', os.path.join(roots['storage'], 'downloads'), 'storage/downloads', True),
+        ('uploads', os.path.join(roots['storage'], 'uploads'), 'storage/uploads', True),
+        ('events', os.path.join(roots['storage'], 'events'), 'storage/events', False),
+        ('models', roots['models'], 'models', True),
+        ('static_uploads', roots['uploads'], 'static/uploads', True),
+    ]
     data = {}
-    for key, path in roots.items():
+    for key, path, rel_root, can_delete in sections:
         data[key] = {
             'root': path,
-            'entries': _list_dir_entries(path, key)
+            'entries': _list_dir_entries(path, rel_root),
+            'can_delete': can_delete
         }
 
     return render_template('admin_storage.html', storage_data=data)
@@ -5774,6 +5835,11 @@ def superadmin_storage_delete():
     allowed_root = os.path.abspath(roots[root_key])
     if not target.startswith(allowed_root):
         return jsonify({'success': False, 'error': 'Access denied'}), 403
+
+    # Protect canonical event storage from accidental destructive cleanup.
+    events_root = os.path.abspath(os.path.join(os.getcwd(), 'storage', 'events'))
+    if target == events_root or target.startswith(events_root + os.sep):
+        return jsonify({'success': False, 'error': 'Event storage is protected. Delete from event tools only.'}), 403
 
     if not os.path.exists(target):
         return jsonify({'success': False, 'error': 'Path not found'}), 404

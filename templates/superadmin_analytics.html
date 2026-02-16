@@ -32,6 +32,9 @@
         .modal-close{background:#dadce0;border:none;border-radius:6px;padding:0.3rem 0.6rem;cursor:pointer}
         .row-click{cursor:pointer}
         .nowrap{white-space:nowrap}
+        .table-wrap{overflow:auto}
+        .label-row{display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap}
+        .subtle{font-size:0.85rem;color:var(--muted)}
     </style>
 </head>
 <body>
@@ -79,8 +82,21 @@
 
         <div class="section">
             <div class="card">
-                <h3>Registered Users</h3>
+                <div class="label-row">
+                    <h3>Registered Users</h3>
+                    <span class="subtle">Latest activity first</span>
+                </div>
                 <div id="registeredUsers" class="muted">Loading...</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="card">
+                <div class="label-row">
+                    <h3>Unregistered Users</h3>
+                    <span class="subtle">Latest activity first</span>
+                </div>
+                <div id="unregisteredUsers" class="muted">Loading...</div>
             </div>
         </div>
 
@@ -161,6 +177,7 @@
             const cards = [
                 { label: 'Unique Users', value: data.unique_users },
                 { label: 'Registered Users', value: data.registered_users_count || 0 },
+                { label: 'Unregistered Users', value: data.unregistered_users_count || 0 },
                 { label: 'Sessions', value: data.total_sessions },
                 { label: 'Searches', value: data.searches },
                 { label: 'Downloads', value: data.downloads },
@@ -190,6 +207,7 @@
             renderKeyValueTable('oses', data.os_distribution);
             renderErrors(data.errors);
             renderRegisteredUsers(data.registered_users || []);
+            renderUnregisteredUsers(data.unregistered_users || []);
             renderTrialEndingSoon(data.trial_ending_soon || []);
             renderUnpaidActive(data.unpaid_active || []);
             window._registeredEmails = (data.registered_users || [])
@@ -202,43 +220,45 @@
             return mins.toFixed(1);
         }
 
+        function formatLocation(city, country) {
+            const c = (city || '').trim();
+            const co = (country || '').trim();
+            if (c && co) return `${c}, ${co}`;
+            return c || co || 'Unknown';
+        }
+
         function renderRegisteredUsers(users) {
             const container = document.getElementById('registeredUsers');
             if (!users || users.length === 0) {
                 container.innerHTML = '<div class="muted">No registered users</div>';
                 return;
             }
-            const rows = users.map(user => `
+            const sortedUsers = [...users].sort((a, b) => (b.last_activity || '').localeCompare(a.last_activity || ''));
+            const rows = sortedUsers.map(user => `
                 <tr class="row-click" data-user="${user.user_id}">
                     <td class="nowrap">${user.user_id}</td>
                     <td>${user.name || ''}</td>
                     <td>${user.plan_name || ''}</td>
-                    <td>${user.city || ''}</td>
-                    <td>${user.phone || ''}</td>
+                    <td>${formatLocation(user.city, user.country)}</td>
                     <td>${user.last_activity || ''}</td>
                     <td>${user.images_processed || 0}</td>
-                    <td>${user.drive_processed || 0}</td>
-                    <td>${user.local_processed || 0}</td>
-                    <td>${user.watermark_images || 0}</td>
                     <td>${user.searches || 0}</td>
                     <td>${user.downloads || 0}</td>
                     <td>${user.shares || 0}</td>
-                    <td>${user.sessions || 0}</td>
-                    <td>${formatMinutes(user.total_time_spent)}</td>
-                    <td>${user.trial_days_left ?? ''}</td>
-                    <td>${user.trial_expired ? 'Yes' : 'No'}</td>
                     <td><a class="link" href="/superadmin/user?user_id=${encodeURIComponent(user.user_id)}">View</a></td>
                 </tr>
             `).join('');
             container.innerHTML = `
-                <table>
-                    <thead>
-                        <tr><th>User</th><th>Name</th><th>Plan</th><th>City</th><th>Phone</th><th>Last Activity</th><th>Images</th><th>Drive</th><th>Local</th><th>Watermark</th><th>Searches</th><th>Downloads</th><th>Shares</th><th>Sessions</th><th>Time (min)</th><th>Trial Days</th><th>Trial Expired</th><th>Details</th></tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                </table>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>User</th><th>Name</th><th>Plan</th><th>Location</th><th>Last Activity</th><th>Images</th><th>Searches</th><th>Downloads</th><th>Shares</th><th>Details</th></tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
             `;
-            users.forEach(user => {
+            sortedUsers.forEach(user => {
                 const row = container.querySelector(`tr[data-user="${CSS.escape(user.user_id)}"]`);
                 if (row) {
                     row.addEventListener('click', (event) => {
@@ -249,6 +269,37 @@
                     });
                 }
             });
+        }
+
+        function renderUnregisteredUsers(users) {
+            const container = document.getElementById('unregisteredUsers');
+            if (!users || users.length === 0) {
+                container.innerHTML = '<div class="muted">No unregistered users</div>';
+                return;
+            }
+            const sortedUsers = [...users].sort((a, b) => (b.last_activity || '').localeCompare(a.last_activity || ''));
+            const rows = sortedUsers.map(user => `
+                <tr>
+                    <td class="nowrap">${user.user_id || ''}</td>
+                    <td>${formatLocation(user.city, user.country)}</td>
+                    <td>${user.last_activity || ''}</td>
+                    <td>${user.sessions || 0}</td>
+                    <td>${user.searches || 0}</td>
+                    <td>${user.downloads || 0}</td>
+                    <td>${user.shares || 0}</td>
+                    <td>${formatMinutes(user.total_time_spent)}</td>
+                </tr>
+            `).join('');
+            container.innerHTML = `
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>User</th><th>Location</th><th>Last Activity</th><th>Sessions</th><th>Searches</th><th>Downloads</th><th>Shares</th><th>Time (min)</th></tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+            `;
         }
 
         function exportAnalytics() {
@@ -351,6 +402,7 @@
                     <td>${formatMinutes(s.total_time_spent)}</td>
                     <td>${s.page_views || 0}</td>
                     <td>${s.current_page || ''}</td>
+                    <td>${s.city || ''}</td>
                     <td>${s.country || ''}</td>
                     <td>${s.region || ''}</td>
                     <td>${s.device_type || ''}</td>
@@ -362,7 +414,7 @@
                 <div class="section">
                     <div><strong>Plan:</strong> ${user.plan_name || ''}</div>
                     <div><strong>Name:</strong> ${user.name || ''}</div>
-                    <div><strong>City:</strong> ${user.city || ''}</div>
+                    <div><strong>Location:</strong> ${formatLocation(user.city, user.country)}</div>
                     <div><strong>Phone:</strong> ${user.phone || ''}</div>
                     <div><strong>Use case:</strong> ${user.use_case || ''}</div>
                     <div><strong>Sessions:</strong> ${user.sessions || 0}</div>
@@ -375,10 +427,10 @@
                     <h4>Sessions Timeline (latest 20)</h4>
                     <table>
                         <thead>
-                            <tr><th>Start</th><th>Last</th><th>Time (min)</th><th>Views</th><th>Page</th><th>Country</th><th>Region</th><th>Device</th><th>OS</th></tr>
+                            <tr><th>Start</th><th>Last</th><th>Time (min)</th><th>Views</th><th>Page</th><th>City</th><th>Country</th><th>Region</th><th>Device</th><th>OS</th></tr>
                         </thead>
                         <tbody>
-                            ${timeline || '<tr><td colspan="9">No sessions</td></tr>'}
+                            ${timeline || '<tr><td colspan="10">No sessions</td></tr>'}
                         </tbody>
                     </table>
                 </div>
