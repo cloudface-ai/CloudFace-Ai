@@ -9,6 +9,7 @@ import sys
 import requests
 import time
 import json
+import shutil
 from urllib.parse import urlparse, parse_qs
 from google_drive_handler import extract_file_id_from_url, download_drive_photo
 import cv2
@@ -31,7 +32,7 @@ class RealDriveProcessor:
         self.total_files = 0
         self.errors = []
         
-    def process_drive_folder(self, drive_url, access_token, user_id, force_reprocess=False, max_depth=10):
+    def process_drive_folder(self, drive_url, access_token, user_id, force_reprocess=False, max_depth=10, folder_scope_id=None, storage_event_id=None):
         """
         Process a Google Drive folder with real facial recognition - RECURSIVE VERSION
         Supports up to 10+ levels deep folder traversal
@@ -58,6 +59,36 @@ class RealDriveProcessor:
                     # Check if folder was already processed and unchanged
                     if folder_cache.is_folder_processed(user_id, folder_id, image_files):
                         print(f"✅ Folder already processed, loading cached results...")
+                        # Even for cached runs, ensure dashboard canonical event folder has photos.
+                        if storage_event_id:
+                            try:
+                                from local_cache import LocalCache
+                                cache = LocalCache()
+                                target_dir = os.path.abspath(os.path.join("storage", "events", storage_event_id, "photos"))
+                                os.makedirs(target_dir, exist_ok=True)
+                                copied = 0
+                                for file_info in image_files:
+                                    cached_path = cache.get_cached_file_path(file_info, user_id)
+                                    if not cached_path or not os.path.isfile(cached_path):
+                                        continue
+                                    name = os.path.basename(cached_path)
+                                    dst = os.path.join(target_dir, name)
+                                    if os.path.abspath(cached_path) == os.path.abspath(dst):
+                                        continue
+                                    if os.path.exists(dst):
+                                        stem, ext = os.path.splitext(name)
+                                        i = 1
+                                        while True:
+                                            candidate = os.path.join(target_dir, f"{stem}_{i}{ext}")
+                                            if not os.path.exists(candidate):
+                                                dst = candidate
+                                                break
+                                            i += 1
+                                    shutil.copy2(cached_path, dst)
+                                    copied += 1
+                                print(f"📁 Cached-run mirror to event folder: {copied} files -> {target_dir}")
+                            except Exception as e:
+                                print(f"⚠️ Cached-run mirror failed: {e}")
                         
                         # Update progress for cached results
                         progress_tracker.start_progress()
@@ -107,6 +138,7 @@ class RealDriveProcessor:
             self.total_files = len(image_files)
             
             print(f"📁 Found {self.total_files} image files in folder")
+            processing_scope_id = folder_scope_id or folder_id
             
             if self.total_files == 0:
                 return {'success': False, 'error': 'No image files found in folder'}
@@ -233,7 +265,7 @@ class RealDriveProcessor:
                             return False, error_msg
 
                         # Use real face recognition engine (Phase 1) - ONLY PATH
-                        result = self._process_with_real_recognition(image, file_info, user_id, folder_id)
+                        result = self._process_with_real_recognition(image, file_info, user_id, processing_scope_id)
                         if result.get('successful_additions', 0) > 0 or result.get('success', False):
                             with counter_lock:
                                 self.processed_count += 1
@@ -288,6 +320,35 @@ class RealDriveProcessor:
                 
             except Exception as e:
                 print(f"⚠️ Warning: Could not create file mapping: {e}")
+
+            # Optional canonical event storage mirror: storage/events/{event_id}/photos/
+            if storage_event_id and storage_event_id != folder_id:
+                try:
+                    target_dir = os.path.abspath(os.path.join("storage", "events", storage_event_id, "photos"))
+                    os.makedirs(target_dir, exist_ok=True)
+                    copied = 0
+                    for item in downloaded_files:
+                        src = item.get('local_path')
+                        if not src or not os.path.isfile(src):
+                            continue
+                        base = os.path.basename(src)
+                        dst = os.path.join(target_dir, base)
+                        if os.path.abspath(src) == os.path.abspath(dst):
+                            continue
+                        if os.path.exists(dst):
+                            stem, ext = os.path.splitext(base)
+                            i = 1
+                            while True:
+                                candidate = os.path.join(target_dir, f"{stem}_{i}{ext}")
+                                if not os.path.exists(candidate):
+                                    dst = candidate
+                                    break
+                                i += 1
+                        shutil.copy2(src, dst)
+                        copied += 1
+                    print(f"📁 Mirrored {copied} drive files to canonical event folder: {target_dir}")
+                except Exception as e:
+                    print(f"⚠️ Could not mirror drive files to event storage: {e}")
             
             # Mark all steps as complete
             progress_tracker.complete_all_steps()
@@ -648,14 +709,22 @@ class RealDriveProcessor:
             return {'success': False, 'error': str(e)}
 
 
-def process_drive_folder_and_store(user_id, url, access_token, force_reprocess=False, max_depth=10):
+def process_drive_folder_and_store(user_id, url, access_token, force_reprocess=False, max_depth=10, folder_scope_id=None, storage_event_id=None):
     """
     Main function to process Google Drive folder - RECURSIVE VERSION
     Supports up to 10+ levels deep folder traversal
     """
     try:
         processor = RealDriveProcessor()
-        result = processor.process_drive_folder(url, access_token, user_id, force_reprocess, max_depth)
+        result = processor.process_drive_folder(
+            url,
+            access_token,
+            user_id,
+            force_reprocess,
+            max_depth,
+            folder_scope_id=folder_scope_id,
+            storage_event_id=storage_event_id
+        )
         return result
         
     except Exception as e:

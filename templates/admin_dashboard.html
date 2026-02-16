@@ -1911,16 +1911,13 @@
                     if (d.success && d.session_id) sid = d.session_id;
                 } catch (e) {}
             }
-            if (driveUrl) {
-                window.location.href = '/auto-process-welcome?drive=' + encodeURIComponent(driveUrl) + '&session=' + encodeURIComponent(sid || '') + '&event=' + encodeURIComponent(eventName || '');
+            if (sid) {
+                window.location.href = '/admin/event-add-photos/' + encodeURIComponent(sid);
                 return;
             }
             if (linkId) {
+                // Fallback only when session_id could not be resolved client-side.
                 window.location.href = '/admin/event-add-photos-link/' + encodeURIComponent(linkId);
-                return;
-            }
-            if (sid) {
-                window.location.href = '/admin/event-add-photos/' + encodeURIComponent(sid);
             } else {
                 alert('This event could not be identified. Refresh the dashboard and try again, or add photos from the App page for a new event.');
             }

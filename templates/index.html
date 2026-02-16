@@ -2120,9 +2120,11 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
             if (sessionId) {
                 console.log('🔗 Shared session detected:', sessionId);
                 sessionStorage.setItem('pendingSessionId', sessionId);
+                activeEventSessionId = sessionId;
             } else {
                 // Critical: plain /app should create a new event, never reuse stale browser session IDs.
                 sessionStorage.removeItem('uploadSessionId');
+                activeEventSessionId = '';
             }
             
             checkAuthStatus().then(function(authenticated) {
@@ -2243,6 +2245,7 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
 
         // Local search functionality
         let selectedLocalFiles = [];
+        let activeEventSessionId = '';
         let localShareReady = false;
         let lastLocalShareMeta = { totalFiles: 0, processedCount: 0 };
         let currentSearchMode = 'cloud';
@@ -2556,6 +2559,7 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                         updateLocalProgress(100, 'Complete!', `Processed ${data.processed_count} faces`);
                         if (data.session_id) {
                             console.log('📁 New event session created:', data.session_id);
+                            activeEventSessionId = data.session_id;
                         }
                         const message = data.cached_result ?
                             `✅ ${data.message} (using cache)` :
@@ -2629,12 +2633,18 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                 body: JSON.stringify({
                     drive_url: driveUrl,
                     force_reprocess: forceReprocess,
-                    max_depth: parseInt(document.getElementById('maxDepth').value) || 10
+                    max_depth: parseInt(document.getElementById('maxDepth').value) || 10,
+                    // Route drive processing into the existing event:
+                    // URL session first, then in-memory event created during this page lifecycle.
+                    session_id: (new URLSearchParams(window.location.search).get('session') || activeEventSessionId || '').trim()
                 })
             })
             .then(response => response.json())
             .then(data => {
                 document.getElementById('processLoading').style.display = 'none';
+                if (data && data.session_id) {
+                    activeEventSessionId = data.session_id;
+                }
                 
                 // Clear progress animation interval
                 if (window.progressInterval) {
@@ -2686,10 +2696,11 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
             const folderDepthInput = document.getElementById('folderDepth');
             
             const driveUrl = driveUrlInput ? driveUrlInput.value.trim() : '';
+            const sid = (activeEventSessionId || new URLSearchParams(window.location.search).get('session') || '').trim();
             if (driveUrl) {
                 const folderDepth = folderDepthInput ? folderDepthInput.value : '10';
                 // Open link generator with pre-filled Drive URL and folder info
-                const shareUrl = `/admin/link-generator?drive=${encodeURIComponent(driveUrl)}&depth=${folderDepth}`;
+                const shareUrl = `/admin/link-generator?drive=${encodeURIComponent(driveUrl)}&depth=${folderDepth}${sid ? `&session=${encodeURIComponent(sid)}` : ''}`;
                 window.open(shareUrl, '_blank');
                 return;
             }
@@ -2700,7 +2711,7 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
             }
             
             // When sharing local uploads, send the admin to the link generator in local mode.
-            const generatorUrl = '/admin/link-generator?local=1';
+            const generatorUrl = `/admin/link-generator?local=1${sid ? `&session=${encodeURIComponent(sid)}` : ''}`;
             window.open(generatorUrl, '_blank');
         }
 
@@ -2718,6 +2729,7 @@ input[type="text"]{width:100%;padding:.75rem;border:1px solid var(--border);bord
                     if (data.success) {
                         console.log('✅ Session data loaded:', data);
                         sessionStorage.setItem('uploadSessionId', sessionId);
+                        activeEventSessionId = sessionId;
                         // Lock entire Step 1 section for shared sessions (end users; owner can still upload to this event)
                         const step1Section = document.querySelector('.section:first-of-type');
                         const processBtn = document.querySelector('.btn[onclick="processPhotos()"]');

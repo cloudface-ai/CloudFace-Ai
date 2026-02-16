@@ -372,6 +372,81 @@ def _event_photos_dir(event_id: str) -> str:
     return os.path.join('storage', 'events', event_id, 'photos')
 
 
+def _mirror_drive_cache_to_event(user_id: str, drive_folder_id: str, event_id: str) -> int:
+    """Mirror downloaded drive cache images into canonical event folder."""
+    if not user_id or not drive_folder_id or not event_id:
+        return 0
+    src_dir = os.path.abspath(os.path.join('storage', 'downloads', f"{user_id}_{drive_folder_id}"))
+    dst_dir = os.path.abspath(_event_photos_dir(event_id))
+    if not os.path.isdir(src_dir):
+        return 0
+    os.makedirs(dst_dir, exist_ok=True)
+    copied = 0
+    for root, _dirs, files in os.walk(src_dir):
+        for name in files:
+            if not _is_image_file(name):
+                continue
+            src = os.path.join(root, name)
+            if not os.path.isfile(src):
+                continue
+            dst = os.path.join(dst_dir, name)
+            if os.path.exists(dst):
+                stem, ext = os.path.splitext(name)
+                i = 1
+                while True:
+                    candidate = os.path.join(dst_dir, f"{stem}_{i}{ext}")
+                    if not os.path.exists(candidate):
+                        dst = candidate
+                        break
+                    i += 1
+            try:
+                shutil.copy2(src, dst)
+                copied += 1
+            except Exception:
+                continue
+    return copied
+
+
+def _force_drive_ingest_to_event(user_id: str, drive_folder_id: str, event_id: str, access_token: str, max_depth: int = 10) -> int:
+    """Directly download drive images and ingest into canonical event folder."""
+    if not user_id or not drive_folder_id or not event_id or not access_token:
+        return 0
+    try:
+        from real_drive_processor import RealDriveProcessor
+        processor = RealDriveProcessor()
+        all_files = processor._get_folder_contents_recursive(drive_folder_id, access_token, max_depth)
+        image_files = processor._filter_image_files(all_files) if all_files else []
+        if not image_files:
+            return 0
+        target_dir = os.path.abspath(_event_photos_dir(event_id))
+        os.makedirs(target_dir, exist_ok=True)
+        downloaded_paths = []
+        for i, file_info in enumerate(image_files):
+            safe = "".join(c for c in file_info.get('name', '') if c.isalnum() or c in (' ', '-', '_', '.')).rstrip() or f"image_{i}"
+            if not safe.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp')):
+                safe += '.jpg'
+            local_name = f"drive_{drive_folder_id[:8]}_{i}_{safe}"[:220]
+            local_path = os.path.join(target_dir, local_name)
+            try:
+                content = processor._download_image(file_info, access_token)
+                if content:
+                    with open(local_path, 'wb') as f:
+                        f.write(content)
+                    downloaded_paths.append(local_path)
+            except Exception:
+                continue
+        if not downloaded_paths:
+            return 0
+        from local_folder_processor import local_processor
+        result = local_processor.process_uploaded_files_from_paths(user_id, downloaded_paths, session_id=event_id)
+        if result.get('success'):
+            return int(result.get('total_files') or len(downloaded_paths))
+        return 0
+    except Exception as e:
+        print(f"⚠️ Force drive ingest failed: {e}")
+        return 0
+
+
 def _lookup_event_link_by_session(event_id: str, admin_user_id: str) -> Optional[Dict[str, Any]]:
     """Fallback event identity lookup from admin_links when session store is unavailable."""
     if not event_id or not admin_user_id:
@@ -2395,6 +2470,7 @@ def process_drive():
         drive_url = data.get('drive_url')
         force_reprocess = data.get('force_reprocess', False)
         max_depth = data.get('max_depth', 10)  # Default to 10 levels deep
+        requested_session_id = (data.get('session_id') or '').strip() or None
         
         if not drive_url:
             return jsonify({'success': False, 'error': 'No drive URL provided'})
@@ -2459,9 +2535,40 @@ def process_drive():
         except Exception as e:
             print(f"⚠️ Plan check failed, proceeding anyway: {e}")
         
-        # Store current folder_id in session for search isolation
-        session['current_folder_id'] = folder_id
-        print(f"📁 Set current folder_id in session: {folder_id}")
+        target_event_id = folder_id
+        created_new_event = False
+
+        # If a specific event/session was requested, validate ownership and use that scope.
+        if requested_session_id:
+            try:
+                from shared_session_manager import get_session_manager
+                manager = get_session_manager()
+                existing = manager.get_session(requested_session_id)
+                if not existing:
+                    return jsonify({'success': False, 'error': 'event_id_not_found'}), 404
+                if existing.get('admin_user_id') != user_id:
+                    return jsonify({'success': False, 'error': 'event_id_forbidden'}), 403
+                target_event_id = requested_session_id
+            except Exception as e:
+                print(f"⚠️ Drive event validation failed for session_id={requested_session_id}: {e}")
+                return jsonify({'success': False, 'error': 'event_validation_failed'}), 400
+        else:
+            # Align with local /app flow: create a new canonical event id when none provided.
+            try:
+                from shared_session_manager import get_session_manager
+                manager = get_session_manager()
+                metadata = {'event_name': 'Drive Upload', 'company_name': '', 'event_date': ''}
+                new_sid = manager.create_session(user_id, 'uploaded', metadata)
+                if new_sid:
+                    target_event_id = new_sid
+                    created_new_event = True
+            except Exception as e:
+                print(f"⚠️ Could not create drive event session, using folder id scope: {e}")
+
+        # Store current scope in session for search isolation (event-id first).
+        session['current_folder_id'] = target_event_id
+        print(f"📁 Set current folder_id in session: {target_event_id}")
+        print(f"📌 Drive target event_id: {target_event_id} (created_new_event={created_new_event})")
         
         print(f"🔍 Starting background processing for user: {user_id}")
         print(f"🔑 Using access token: {access_token[:20]}...")
@@ -2488,8 +2595,23 @@ def process_drive():
                     url=drive_url,
                     access_token=access_token,
                     force_reprocess=force_reprocess,
-                    max_depth=max_depth
+                    max_depth=max_depth,
+                    folder_scope_id=target_event_id,
+                    storage_event_id=target_event_id
                 )
+                # Ensure dashboard/event pages can always read from canonical event storage.
+                try:
+                    mirrored = _mirror_drive_cache_to_event(user_id, folder_id, target_event_id)
+                    print(f"📁 Mirrored drive cache to event folder: {mirrored} files (event_id={target_event_id})")
+                except Exception as e:
+                    print(f"⚠️ Mirror drive cache to event failed: {e}")
+                # Hard fallback: if canonical event folder is still empty, ingest directly into it.
+                try:
+                    if not _list_session_uploads(user_id, target_event_id, limit=1):
+                        forced = _force_drive_ingest_to_event(user_id, folder_id, target_event_id, access_token, max_depth=max_depth)
+                        print(f"📁 Forced drive ingest to event folder: {forced} files (event_id={target_event_id})")
+                except Exception as e:
+                    print(f"⚠️ Forced drive ingest check failed: {e}")
                 
                 # Track usage if processing was successful
                 if result.get('success') and result.get('processed_count', 0) > 0:
@@ -2518,7 +2640,8 @@ def process_drive():
         return jsonify({
             'success': True,
             'message': 'Processing your request...',
-            'status': 'processing'
+            'status': 'processing',
+            'session_id': target_event_id
         })
         
     except Exception as e:
@@ -2628,6 +2751,7 @@ def process_drive_shared():
         force_reprocess = data.get('force_reprocess', False)
         max_depth = data.get('max_depth', 10)
         user_id = data.get('user_id') or session.get('user_id') or 'shared_bot'
+        requested_session_id = (data.get('session_id') or '').strip() or None
 
         if not drive_url:
             return jsonify({'success': False, 'error': 'No drive URL provided'}), 400
@@ -2693,9 +2817,39 @@ def process_drive_shared():
             import traceback
             traceback.print_exc()
 
-        # Store current folder_id in session for search isolation
-        session['current_folder_id'] = folder_id
-        print(f"📁 Set current folder_id in session for bot processing: {folder_id}")
+        target_event_id = folder_id
+        created_new_event = False
+        if user_id != 'shared_bot':
+            if requested_session_id:
+                try:
+                    from shared_session_manager import get_session_manager
+                    manager = get_session_manager()
+                    existing = manager.get_session(requested_session_id)
+                    if not existing:
+                        return jsonify({'success': False, 'error': 'event_id_not_found'}), 404
+                    if existing.get('admin_user_id') != user_id:
+                        return jsonify({'success': False, 'error': 'event_id_forbidden'}), 403
+                    target_event_id = requested_session_id
+                except Exception as e:
+                    print(f"⚠️ Drive-shared event validation failed for session_id={requested_session_id}: {e}")
+                    return jsonify({'success': False, 'error': 'event_validation_failed'}), 400
+            else:
+                # /app drive upload without explicit event id => create a new canonical event id once.
+                try:
+                    from shared_session_manager import get_session_manager
+                    manager = get_session_manager()
+                    metadata = {'event_name': 'Drive Upload', 'company_name': '', 'event_date': '', 'drive_url': drive_url}
+                    new_sid = manager.create_session(user_id, 'uploaded', metadata)
+                    if new_sid:
+                        target_event_id = new_sid
+                        created_new_event = True
+                except Exception as e:
+                    print(f"⚠️ Could not create drive-shared event session, using folder id scope: {e}")
+
+        # Store current event/folder scope in session for search isolation
+        session['current_folder_id'] = target_event_id
+        print(f"📁 Set current folder_id in session for bot processing: {target_event_id}")
+        print(f"📌 Drive-shared target event_id: {target_event_id} (created_new_event={created_new_event})")
 
         # Import progress tracking and threading
         import threading
@@ -2720,8 +2874,23 @@ def process_drive_shared():
                     url=drive_url,
                     access_token=access_token,
                     force_reprocess=force_reprocess,
-                    max_depth=max_depth
+                    max_depth=max_depth,
+                    folder_scope_id=target_event_id,
+                    storage_event_id=target_event_id
                 )
+                # Ensure dashboard/event pages can always read from canonical event storage.
+                try:
+                    mirrored = _mirror_drive_cache_to_event(user_id, folder_id, target_event_id)
+                    print(f"📁 Mirrored drive cache to event folder: {mirrored} files (event_id={target_event_id})")
+                except Exception as e:
+                    print(f"⚠️ Mirror drive cache to event failed: {e}")
+                # Hard fallback: if canonical event folder is still empty, ingest directly into it.
+                try:
+                    if not _list_session_uploads(user_id, target_event_id, limit=1):
+                        forced = _force_drive_ingest_to_event(user_id, folder_id, target_event_id, access_token, max_depth=max_depth)
+                        print(f"📁 Forced drive ingest to event folder: {forced} files (event_id={target_event_id})")
+                except Exception as e:
+                    print(f"⚠️ Forced drive ingest check failed: {e}")
                 
                 # Track photo processing analytics
                 if result.get('success') and result.get('processed_count', 0) > 0:
@@ -2772,7 +2941,8 @@ def process_drive_shared():
         return jsonify({
             'success': True,
             'message': 'Processing your request...',
-            'status': 'processing'
+            'status': 'processing',
+            'session_id': target_event_id
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -4261,6 +4431,7 @@ def test_logo_qr():
     return send_from_directory('.', 'test_logo_qr.html', mimetype='text/html')
 
 @app.route('/auto-process')
+@app.route('/auto-process-welcome')
 def auto_process():
     """Auto-process route with beautiful welcome page"""
     drive_url = request.args.get('drive', '')
@@ -5167,10 +5338,23 @@ def admin_event_photos(session_id):
     if user_id != admin_user_id and not is_super_user(user_id):
         return render_template('404.html'), 404
     
-    # List photos for this event: per-event folder = storage/uploads/admin_id/folder_id/ (folder_id is session_id for local events)
+    # Prefer canonical event folder keyed by session_id, fallback to legacy folder_id.
     folder_id = session_data.get('folder_id', 'uploaded')
-    uploads = _list_session_uploads(admin_user_id, folder_id, limit=5000)
-    actual_folder_used = folder_id
+    uploads = _list_session_uploads(admin_user_id, session_id, limit=5000)
+    actual_folder_used = session_id
+    # If this is an older drive-backed event, hydrate canonical folder from drive cache on-demand.
+    if not uploads and folder_id and folder_id != session_id:
+        try:
+            mirrored = _mirror_drive_cache_to_event(admin_user_id, folder_id, session_id)
+            if mirrored:
+                print(f"📁 On-demand mirror for event photos: {mirrored} files (event_id={session_id})")
+                uploads = _list_session_uploads(admin_user_id, session_id, limit=5000)
+                actual_folder_used = session_id
+        except Exception as e:
+            print(f"⚠️ On-demand mirror failed in admin_event_photos: {e}")
+    if not uploads and folder_id and folder_id != session_id:
+        uploads = _list_session_uploads(admin_user_id, folder_id, limit=5000)
+        actual_folder_used = folder_id
     # If event folder is empty but exactly one other subfolder has images (e.g. legacy "100"), use it so photos show
     if not uploads:
         fallback_folder = _find_single_non_empty_upload_subfolder(admin_user_id)
@@ -5514,8 +5698,17 @@ def api_admin_event_preview_image(session_id):
     if user_id != admin_user_id and not is_super_user(user_id):
         return '', 403
 
-    folder_id = session_data.get('folder_id') or session_id
-    uploads = _list_session_uploads(admin_user_id, folder_id, limit=1)
+    # Prefer canonical event folder keyed by session_id; fallback to legacy folder_id.
+    folder_id = session_data.get('folder_id') or ''
+    uploads = _list_session_uploads(admin_user_id, session_id, limit=1)
+    if not uploads and folder_id and folder_id != session_id:
+        try:
+            _mirror_drive_cache_to_event(admin_user_id, folder_id, session_id)
+            uploads = _list_session_uploads(admin_user_id, session_id, limit=1)
+        except Exception as e:
+            print(f"⚠️ On-demand mirror failed in preview endpoint: {e}")
+    if not uploads and folder_id and folder_id != session_id:
+        uploads = _list_session_uploads(admin_user_id, folder_id, limit=1)
     if not uploads:
         return '', 404
 

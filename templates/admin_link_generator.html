@@ -467,6 +467,7 @@
         let generatedShareLink = '';  // Store generated link
         let generatedFullLink = '';   // Store full link for reference
         let localShareMode = false;
+        let preselectedSessionId = '';
         
         // Auto-fill Drive URL from URL parameters (when coming from main app)
         window.addEventListener('load', function() {
@@ -475,6 +476,7 @@
             const driveUrl = urlParams.get('drive');
             const depth = urlParams.get('depth');
             localShareMode = urlParams.get('local') === '1';
+            preselectedSessionId = (urlParams.get('session') || '').trim();
             
             // Auto-fill if coming from processing
             if (driveUrl) {
@@ -1004,6 +1006,8 @@
                         body: JSON.stringify({
                             admin_user_id: adminUserId,
                             folder_id: folderId,
+                            // Preserve /app-created event identity when passed in query params.
+                            session_id: preselectedSessionId || null,
                             metadata: {
                                 drive_url: localShareMode ? '' : driveUrl,
                                 local_upload: localShareMode,
