@@ -3070,6 +3070,21 @@ def search():
             # If shared session, search only in the specific shared folder
             shared_folder_id = session.get('shared_folder_id')
             search_result = search_with_real_recognition_universal(normalized_path, search_user_id, threshold, shared_folder_id)
+            effective_threshold = threshold
+            if search_result.get('success') and search_result.get('total_matches', 0) == 0:
+                relaxed_threshold = max(0.35, threshold - 0.08)
+                if relaxed_threshold < threshold:
+                    relaxed_result = search_with_real_recognition_universal(
+                        normalized_path,
+                        search_user_id,
+                        relaxed_threshold,
+                        shared_folder_id
+                    )
+                    if relaxed_result.get('success') and relaxed_result.get('total_matches', 0) > 0:
+                        search_result = relaxed_result
+                        effective_threshold = relaxed_threshold
+                        search_result['threshold_fallback_used'] = True
+                        search_result['original_threshold'] = threshold
             print(f"🔧 DEBUG: Universal search result: {search_result.get('total_matches', 0)} matches found")
 
             # Track search analytics
@@ -3082,7 +3097,7 @@ def search():
                         'search_performed',
                         {
                             'matches': search_result.get('total_matches', 0),
-                            'threshold': threshold,
+                            'threshold': effective_threshold,
                             'source': 'shared' if shared_user_id else 'admin',
                             'shared_folder_id': shared_folder_id
                         },
@@ -4557,12 +4572,16 @@ def create_share_session():
         if requested_session_id:
             try:
                 requested = manager.get_session(requested_session_id)
-                if requested and requested.get('admin_user_id') == admin_user_id:
-                    existing_session = requested
-                    existing_session.setdefault('session_id', requested_session_id)
-                    print(f"🔁 Reusing requested session: {requested_session_id}")
+                if not requested:
+                    return jsonify({'success': False, 'error': 'requested_session_not_found'}), 404
+                if requested.get('admin_user_id') != admin_user_id:
+                    return jsonify({'success': False, 'error': 'requested_session_forbidden'}), 403
+                existing_session = requested
+                existing_session.setdefault('session_id', requested_session_id)
+                print(f"🔁 Reusing requested session: {requested_session_id}")
             except Exception as requested_lookup_error:
                 print(f"⚠️ Error loading requested session: {requested_lookup_error}")
+                return jsonify({'success': False, 'error': 'requested_session_lookup_failed'}), 400
 
         # 2) For local uploads, try to reuse most recent existing event link session for this admin
         if not existing_session and folder_id == 'uploaded' and not force_new:

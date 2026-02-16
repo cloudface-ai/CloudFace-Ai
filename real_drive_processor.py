@@ -60,6 +60,7 @@ class RealDriveProcessor:
                     if folder_cache.is_folder_processed(user_id, folder_id, image_files):
                         print(f"✅ Folder already processed, loading cached results...")
                         # Even for cached runs, ensure dashboard canonical event folder has photos.
+                        mirrored_paths = []
                         if storage_event_id:
                             try:
                                 from local_cache import LocalCache
@@ -85,8 +86,42 @@ class RealDriveProcessor:
                                                 break
                                             i += 1
                                     shutil.copy2(cached_path, dst)
+                                    mirrored_paths.append(dst)
                                     copied += 1
                                 print(f"📁 Cached-run mirror to event folder: {copied} files -> {target_dir}")
+                                # For cached folders, ensure first-time event scopes still get FAISS/Firebase entries.
+                                try:
+                                    index_path = os.path.join("models", user_id, storage_event_id, "face_embeddings.index")
+                                    metadata_path = os.path.join("models", user_id, storage_event_id, "face_metadata.json")
+                                    needs_reindex = (not os.path.exists(index_path)) or (not os.path.exists(metadata_path))
+                                    if not needs_reindex and os.path.exists(metadata_path):
+                                        try:
+                                            with open(metadata_path, "r") as f:
+                                                metadata_json = json.load(f)
+                                            needs_reindex = not bool(metadata_json)
+                                        except Exception:
+                                            needs_reindex = True
+                                    if needs_reindex:
+                                        if not mirrored_paths:
+                                            for root, _dirs, files in os.walk(target_dir):
+                                                for fname in files:
+                                                    if fname.lower().endswith(('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp')):
+                                                        mirrored_paths.append(os.path.join(root, fname))
+                                        if mirrored_paths:
+                                            from local_folder_processor import local_processor
+                                            append_result = local_processor.process_uploaded_files_from_paths(
+                                                user_id,
+                                                mirrored_paths,
+                                                session_id=storage_event_id
+                                            )
+                                            print(
+                                                "📌 Cached-run reindex result: "
+                                                f"success={append_result.get('success')} "
+                                                f"processed_faces={append_result.get('processed_count', 0)} "
+                                                f"files={append_result.get('total_files', 0)}"
+                                            )
+                                except Exception as reindex_error:
+                                    print(f"⚠️ Cached-run reindex failed: {reindex_error}")
                             except Exception as e:
                                 print(f"⚠️ Cached-run mirror failed: {e}")
                         
@@ -151,7 +186,6 @@ class RealDriveProcessor:
             progress_tracker.set_status('database', 'Waiting for processing...')
             
             # Create local download directory
-            import os
             download_dir = os.path.join("storage", "downloads", f"{user_id}_{folder_id}")
             os.makedirs(download_dir, exist_ok=True)
             print(f"INFO: Created download directory: {download_dir}")

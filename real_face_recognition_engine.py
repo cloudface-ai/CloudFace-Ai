@@ -230,42 +230,43 @@ class RealFaceRecognitionEngine:
         """Add face embedding to FAISS database with duplicate prevention."""
         try:
             embedding = face_data['embedding']
-            
-            # Check for duplicates first
-            for existing_id, existing_data in self.face_database.items():
-                if (existing_data['person_id'] == person_id and 
-                    existing_data['user_id'] == user_id and 
-                    existing_data['folder_id'] == folder_id):
-                    print(f"⚠️  Skipping duplicate: {person_id} already exists in database")
+            lock = self._get_scope_lock()
+            with lock:
+                # Check for duplicates first
+                for _existing_id, existing_data in self.face_database.items():
+                    if (existing_data['person_id'] == person_id and
+                        existing_data['user_id'] == user_id and
+                        existing_data['folder_id'] == folder_id):
+                        print(f"⚠️  Skipping duplicate: {person_id} already exists in database")
+                        return False
+
+                # Add to FAISS index
+                if self.faiss_index is not None:
+                    # Normalize embedding for cosine similarity
+                    embedding_norm = embedding / (np.linalg.norm(embedding) + 1e-8)
+
+                    # FAISS expects 2D array
+                    embedding_2d = embedding_norm.reshape(1, -1)
+                    self.faiss_index.add(embedding_2d)
+
+                    # Store metadata
+                    face_id = self.faiss_index.ntotal - 1  # Index of last added
+                    self.face_database[face_id] = {
+                        'person_id': person_id,
+                        'user_id': user_id,
+                        'folder_id': folder_id,
+                        'bbox': face_data['bbox'],
+                        'confidence': face_data['confidence'],
+                        'quality_score': face_data['quality_score'],
+                        'detector': face_data['detector'],
+                        'extractor': face_data['extractor']
+                    }
+
+                    print(f"💾 Added face to FAISS database: {person_id}")
+                    return True
+                else:
+                    print(f"⚠️  FAISS not available, skipping database add")
                     return False
-            
-            # Add to FAISS index
-            if self.faiss_index is not None:
-                # Normalize embedding for cosine similarity
-                embedding_norm = embedding / (np.linalg.norm(embedding) + 1e-8)
-                
-                # FAISS expects 2D array
-                embedding_2d = embedding_norm.reshape(1, -1)
-                self.faiss_index.add(embedding_2d)
-                
-                # Store metadata
-                face_id = self.faiss_index.ntotal - 1  # Index of last added
-                self.face_database[face_id] = {
-                    'person_id': person_id,
-                    'user_id': user_id,
-                    'folder_id': folder_id,
-                    'bbox': face_data['bbox'],
-                    'confidence': face_data['confidence'],
-                    'quality_score': face_data['quality_score'],
-                    'detector': face_data['detector'],
-                    'extractor': face_data['extractor']
-                }
-                
-                print(f"💾 Added face to FAISS database: {person_id}")
-                return True
-            else:
-                print(f"⚠️  FAISS not available, skipping database add")
-                return False
                 
         except Exception as e:
             logger.error(f"Failed to add face to database: {e}")
@@ -311,65 +312,67 @@ class RealFaceRecognitionEngine:
                            k: int = None, threshold: float = 0.7) -> List[Dict[str, Any]]:
         """Search for similar faces using FAISS."""
         try:
-            if self.faiss_index is None or self.faiss_index.ntotal == 0:
-                print("❌ No faces in FAISS database")
-                return []
-            
-            # Normalize query embedding for cosine similarity
-            query_norm = query_embedding / (np.linalg.norm(query_embedding) + 1e-8)
-            query_2d = query_norm.reshape(1, -1)
-            
-            # Search FAISS index - search ALL embeddings (no artificial limits)
-            search_k = k if k is not None else self.faiss_index.ntotal
-            similarities, indices = self.faiss_index.search(query_2d, min(search_k, self.faiss_index.ntotal))
-            
-            results = []
-            for sim, idx in zip(similarities[0], indices[0]):
-                if idx == -1:  # Invalid index
-                    continue
-                
-                # Convert inner product to cosine similarity (FAISS 1.7.4 compatibility)
-                # Since we normalized embeddings, inner product = cosine similarity
-                # But clamp to valid range just in case
-                similarity_clamped = max(0.0, min(1.0, float(sim)))
-                
-                if similarity_clamped >= threshold:
-                    # Get face metadata
-                    if idx in self.face_database:
-                        face_meta = self.face_database[idx]
-                        
-                        # Filter by user and folder
-                        if (face_meta['user_id'] == user_id and 
-                            face_meta['folder_id'] == folder_id):
-                            
-                            # Extract file_id from person_id to find photo
-                            person_id = face_meta['person_id']
-                            if person_id.startswith('uploaded_'):
-                                temp = person_id.replace('uploaded_', '')
-                                temp = temp.replace(f'{user_id}_', '', 1)
-                                parts = temp.split('_', 1)
-                                if len(parts) >= 2:
-                                    filename_part = parts[1]
-                                    photo_name = re.sub(r'_face_\d+$', '', filename_part)
+            lock = self._get_scope_lock()
+            with lock:
+                if self.faiss_index is None or self.faiss_index.ntotal == 0:
+                    print("❌ No faces in FAISS database")
+                    return []
+
+                # Normalize query embedding for cosine similarity
+                query_norm = query_embedding / (np.linalg.norm(query_embedding) + 1e-8)
+                query_2d = query_norm.reshape(1, -1)
+
+                # Search FAISS index - search ALL embeddings (no artificial limits)
+                search_k = k if k is not None else self.faiss_index.ntotal
+                similarities, indices = self.faiss_index.search(query_2d, min(search_k, self.faiss_index.ntotal))
+
+                results = []
+                for sim, idx in zip(similarities[0], indices[0]):
+                    if idx == -1:  # Invalid index
+                        continue
+
+                    # Convert inner product to cosine similarity (FAISS 1.7.4 compatibility)
+                    # Since we normalized embeddings, inner product = cosine similarity
+                    # But clamp to valid range just in case
+                    similarity_clamped = max(0.0, min(1.0, float(sim)))
+
+                    if similarity_clamped >= threshold:
+                        # Get face metadata
+                        if idx in self.face_database:
+                            face_meta = self.face_database[idx]
+
+                            # Filter by user and folder
+                            if (face_meta['user_id'] == user_id and
+                                face_meta['folder_id'] == folder_id):
+
+                                # Extract file_id from person_id to find photo
+                                person_id = face_meta['person_id']
+                                if person_id.startswith('uploaded_'):
+                                    temp = person_id.replace('uploaded_', '')
+                                    temp = temp.replace(f'{user_id}_', '', 1)
+                                    parts = temp.split('_', 1)
+                                    if len(parts) >= 2:
+                                        filename_part = parts[1]
+                                        photo_name = re.sub(r'_face_\d+$', '', filename_part)
+                                    else:
+                                        photo_name = re.sub(r'_face_\d+$', '', temp)
                                 else:
-                                    photo_name = re.sub(r'_face_\d+$', '', temp)
-                            else:
-                                file_id = person_id.split('_', 1)[1] if '_' in person_id else person_id
-                                # Find photo filename using file_id and mapping
-                                photo_name = self._find_photo_by_file_id(user_id, file_id, folder_id)
-                            
-                            # Only add if photo found (prevent unknown.jpg entries)
-                            if photo_name:
-                                results.append({
-                                    'similarity': similarity_clamped,
-                                    'person_id': person_id,
-                                    'photo_name': photo_name,
-                                    'photo_path': photo_name,
-                                    'confidence': f"{similarity_clamped:.2%}",
-                                    'quality_score': face_meta['quality_score'],
-                                    'detector': face_meta['detector'],
-                                    'extractor': face_meta['extractor']
-                                })
+                                    file_id = person_id.split('_', 1)[1] if '_' in person_id else person_id
+                                    # Find photo filename using file_id and mapping
+                                    photo_name = self._find_photo_by_file_id(user_id, file_id, folder_id)
+
+                                # Only add if photo found (prevent unknown.jpg entries)
+                                if photo_name:
+                                    results.append({
+                                        'similarity': similarity_clamped,
+                                        'person_id': person_id,
+                                        'photo_name': photo_name,
+                                        'photo_path': photo_name,
+                                        'confidence': f"{similarity_clamped:.2%}",
+                                        'quality_score': face_meta['quality_score'],
+                                        'detector': face_meta['detector'],
+                                        'extractor': face_meta['extractor']
+                                    })
             
             # Sort by similarity (highest first)
             results.sort(key=lambda x: x['similarity'], reverse=True)
@@ -508,25 +511,26 @@ class RealFaceRecognitionEngine:
         """Load FAISS index and metadata from disk for current scope."""
         try:
             index_path, metadata_path = self._get_paths_for_scope()
-            if os.path.exists(index_path):
-                self.faiss_index = faiss.read_index(index_path)
-                print(f"✅ Loaded FAISS index with {self.faiss_index.ntotal} faces from {index_path}")
-                # Load metadata
-                if os.path.exists(metadata_path):
-                    import json
-                    with open(metadata_path, "r") as f:
-                        serializable_db = json.load(f)
-                    self.face_database = {}
-                    for k, v in serializable_db.items():
-                        self.face_database[int(k)] = v
-                    print(f"✅ Loaded face metadata for {len(self.face_database)} faces")
+            lock = self._get_scope_lock()
+            with lock:
+                if os.path.exists(index_path):
+                    self.faiss_index = faiss.read_index(index_path)
+                    print(f"✅ Loaded FAISS index with {self.faiss_index.ntotal} faces from {index_path}")
+                    # Load metadata
+                    if os.path.exists(metadata_path):
+                        import json
+                        with open(metadata_path, "r") as f:
+                            serializable_db = json.load(f)
+                        self.face_database = {}
+                        for k, v in serializable_db.items():
+                            self.face_database[int(k)] = v
+                        print(f"✅ Loaded face metadata for {len(self.face_database)} faces")
+                    else:
+                        self.face_database = {}
                 else:
+                    # Initialize empty structures for new scope
+                    self.faiss_index = faiss.IndexFlatIP(self.embedding_dim)
                     self.face_database = {}
-                return True
-            else:
-                # Initialize empty structures for new scope
-                self.faiss_index = faiss.IndexFlatIP(self.embedding_dim)
-                self.face_database = {}
                 return True
         except Exception as e:
             logger.error(f"Failed to load database: {e}")
