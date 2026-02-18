@@ -1853,8 +1853,11 @@ def get_usage_stats():
             stats['images']['percentage'] = round((stats['images']['used'] / 10000000) * 100, 1) if stats['images']['used'] else 0
         else:
             stats = pricing_manager.get_usage_stats(user_id)
-        
-        return jsonify({'success': True, 'stats': stats})
+        response = jsonify({'success': True, 'stats': stats})
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
         
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -1868,7 +1871,7 @@ def get_trial_status():
         from pricing_manager import pricing_manager
         user_id = session['user_id']
         if is_super_user(user_id):
-            return jsonify({
+            response = jsonify({
                 'success': True,
                 'trial': {
                     'trial_start': None,
@@ -1882,6 +1885,10 @@ def get_trial_status():
                 },
                 'upgrade_required': False
             })
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+            return response
         trial_info = pricing_manager.get_trial_info(user_id)
         plan = pricing_manager.get_user_plan(user_id)
         profile = _load_user_profile(user_id)
@@ -1895,7 +1902,7 @@ def get_trial_status():
                 'days_left': None,
                 'expired': False
             }
-        return jsonify({
+        response = jsonify({
             'success': True,
             'trial': trial_info,
             'plan': {
@@ -1904,6 +1911,10 @@ def get_trial_status():
             },
             'upgrade_required': upgrade_required
         })
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
 

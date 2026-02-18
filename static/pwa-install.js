@@ -371,7 +371,9 @@
         const trialText = document.getElementById('trialText');
         if (!banner || !trialText) return;
         try {
-            const response = await fetch('/api/trial-status');
+            const response = await fetch(`/api/trial-status?t=${Date.now()}`, {
+                cache: 'no-store'
+            });
             const data = await response.json();
             if (!data.success) return;
             const trial = data.trial || {};
@@ -407,7 +409,9 @@
         const usageText = document.getElementById('usageText');
         const usageFill = document.getElementById('usageFill');
         try {
-            const response = await fetch('/api/usage-stats');
+            const response = await fetch(`/api/usage-stats?t=${Date.now()}`, {
+                cache: 'no-store'
+            });
             const data = await response.json();
             if (!data.success) return;
             const stats = data.stats || {};

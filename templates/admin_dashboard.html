@@ -1051,7 +1051,7 @@
                     </div>
                 </div>
                 
-                <button class="btn-upgrade" onclick="window.location.href='/pricing'">
+                <button class="btn-upgrade" id="profileUpgradeBtn" onclick="window.location.href='/pricing'">
                     ⬆️ Upgrade Plan
                 </button>
             </div>
@@ -1406,12 +1406,11 @@
                 `${formatNumber(profile.videos_used)} / ${formatNumber(profile.videos_limit)}`;
             document.getElementById('profileVideosBar').style.width = profile.videos_percentage + '%';
             
-            // Hide upgrade button for enterprise plan
-            const upgradeBtn = document.querySelector('.btn-upgrade');
-            if (profile.plan_type === 'enterprise') {
-                upgradeBtn.style.display = 'none';
-            } else {
-                upgradeBtn.style.display = 'block';
+            // Show upgrade button only for free plan users.
+            const upgradeBtn = document.getElementById('profileUpgradeBtn');
+            if (upgradeBtn) {
+                const planType = String(profile.plan_type || 'free').toLowerCase();
+                upgradeBtn.style.display = (planType === 'free') ? 'block' : 'none';
             }
         }
 
