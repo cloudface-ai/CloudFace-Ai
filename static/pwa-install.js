@@ -375,11 +375,15 @@
             const data = await response.json();
             if (!data.success) return;
             const trial = data.trial || {};
+            const plan = data.plan || {};
+            const planType = String(plan.plan_type || '').toLowerCase();
+            const isFreePlan = planType === 'free';
+            const shouldBlock = data.upgrade_required === true || (isFreePlan && trial.expired);
             if (!trial.trial_start) {
                 banner.style.display = 'none';
                 return;
             }
-            if (trial.expired) {
+            if (shouldBlock) {
                 trialText.innerHTML = '<strong>Trial ended.</strong> Please upgrade to continue.';
                 banner.style.display = 'block';
                 openUpgradeModal();

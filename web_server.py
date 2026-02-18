@@ -1879,19 +1879,23 @@ def get_trial_status():
                 'plan': {
                     'plan_type': 'enterprise',
                     'plan_name': 'Enterprise'
-                }
+                },
+                'upgrade_required': False
             })
         trial_info = pricing_manager.get_trial_info(user_id)
         plan = pricing_manager.get_user_plan(user_id)
         profile = _load_user_profile(user_id)
         _maybe_send_trial_emails(user_id, profile, trial_info)
+        plan_type = (plan.get('plan_type') or '').lower()
+        upgrade_required = bool(plan_type == 'free' and trial_info.get('expired'))
         return jsonify({
             'success': True,
             'trial': trial_info,
             'plan': {
                 'plan_type': plan.get('plan_type'),
                 'plan_name': plan.get('plan_name')
-            }
+            },
+            'upgrade_required': upgrade_required
         })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)})
@@ -1954,8 +1958,8 @@ def create_payment():
         if 'user_id' not in session:
             return jsonify({'error': 'Not authenticated'}), 401
         
-        data = request.get_json()
-        plan_id = data.get('plan_id')
+        data = request.get_json() or {}
+        plan_id = (data.get('plan_id') or '').strip()
         currency = 'inr'
         
         from pricing_manager import pricing_manager
@@ -1967,6 +1971,8 @@ def create_payment():
         
         if not plan:
             return jsonify({'success': False, 'error': 'Invalid plan'})
+        if plan_id in ('free', 'enterprise'):
+            return jsonify({'success': False, 'error': 'Selected plan does not require direct checkout'})
         
         # Create payment order
         # Razorpay only
@@ -1997,7 +2003,7 @@ def verify_payment():
         if 'user_id' not in session:
             return jsonify({'error': 'Not authenticated'}), 401
         
-        data = request.get_json()
+        data = request.get_json() or {}
         payment_method = data.get('method', 'razorpay')
         
         from pricing_manager import pricing_manager
@@ -2010,7 +2016,16 @@ def verify_payment():
         
         if verification['success']:
             # Upgrade user plan
-            plan_id = data.get('plan_id')
+            plan_id = (data.get('plan_id') or '').strip()
+            if plan_id in ('free', 'enterprise'):
+                return jsonify({'success': False, 'error': 'Invalid paid plan'}), 400
+            valid_paid_plans = {
+                plan_id
+                for plan_id, plan in pricing_manager.get_all_plans('inr').items()
+                if plan.get('price', 0) > 0
+            }
+            if plan_id not in valid_paid_plans:
+                return jsonify({'success': False, 'error': 'Unknown plan selected'}), 400
             payment_info = {
                 'amount': data.get('amount', 0),
                 'currency': data.get('currency', 'INR'),
@@ -2023,10 +2038,15 @@ def verify_payment():
             )
             
             if upgrade_success:
+                updated_plan = pricing_manager.get_user_plan(session['user_id'])
                 return jsonify({
                     'success': True,
                     'message': 'Payment successful! Your plan has been upgraded.',
-                    'redirect': '/app'
+                    'redirect': '/app',
+                    'plan': {
+                        'plan_type': updated_plan.get('plan_type'),
+                        'plan_name': updated_plan.get('plan_name')
+                    }
                 })
             else:
                 return jsonify({

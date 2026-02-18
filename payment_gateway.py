@@ -150,11 +150,22 @@ class PaymentGateway:
         """Verify Razorpay payment signature"""
         try:
             order_id = payment_data.get('razorpay_order_id')
+            subscription_id = payment_data.get('razorpay_subscription_id')
             payment_id = payment_data.get('razorpay_payment_id')
             signature = payment_data.get('razorpay_signature')
+            if not payment_id or not signature:
+                return {'success': False, 'error': 'Missing Razorpay payment fields'}
             
-            # Create signature for verification
-            message = f"{order_id}|{payment_id}"
+            # Razorpay signature differs by flow:
+            # order checkout => order_id|payment_id
+            # subscription checkout => payment_id|subscription_id
+            if subscription_id:
+                message = f"{payment_id}|{subscription_id}"
+            elif order_id:
+                message = f"{order_id}|{payment_id}"
+            else:
+                return {'success': False, 'error': 'Missing order/subscription identifier'}
+
             expected_signature = hmac.new(
                 self.razorpay_key_secret.encode(),
                 message.encode(),
@@ -165,6 +176,7 @@ class PaymentGateway:
                 # Log successful payment
                 self._log_payment_event('razorpay_payment_success', {
                     'order_id': order_id,
+                    'subscription_id': subscription_id,
                     'payment_id': payment_id,
                     'verified': True
                 })
@@ -173,12 +185,14 @@ class PaymentGateway:
                     'success': True,
                     'payment_id': payment_id,
                     'order_id': order_id,
+                    'subscription_id': subscription_id,
                     'method': 'razorpay'
                 }
             else:
                 # Log failed verification
                 self._log_payment_event('razorpay_verification_failed', {
                     'order_id': order_id,
+                    'subscription_id': subscription_id,
                     'payment_id': payment_id,
                     'expected_signature': expected_signature,
                     'received_signature': signature
