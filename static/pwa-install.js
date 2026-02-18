@@ -379,6 +379,10 @@
             const planType = String(plan.plan_type || '').toLowerCase();
             const isFreePlan = planType === 'free';
             const shouldBlock = data.upgrade_required === true || (isFreePlan && trial.expired);
+            if (!isFreePlan) {
+                banner.style.display = 'none';
+                return;
+            }
             if (!trial.trial_start) {
                 banner.style.display = 'none';
                 return;

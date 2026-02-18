@@ -1888,6 +1888,13 @@ def get_trial_status():
         _maybe_send_trial_emails(user_id, profile, trial_info)
         plan_type = (plan.get('plan_type') or '').lower()
         upgrade_required = bool(plan_type == 'free' and trial_info.get('expired'))
+        if plan_type != 'free':
+            trial_info = {
+                'trial_start': None,
+                'trial_end': None,
+                'days_left': None,
+                'expired': False
+            }
         return jsonify({
             'success': True,
             'trial': trial_info,
