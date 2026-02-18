@@ -5,6 +5,10 @@ Separate module to handle subscriptions without affecting core functionality
 import os
 import json
 import time
+import shutil
+import tempfile
+import threading
+import copy
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 from enum import Enum
@@ -24,6 +28,9 @@ class PricingManager:
         self.data_dir = data_dir
         os.makedirs(data_dir, exist_ok=True)
         self.trial_days = 7
+        self._locks: Dict[str, threading.RLock] = {}
+        self._locks_guard = threading.Lock()
+        self._last_valid_plans: Dict[str, Dict[str, Any]] = {}
         
         # Plan configurations
         self.plans = {
@@ -77,41 +84,80 @@ class PricingManager:
             }
         }
     
+    def _normalize_user_id(self, user_id: str) -> str:
+        """Normalize user ID to avoid accidental duplicate keys."""
+        return (user_id or "").strip().lower()
+
+    def _get_user_lock(self, user_id: str) -> threading.RLock:
+        user_key = self._normalize_user_id(user_id)
+        with self._locks_guard:
+            if user_key not in self._locks:
+                self._locks[user_key] = threading.RLock()
+            return self._locks[user_key]
+
     def _get_user_file(self, user_id: str) -> str:
         """Get user's pricing data file path"""
-        return os.path.join(self.data_dir, f"{user_id}_plan.json")
+        user_key = self._normalize_user_id(user_id)
+        return os.path.join(self.data_dir, f"{user_key}_plan.json")
+
+    def _get_user_backup_file(self, user_id: str) -> str:
+        return self._get_user_file(user_id) + ".bak"
     
     def get_user_plan(self, user_id: str) -> Dict[str, Any]:
         """Get user's current plan and usage"""
+        user_key = self._normalize_user_id(user_id)
+        user_file = self._get_user_file(user_key)
+        backup_file = self._get_user_backup_file(user_key)
+        lock = self._get_user_lock(user_key)
         try:
-            user_file = self._get_user_file(user_id)
-            
-            if not os.path.exists(user_file):
-                # New user - create free plan
-                return self._create_free_plan(user_id)
-            
-            with open(user_file, 'r') as f:
-                user_data = json.load(f)
-            
-            # Ensure trial_start exists for free users
-            user_data = self._ensure_trial_start(user_data)
-            self._save_user_plan(user_id, user_data)
-            
-            # Check if plan expired
-            if self._is_plan_expired(user_data):
-                return self._downgrade_to_free(user_id, user_data)
-            
-            return user_data
-            
+            with lock:
+                if not os.path.exists(user_file):
+                    # New user - create free plan
+                    return self._create_free_plan(user_key)
+
+                try:
+                    with open(user_file, 'r') as f:
+                        user_data = json.load(f)
+                except Exception as read_error:
+                    # Attempt backup recovery first; never silently overwrite paid users to free.
+                    if os.path.exists(backup_file):
+                        with open(backup_file, 'r') as f:
+                            user_data = json.load(f)
+                        self._save_user_plan(user_key, user_data)
+                        print(f"⚠️ Recovered user plan from backup for {user_key}: {read_error}")
+                    elif user_key in self._last_valid_plans:
+                        user_data = copy.deepcopy(self._last_valid_plans[user_key])
+                        print(f"⚠️ Using in-memory fallback user plan for {user_key}: {read_error}")
+                    else:
+                        raise RuntimeError(f"Unable to read pricing file for {user_key}: {read_error}") from read_error
+
+                # Ensure trial_start exists for free users
+                user_data = self._ensure_trial_start(user_data)
+                user_data['user_id'] = user_key
+                self._save_user_plan(user_key, user_data)
+                self._last_valid_plans[user_key] = copy.deepcopy(user_data)
+
+                # Check if plan expired
+                if self._is_plan_expired(user_data):
+                    downgraded = self._downgrade_to_free(user_key, user_data)
+                    self._last_valid_plans[user_key] = copy.deepcopy(downgraded)
+                    return downgraded
+
+                return user_data
+
         except Exception as e:
             print(f"❌ Error getting user plan: {e}")
-            return self._create_free_plan(user_id)
+            if os.path.exists(user_file):
+                # Existing file should never be replaced with free plan due to transient read issues.
+                raise
+            return self._create_free_plan(user_key)
     
     def _create_free_plan(self, user_id: str) -> Dict[str, Any]:
         """Create new free plan for user"""
+        user_key = self._normalize_user_id(user_id)
         now = datetime.now().isoformat()
         plan_data = {
-            'user_id': user_id,
+            'user_id': user_key,
             'plan_type': PlanType.FREE.value,
             'plan_name': 'Starter',
             'created_at': now,
@@ -126,7 +172,8 @@ class PricingManager:
             'payment_history': []
         }
         
-        self._save_user_plan(user_id, plan_data)
+        self._save_user_plan(user_key, plan_data)
+        self._last_valid_plans[user_key] = copy.deepcopy(plan_data)
         return plan_data
 
     def _ensure_trial_start(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -182,10 +229,34 @@ class PricingManager:
     
     def _save_user_plan(self, user_id: str, plan_data: Dict[str, Any]) -> bool:
         """Save user plan data"""
+        user_key = self._normalize_user_id(user_id)
+        lock = self._get_user_lock(user_key)
         try:
-            user_file = self._get_user_file(user_id)
-            with open(user_file, 'w') as f:
-                json.dump(plan_data, f, indent=2)
+            user_file = self._get_user_file(user_key)
+            backup_file = self._get_user_backup_file(user_key)
+            os.makedirs(self.data_dir, exist_ok=True)
+            plan_data = copy.deepcopy(plan_data)
+            plan_data['user_id'] = user_key
+
+            with lock:
+                if os.path.exists(user_file):
+                    try:
+                        shutil.copy2(user_file, backup_file)
+                    except Exception:
+                        pass
+
+                fd, temp_path = tempfile.mkstemp(prefix=".plan_", suffix=".tmp", dir=self.data_dir)
+                try:
+                    with os.fdopen(fd, 'w') as f:
+                        json.dump(plan_data, f, indent=2)
+                        f.flush()
+                        os.fsync(f.fileno())
+                    os.replace(temp_path, user_file)
+                finally:
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
+
+                self._last_valid_plans[user_key] = copy.deepcopy(plan_data)
             return True
         except Exception as e:
             print(f"❌ Error saving user plan: {e}")
@@ -400,10 +471,7 @@ class PricingManager:
             }
             
             # Save user plan
-            user_file = os.path.join(self.data_dir, f"{user_id}.json")
-            with open(user_file, 'w') as f:
-                json.dump(user_plan, f, indent=2)
-            
+            self._save_user_plan(user_id, user_plan)
             print(f"✅ User {user_id} upgraded to Professional plan (50,000 images)")
             return True
             
