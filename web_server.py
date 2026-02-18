@@ -2455,8 +2455,9 @@ def process_local():
         if result.get('success') and result.get('processed_count', 0) > 0:
             try:
                 from pricing_manager import pricing_manager
-                pricing_manager.track_image_usage(user_id, result['processed_count'])
-                print(f"📊 Tracked {result['processed_count']} images for user {user_id}")
+                billed_images = int(result.get('total_files') or result.get('processed_count') or 0)
+                pricing_manager.track_image_usage(user_id, billed_images)
+                print(f"📊 Tracked {billed_images} images for user {user_id}")
             except Exception as e:
                 print(f"⚠️ Usage tracking failed: {e}")
         
@@ -2655,8 +2656,9 @@ def process_drive():
                 if result.get('success') and result.get('processed_count', 0) > 0:
                     try:
                         from pricing_manager import pricing_manager
-                        pricing_manager.track_image_usage(user_id, result['processed_count'])
-                        print(f"📊 Tracked {result['processed_count']} images for user {user_id}")
+                        billed_images = int(result.get('total_files') or result.get('processed_count') or 0)
+                        pricing_manager.track_image_usage(user_id, billed_images)
+                        print(f"📊 Tracked {billed_images} images for user {user_id}")
                     except Exception as e:
                         print(f"⚠️ Usage tracking failed: {e}")
                 
@@ -4611,7 +4613,47 @@ def create_share_session():
             try:
                 requested = manager.get_session(requested_session_id)
                 if not requested:
-                    return jsonify({'success': False, 'error': 'requested_session_not_found'}), 404
+                    # Recovery path: if session storage was cleaned but admin link still exists,
+                    # rehydrate the session using the same event/session identity.
+                    link = _lookup_event_link_by_session(requested_session_id, admin_user_id)
+                    if not link:
+                        return jsonify({'success': False, 'error': 'requested_session_not_found'}), 404
+
+                    link_meta = dict(link.get('metadata') or {})
+                    merged_meta = dict(link_meta)
+                    merged_meta.update(metadata or {})
+                    fallback_folder_id = (
+                        link_meta.get('folder_id')
+                        or link.get('folder_id')
+                        or folder_id
+                        or requested_session_id
+                    )
+                    if fallback_folder_id == 'uploaded':
+                        fallback_folder_id = requested_session_id
+
+                    requested = {
+                        'session_id': requested_session_id,
+                        'admin_user_id': admin_user_id,
+                        'folder_id': fallback_folder_id,
+                        'metadata': merged_meta,
+                        'created_at': datetime.utcnow().isoformat(),
+                        'expires_at': (datetime.utcnow() + timedelta(days=30)).isoformat(),
+                        'access_count': 0,
+                        'status': 'active'
+                    }
+
+                    # Best-effort persistence so downstream lookups continue working.
+                    try:
+                        if getattr(manager, 'db', None) is not None:
+                            manager.db.collection('shared_sessions').document(requested_session_id).set(requested)
+                        else:
+                            os.makedirs('storage/sessions', exist_ok=True)
+                            with open(os.path.join('storage/sessions', f"{requested_session_id}.json"), 'w') as f:
+                                json.dump(requested, f, indent=2)
+                        print(f"♻️ Rehydrated missing requested session from admin_links: {requested_session_id}")
+                    except Exception as rehydrate_error:
+                        print(f"⚠️ Could not persist rehydrated requested session {requested_session_id}: {rehydrate_error}")
+
                 if requested.get('admin_user_id') != admin_user_id:
                     return jsonify({'success': False, 'error': 'requested_session_forbidden'}), 403
                 existing_session = requested
@@ -5647,7 +5689,8 @@ def api_admin_append_event_photos(session_id):
     if result.get('success') and result.get('processed_count', 0) > 0:
         try:
             from pricing_manager import pricing_manager
-            pricing_manager.track_image_usage(admin_user_id, result['processed_count'])
+            billed_images = int(result.get('total_files') or result.get('processed_count') or 0)
+            pricing_manager.track_image_usage(admin_user_id, billed_images)
         except Exception:
             pass
     return jsonify(result)
@@ -5730,7 +5773,8 @@ def api_admin_append_event_photos_from_drive(session_id):
     if result.get('success') and result.get('processed_count', 0) > 0:
         try:
             from pricing_manager import pricing_manager
-            pricing_manager.track_image_usage(admin_user_id, result['processed_count'])
+            billed_images = int(result.get('total_files') or result.get('processed_count') or 0)
+            pricing_manager.track_image_usage(admin_user_id, billed_images)
         except Exception:
             pass
     return jsonify(result)

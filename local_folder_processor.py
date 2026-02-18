@@ -266,7 +266,7 @@ class LocalFolderProcessor:
             # Track usage for pricing plans
             try:
                 from pricing_manager import pricing_manager
-                pricing_manager.track_image_usage(user_id, self.processed_count)
+                pricing_manager.track_image_usage(user_id, self.total_files)
             except ImportError:
                 print("⚠️  Pricing manager not available")
             
