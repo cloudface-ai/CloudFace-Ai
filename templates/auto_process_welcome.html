@@ -243,10 +243,12 @@
 </head>
 <body>
     <div class="container">
-        <!-- Company Logo (if uploaded) -->
-        {% if logo_filename %}
+        <!-- Company branding -->
+        {% if logo_filename or company_name %}
         <div class="company-logo-section">
+            {% if logo_filename %}
             <img id="companyLogo" src="/static/logos/{{ logo_filename }}" alt="{{ company_name or 'Company Logo' }}" class="company-logo" onerror="this.src='/static/Cloudface-ai-logo.png';">
+            {% endif %}
             {% if company_name %}
             <div class="company-name">{{ company_name }}</div>
             {% endif %}

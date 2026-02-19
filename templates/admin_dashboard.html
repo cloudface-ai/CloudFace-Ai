@@ -1263,6 +1263,8 @@
 
         let activityChart, sourcesChart;
         let currentPeriod = '24h';
+        const autoOpenEditSessionId = (new URLSearchParams(window.location.search).get('open_edit_session') || '').trim();
+        let autoOpenedEditModal = false;
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
@@ -1520,6 +1522,7 @@
                 
                 if (data.success) {
                     displayAdminLinks(data.links);
+                    maybeAutoOpenEditEventDetails(data.links);
                 } else {
                     document.getElementById('adminLinksList').innerHTML = `
                         <div class="error-message">Failed to load links: ${data.error}</div>
@@ -1620,6 +1623,32 @@
                     </div>
                 </div>
             `).join('');
+        }
+
+        function maybeAutoOpenEditEventDetails(links) {
+            if (autoOpenedEditModal || !autoOpenEditSessionId) return;
+            if (!Array.isArray(links) || links.length === 0) return;
+            const match = links.find(l => String(l.session_id || '').trim() === autoOpenEditSessionId);
+            if (!match) return;
+
+            // Use the same fields the "Edit Details" button uses.
+            const md = match.metadata || {};
+            openEditEventModal(
+                String(match.id || ''),
+                String(match.short_code || ''),
+                String(match.session_id || ''),
+                String(md.event_name || ''),
+                String(md.company_name || ''),
+                String(md.event_date || ''),
+                (md.watermark_enabled !== undefined ? String(md.watermark_enabled) : 'true'),
+                String(md.watermark_text || ''),
+                (md.watermark_logo_filename ? String(md.watermark_logo_filename) : ''),
+                String(md.watermark_position || 'bottom-right'),
+                (md.watermark_opacity !== undefined ? String(md.watermark_opacity) : '70'),
+                (md.watermark_size !== undefined ? String(md.watermark_size) : '15'),
+                (md.watermark_margin !== undefined ? String(md.watermark_margin) : '12')
+            );
+            autoOpenedEditModal = true;
         }
 
         function copyLink(url, buttonElement) {
